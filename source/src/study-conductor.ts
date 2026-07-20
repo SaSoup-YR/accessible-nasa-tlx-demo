@@ -25,7 +25,7 @@ export class StudyConductorApp extends LitElement {
   @state() private largeText = false;
   @state() private audioGuidance = false;
   @state() private recoveryEnabled = true;
-  @state() private allowParticipantChanges = true;
+  @state() private allowParticipantChanges = false;
   @state() private voiceInputAvailable = true;
   @state() private gazeInputAvailable = false;
   @state() private generatedConfig: StudyConfig | null = null;
@@ -63,7 +63,8 @@ export class StudyConductorApp extends LitElement {
           <h2>What this page does</h2>
           <p>
             This separates study setup from participant answering. Participants receive a configured questionnaire and do not
-            have to set it up themselves. Optional personal changes can remain available when the protocol allows them.
+            have to set it up themselves. This researcher page generates a separate participant page. Participant adjustments
+            are locked by default and should be enabled only when the approved protocol permits them.
           </p>
           <p>
             <strong>Current storage boundary:</strong> completed records stay in this browser on this device until the study conductor
@@ -81,21 +82,25 @@ export class StudyConductorApp extends LitElement {
 
         <section class="panel conductor-panel" aria-labelledby="study-details-heading">
           <h2 id="study-details-heading">1. Study details</h2>
+          <p class="support-boundary">
+            These fields identify the questionnaire configuration, not the participant. Give each participant a separate
+            pseudonymous code such as P-001; they enter that code on the participant page.
+          </p>
           <div class="form-grid">
             <label>
               <strong>Study ID</strong>
-              <span>Example: TLX-PILOT-01. Do not use a participant name.</span>
-              <input .value=${this.studyId} maxlength="64" @input=${(event: Event) => { this.studyId = (event.currentTarget as HTMLInputElement).value; }} />
+              <span>Internal label shared by records from one study or condition. Example: TLX-TECH-01. Do not use a participant name.</span>
+              <input placeholder="TLX-TECH-01" autocomplete="off" spellcheck="false" .value=${this.studyId} maxlength="64" @input=${(event: Event) => { this.studyId = (event.currentTarget as HTMLInputElement).value; }} />
             </label>
             <label>
               <strong>Study title</strong>
-              <span>Shown to participants.</span>
-              <input .value=${this.studyTitle} maxlength="120" @input=${(event: Event) => { this.studyTitle = (event.currentTarget as HTMLInputElement).value; }} />
+              <span>Participant-facing name of the study. Example: Route-planning workload study.</span>
+              <input placeholder="Route-planning workload study" autocomplete="off" .value=${this.studyTitle} maxlength="120" @input=${(event: Event) => { this.studyTitle = (event.currentTarget as HTMLInputElement).value; }} />
             </label>
             <label class="full-width">
               <strong>Task label</strong>
-              <span>State exactly which completed task the participant should rate.</span>
-              <input .value=${this.taskLabel} maxlength="160" @input=${(event: Event) => { this.taskLabel = (event.currentTarget as HTMLInputElement).value; }} />
+              <span>Exact activity the participant has just completed and must rate. Example: planning a route from A to B using the prototype.</span>
+              <input placeholder="planning a route from A to B using the prototype" autocomplete="off" .value=${this.taskLabel} maxlength="160" @input=${(event: Event) => { this.taskLabel = (event.currentTarget as HTMLInputElement).value; }} />
             </label>
           </div>
         </section>
@@ -112,7 +117,7 @@ export class StudyConductorApp extends LitElement {
             ${this.booleanOption('Save incomplete progress on this device', this.recoveryEnabled, (value) => { this.recoveryEnabled = value; })}
             ${this.booleanOption('Allow confirmed built-in voice answers', this.voiceInputAvailable, (value) => { this.voiceInputAvailable = value; })}
             ${this.booleanOption('Allow experimental webcam gaze input', this.gazeInputAvailable, (value) => { this.gazeInputAvailable = value; }, 'Default off because current gaze accuracy is recorded as Partial.')}
-            ${this.booleanOption('Let participants adjust support after opening the link', this.allowParticipantChanges, (value) => { this.allowParticipantChanges = value; }, 'Recommended for accessibility autonomy; every final setting is recorded separately from the score.')}
+            ${this.booleanOption('Allow optional participant adjustments after opening the link', this.allowParticipantChanges, (value) => { this.allowParticipantChanges = value; }, 'Default off for a controlled study. Turn on only when the approved protocol allows personalisation; the final settings are recorded.')}
             ${this.booleanOption('Show the weighted score to the participant', this.showScoreToParticipant, (value) => { this.showScoreToParticipant = value; }, 'Default off for a study; the conductor receives the score in the export.')}
           </div>
 
