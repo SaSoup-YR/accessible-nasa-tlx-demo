@@ -1,25 +1,38 @@
 # Accessible NASA-TLX Version 0.4
 
-A self-contained research prototype that adds optional accessibility support to the weighted NASA Task Load Index while preserving its rating, comparison and scoring structure.
+A public research prototype of an implementation-ready accessibility support layer for the full weighted NASA Task Load Index.
 
-## Open the hosted prototype
+**[Open the hosted prototype](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
-The prototype is published through GitHub Pages from `index.html`.
+## What the prototype preserves
 
-## Browser requirements
+The prototype retains the official NASA-TLX factor definitions, 0–100 rating values, reversed Performance direction, fifteen pairwise comparisons, factor weighting and weighted-score calculation. Optional accessibility support is kept separate from the workload score.
 
-For the most complete technical test, use a recent version of Chrome or Microsoft Edge.
+## Optional accessibility support
 
-- Gaze-assisted answering requires HTTPS, a webcam and camera permission.
-- Voice input requires browser speech-recognition support and microphone permission.
-- Built-in audio uses browser speech synthesis.
-- Screen-reader compatibility should be tested with external software such as NVDA or VoiceOver.
-- Standard mouse, touch and keyboard controls remain available.
+- Adjustable text and larger controls
+- Simpler explanations alongside the official wording
+- Standard scale and experimental smiley landmarks
+- Built-in spoken guidance
+- Keyboard and external screen-reader operation
+- Confirmed voice input
+- Interruption recovery using local browser storage
+- Experimental webcam-gaze input with conventional fallbacks
+
+## Run and inspect
+
+No build step is required. The hosted site serves the complete prototype directly from `index.html`.
+
+For local inspection, serve the repository over HTTP rather than opening `index.html` as a `file://` URL. HTTPS or localhost is required for webcam access.
+
+For the most complete technical test, use a recent version of Chrome or Microsoft Edge. Voice input depends on browser speech-recognition support. Gaze support downloads the pinned WebGazer 3.5.3 browser library from jsDelivr when that option is activated.
 
 ## Privacy
 
-Questionnaire progress is stored locally only when the user enables recovery support. The prototype does not upload questionnaire answers. Webcam video is processed in the browser by the gaze library and is not stored by the questionnaire.
+Questionnaire answers are not uploaded by this prototype. Progress is stored locally only when recovery support is enabled. Webcam video is processed in the browser and is not stored by the questionnaire. Activating gaze support requires downloading its browser library from jsDelivr.
 
-## Status
+## Evaluation status
 
-This is a research prototype. Full WCAG conformance, cross-browser equivalence and psychometric equivalence of optional support routes have not been established.
+This is a research prototype. Automated checks and researcher-led manual tests do not establish full WCAG conformance, psychometric equivalence, improved comprehension, effectiveness for a disability group or reliable independent gaze answering. Smiley and simpler-language presentations remain optional and are not validated replacements for the official scale.
+
+See [TESTING.md](TESTING.md) for the technical test checklist.
