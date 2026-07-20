@@ -3,11 +3,11 @@
   "version": "0.5.0",
   "releaseStatus": "study-workflow candidate",
   "canonicalRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
-  "canonicalCommit": "18e1d3603d0b74a82091d2883843384d148e6d37",
-  "builtAt": "2026-07-20T21:45:41Z",
+  "canonicalCommit": "226cdc87fa16c7dec5736b0279c1d136b0291238",
+  "builtAt": "2026-07-20T23:37:43Z",
   "verification": {
     "testFilesPassed": 10,
-    "testsPassed": 42,
+    "testsPassed": 47,
     "axeStructuralScansPassed": 3,
     "typescriptBuild": "passed",
     "productionBuild": "passed"
