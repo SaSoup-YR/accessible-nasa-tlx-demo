@@ -37,7 +37,7 @@ This is role separation, not questionnaire duplication. Both pages import the sa
 
 1. Enter a non-identifying study ID, participant-facing study title and exact task label.
 2. Select starting support. Standard rating presentation is the recommended default; WebGazer is off by default because current accuracy evidence is Partial.
-3. Decide whether the participant may change support. This affects interface support only; it never unlocks official wording, response values, pairs or scoring.
+3. Keep participant support changes locked by default. Enable optional changes only when personalisation is part of the approved protocol. This policy affects interface support only; it never unlocks official wording, response values, pairs or scoring.
 4. Generate a versioned configuration with a unique configuration ID and creation timestamp.
 5. Download the configuration JSON as part of the protocol/freeze package.
 6. Give the generated link to the participant. No participant identifier or answer is placed in the link.
@@ -78,7 +78,7 @@ The JSON export and participant link represent the same configuration ID. Re-imp
 Preconfiguration removes an avoidable setup task, but completely removing personal adjustment can also create barriers. W3C cognitive-accessibility guidance treats different user needs and personalisation as important beyond minimum WCAG conformance. Version 0.5 therefore separates two decisions:
 
 - the conductor defines the starting study condition and whether experimental routes are available;
-- the protocol can allow optional participant changes after opening, and the final state and actual input route are recorded.
+- participant changes are locked by default, while a protocol can explicitly allow optional changes after opening; the final state and actual input route are recorded.
 
 This does not solve the possible psychometric effect of simpler explanations or smiley presentation. If a study compares NASA-TLX scores, measurement-adjacent support should be fixed or analysed as a prespecified condition. If the study evaluates technical implementation routes, optional changes can be allowed but must not be treated as evidence that one interface suits every impairment.
 
@@ -167,12 +167,15 @@ Version 0.5 adds automated checks for:
 - complete local record saving and duplicate submission protection;
 - stable CSV columns for ratings, weights, pairs and routes;
 - configured participant-code gate and locked support;
+- conductor guidance, separate participant-link generation and locked-by-default support;
+- first-request spoken summary without an unnecessary speech-queue cancellation;
+- configured task wording in the participant introduction summary;
 - complete-answer local saving and host-event emission;
 - hidden participant score policy;
 - structural axe scans of the study-conductor page;
 - Version 0.5 standalone syntax and boot.
 
-At this decision point, 39 tests across nine files and both production builds pass. Manual browser, keyboard, screen-reader, reflow, contrast, cross-device and storage-clearance checks remain necessary before a freeze.
+At this decision point, 47 tests across ten files and both production builds pass. The clean-clone standalone build now creates its output directory when absent. Manual browser, keyboard, screen-reader, reflow, contrast, cross-device and storage-clearance checks remain necessary before a freeze.
 
 ## Authoritative external guidance used
 
