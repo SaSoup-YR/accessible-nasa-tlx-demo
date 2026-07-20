@@ -24,6 +24,8 @@ npm run build:standalone
 
 The participant development route is `/`; the study-conductor route is `/study.html`.
 
+The study conductor prepares the questionnaire and participant adjustments are locked by default. A generated link opens the separate participant route with the configuration already applied. The conductor can enable optional personalisation only when the approved protocol requires it.
+
 ## Evidence boundary
 
 This source demonstrates technical behaviour. It does not establish WCAG conformance, psychometric equivalence, improved comprehension, secure remote data collection or effectiveness for a disability group. The experimental gaze route remains Partial. Participant data collection remains subject to supervisor review and the applicable ethics and data-protection route.
