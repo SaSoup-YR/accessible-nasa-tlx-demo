@@ -1,38 +1,55 @@
-# Accessible NASA-TLX Version 0.4
+# Accessible NASA-TLX Version 0.5 candidate
 
-A public research prototype of an implementation-ready accessibility support layer for the full weighted NASA Task Load Index.
+A public, inspectable release of a full weighted NASA Task Load Index prototype with a separate study-conductor workflow and configurable accessibility support.
 
-**[Open the hosted prototype](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
+- **[Prepare a study and export same-device results](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html)**
+- **[Open the participant questionnaire / technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
-## What the prototype preserves
+Use synthetic test codes only. This candidate has not been approved for participant data collection.
 
-The prototype retains the official NASA-TLX factor definitions, 0–100 rating values, reversed Performance direction, fifteen pairwise comparisons, factor weighting and weighted-score calculation. Optional accessibility support is kept separate from the workload score.
+## Who uses which page?
 
-## Optional accessibility support
+| Role | Page | Responsibility |
+| --- | --- | --- |
+| Study conductor | `study.html` | Enters study details, prepares starting support, generates and archives the configuration, gives out the participant link, and exports results. |
+| Participant | `index.html` through the generated link | Enters a pseudonymous study code and completes the prepared questionnaire. No initial setup is required. |
 
-- Adjustable text and larger controls
-- Simpler explanations alongside the official wording
-- Standard scale and experimental smiley landmarks
-- Built-in spoken guidance
-- Keyboard and external screen-reader operation
-- Confirmed voice input
-- Interruption recovery using local browser storage
-- Experimental webcam-gaze input with conventional fallbacks
+The conductor can allow optional personal support changes when the protocol permits them. The final settings and actual input routes are recorded separately from the NASA-TLX score.
 
-## Run and inspect
+## What is saved and exported?
 
-No build step is required. The hosted site serves the complete prototype directly from `index.html`.
+A completed record contains the study/configuration IDs, pseudonymous participant code, timestamps, prototype version, all six ratings, all fifteen pairwise choices, randomized pair order, weights, weighted score, configured support, final support state and input-route metadata.
 
-For local inspection, serve the repository over HTTP rather than opening `index.html` as a `file://` URL. HTTPS or localhost is required for webcam access.
+JSON is the complete lossless record. CSV is the flattened analysis format.
 
-For the most complete technical test, use a recent version of Chrome or Microsoft Edge. Voice input depends on browser speech-recognition support. Gaze support downloads the pinned WebGazer 3.5.3 browser library from jsDelivr when that option is activated.
+### Current same-device mode
 
-## Privacy
+GitHub Pages is static hosting; it is not a research database. In the implemented mode, completed records stay in this site's browser storage on the device where the questionnaire was completed. Return to `study.html` in that same browser to export all records as CSV or JSON. Verify the export before using the erase control.
 
-Questionnaire answers are not uploaded by this prototype. Progress is stored locally only when recovery support is enabled. Webcam video is processed in the browser and is not stored by the questionnaire. Activating gaze support requires downloading its browser library from jsDelivr.
+### Remote participants
 
-## Evaluation status
+A completion on another device does **not** appear on the conductor's device. The component emits a versioned `nasa-tlx-complete` browser event for a future approved host adapter. Do not use participant download-and-email as the normal collection procedure. Remote collection requires the supervisor-approved UCL platform, ethics/data-protection route and frozen prototype.
 
-This is a research prototype. Automated checks and researcher-led manual tests do not establish full WCAG conformance, psychometric equivalence, improved comprehension, effectiveness for a disability group or reliable independent gaze answering. Smiley and simpler-language presentations remain optional and are not validated replacements for the official scale.
+## Measurement and support boundary
 
-See [TESTING.md](TESTING.md) for the technical test checklist.
+The prototype preserves the six NASA-TLX dimensions, 0–100 ratings in five-point increments, reversed Performance direction, fifteen unique pairwise comparisons, factor weights and weighted-score calculation. Optional simpler explanations, smiley landmarks, audio, voice, recovery and experimental webcam gaze remain a separate interface layer. Webcam gaze is off by default because current accuracy evidence is Partial.
+
+## Inspect and learn from the implementation
+
+- [`source/`](source/) is the readable Version 0.5 source-and-test snapshot used for this release.
+- [`docs/STUDY-WORKFLOW.md`](docs/STUDY-WORKFLOW.md) records the role, configuration, data and repository decisions.
+- [`TESTING.md`](TESTING.md) gives an end-to-end technical checklist.
+- [`BUILD-INFO.json`](BUILD-INFO.json) identifies the canonical commit and verification state used to produce this deployment.
+
+The complete dissertation history and evidence remain in `accessible-hci-questionnaire-library`, the single canonical development repository. This public repository is a one-way release mirror, not a second independently edited implementation.
+
+## Build and verify the source snapshot
+
+```bash
+cd source
+npm ci
+npm test
+npm run build:standalone
+```
+
+The release passed 39 automated tests across nine files, including three axe-core structural scans, plus TypeScript and production builds. Automated and researcher-led tests do not establish WCAG conformance, psychometric equivalence, improved comprehension or accessibility for a disability group.
