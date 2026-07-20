@@ -196,6 +196,7 @@ describe('interruption recovery', () => {
 describe('speech support integration', () => {
   it('produces audible browser speech when built-in audio guidance is enabled', async () => {
     const spoken: string[] = [];
+    const cancel = vi.fn();
     class FakeUtterance {
       lang = '';
       rate = 1;
@@ -207,7 +208,7 @@ describe('speech support integration', () => {
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
       value: {
-        cancel: vi.fn(),
+        cancel,
         resume: vi.fn(),
         speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
         getVoices: () => [],
@@ -218,6 +219,16 @@ describe('speech support integration', () => {
     const component = await renderComponent();
     const summaryButton = [...component.querySelectorAll<HTMLButtonElement>('.audio-guidance button')][0];
     expect(summaryButton.textContent?.trim()).toBe('Hear a summary of this step');
+    summaryButton.click();
+    await component.updateComplete;
+    expect(spoken.at(-1)).toContain('Before you begin');
+    expect(cancel).not.toHaveBeenCalled();
+    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing a spoken summary');
+
+    summaryButton.click();
+    await component.updateComplete;
+    expect(cancel).toHaveBeenCalledTimes(1);
+
     const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
       label.textContent?.includes('Automatically read new questions'),
     )!.querySelector<HTMLInputElement>('input')!;
@@ -226,10 +237,12 @@ describe('speech support integration', () => {
     expect(spoken.at(-1)).toContain('Built-in audio guidance is on');
 
     await startRatings(component);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await component.updateComplete;
     expect(spoken.at(-1)).toContain('Rating 1 of 6. Mental Demand');
 
     component.querySelector<HTMLInputElement>('.rating-option input[value="70"]')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(spoken.at(-1)).toContain('Mental Demand, 70, selected');
   });
 
@@ -247,7 +260,9 @@ describe('speech support integration', () => {
           results: { 0: { 0: { transcript: 'fifty five' }, length: 1 }, length: 1 },
         });
       }
-      stop() {}
+      stop() {
+        throw new DOMException('Recognition has already stopped', 'InvalidStateError');
+      }
     }
     window.webkitSpeechRecognition = FakeRecognition as any;
 
@@ -265,6 +280,150 @@ describe('speech support integration', () => {
     component.querySelector<HTMLButtonElement>('.voice-confirmation .primary-button')!.click();
     await component.updateComplete;
     expect(component.querySelector<HTMLInputElement>('input[value="55"]')?.checked).toBe(true);
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    expect(component.querySelector('.step-label')?.textContent).toContain('Rating 2 of 6');
+    expect(component.querySelector('#rating-heading')?.textContent).toBe('Physical Demand');
+  });
+
+  it('synchronises a confirmed voice landmark with the visible smiley radio group', async () => {
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        this.onresult?.({
+          results: { 0: { 0: { transcript: 'seventy five' }, length: 1 }, length: 1 },
+        });
+      }
+      stop() {}
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = await renderComponent();
+    inputByValue(component, 'smiley')!.click();
+    await component.updateComplete;
+    await startRatings(component);
+
+    [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')]
+      .find((button) => button.textContent?.includes('Start voice input'))!
+      .click();
+    await component.updateComplete;
+    component.querySelector<HTMLButtonElement>('.voice-confirmation .primary-button')!.click();
+    await component.updateComplete;
+
+    const selectedLandmark = component.querySelector<HTMLInputElement>('.smiley-option input[value="75"]');
+    expect(selectedLandmark?.checked).toBe(true);
+    expect(selectedLandmark?.nextElementSibling?.classList.contains('smiley-option-content')).toBe(true);
+  });
+
+  it('cancels a pending voice proposal when a visible rating is chosen and still advances', async () => {
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        this.onresult?.({
+          results: { 0: { 0: { transcript: 'fifty five' }, length: 1 }, length: 1 },
+        });
+      }
+      stop() {
+        throw new DOMException('Recognition has already stopped', 'InvalidStateError');
+      }
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = await renderComponent();
+    await startRatings(component);
+    [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')]
+      .find((button) => button.textContent?.includes('Start voice input'))!
+      .click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')).not.toBeNull();
+
+    component.querySelector<HTMLInputElement>('.rating-option input[value="70"]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.querySelector<HTMLInputElement>('.rating-option input[value="70"]')?.checked).toBe(true);
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    expect(component.querySelector('.step-label')?.textContent).toContain('Rating 2 of 6');
+  });
+
+  it('confirms a spoken pair choice and advances to the next comparison', async () => {
+    let transcript = '';
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        this.onresult?.({
+          results: { 0: { 0: { transcript }, length: 1 }, length: 1 },
+        });
+      }
+      stop() {}
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = await renderComponent();
+    await startRatings(component);
+    await completeRatings(component);
+    const visibleChoices = [...component.querySelectorAll<HTMLInputElement>('.choice-card input')];
+    const chosen = visibleChoices[0];
+    transcript = ({
+      mental: 'mental demand',
+      physical: 'physical demand',
+      temporal: 'temporal demand',
+      performance: 'performance',
+      effort: 'effort',
+      frustration: 'frustration',
+    } as Record<string, string>)[chosen.value];
+
+    [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')]
+      .find((button) => button.textContent?.includes('Start voice input'))!
+      .click();
+    await component.updateComplete;
+    component.querySelector<HTMLButtonElement>('.voice-confirmation .primary-button')!.click();
+    await component.updateComplete;
+    expect(component.querySelector<HTMLInputElement>(`.choice-card input[value="${chosen.value}"]`)?.checked).toBe(true);
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    expect(component.querySelector('.step-label')?.textContent).toContain('Comparison 2 of 15');
+  });
+});
+
+describe('error location', () => {
+  it('moves focus to the visible error summary when an answer is missing', async () => {
+    const component = await renderComponent();
+    await startRatings(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('#error-summary')?.textContent).toContain('Choose a rating for Mental Demand');
+    expect(document.activeElement).toBe(component.querySelector('#error-summary'));
   });
 });
 
@@ -350,4 +509,3 @@ describe('review and experimental gaze route', () => {
     expect(component.querySelector<HTMLInputElement>('input[value="50"]')?.checked).toBe(true);
   });
 });
-
