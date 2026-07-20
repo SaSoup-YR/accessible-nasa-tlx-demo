@@ -1783,16 +1783,25 @@ export class AccessibleNasaTlx extends LitElement {
   private confirmVoiceAnswer = () => {
     const pending = this.pendingVoiceAnswer;
     if (!pending) return;
+    let confirmedControlId = '';
     if (pending.context === 'rating') {
       const dimension = dimensions[this.ratingIndex];
-      this.selectRating(dimension.id, pending.value as number, 'voice');
+      const value = pending.value as number;
+      this.selectRating(dimension.id, value, 'voice');
+      const visibleAsLandmark = this.answerMode === 'smiley' && smileyLandmarks.some((landmark) => landmark.value === value);
+      confirmedControlId = visibleAsLandmark
+        ? `smiley-${dimension.id}-${value}`
+        : `rating-${dimension.id}-${value}`;
     } else {
       const pair = this.pairOrder[this.pairIndex];
-      this.selectPair(pair.id, pending.value as DimensionId, 'voice');
+      const dimension = pending.value as DimensionId;
+      this.selectPair(pair.id, dimension, 'voice');
+      confirmedControlId = `${pair.id}-${dimension}`;
     }
     this.voiceState = 'idle';
     this.voiceMessage = '';
     this.pendingVoiceAnswer = null;
+    void this.updateComplete.then(() => this.querySelector<HTMLInputElement>(`#${confirmedControlId}`)?.focus());
   };
 
   private clearVoiceAnswer = () => {

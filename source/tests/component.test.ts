@@ -322,6 +322,7 @@ describe('speech support integration', () => {
     const selectedLandmark = component.querySelector<HTMLInputElement>('.smiley-option input[value="75"]');
     expect(selectedLandmark?.checked).toBe(true);
     expect(selectedLandmark?.nextElementSibling?.classList.contains('smiley-option-content')).toBe(true);
+    expect(document.activeElement).toBe(selectedLandmark);
   });
 
   it('cancels a pending voice proposal when a visible rating is chosen and still advances', async () => {
