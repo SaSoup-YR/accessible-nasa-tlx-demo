@@ -1,0 +1,20 @@
+{
+  "prototype": "Accessible NASA-TLX",
+  "version": "0.5.0",
+  "releaseStatus": "study-workflow candidate",
+  "canonicalRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
+  "canonicalCommit": "6416f86908e55509b5672c5e40223d7fccef5759",
+  "builtAt": "2026-07-20T13:50:21Z",
+  "verification": {
+    "testFilesPassed": 9,
+    "testsPassed": 39,
+    "axeStructuralScansPassed": 3,
+    "typescriptBuild": "passed",
+    "productionBuild": "passed"
+  },
+  "entryPoints": {
+    "participant": "index.html",
+    "studyConductor": "study.html"
+  },
+  "storageMode": "same-origin browser storage with CSV/JSON export; no remote database"
+}
