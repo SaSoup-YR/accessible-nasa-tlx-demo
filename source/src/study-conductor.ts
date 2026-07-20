@@ -14,6 +14,15 @@ import {
   type StudySupportConfig,
 } from './study';
 
+function looksLikeCompletedResult(value: unknown) {
+  const records = Array.isArray(value) ? value : [value];
+  return records.length > 0 && records.some((candidate) => {
+    if (!candidate || typeof candidate !== 'object') return false;
+    const record = candidate as Record<string, unknown>;
+    return 'study' in record && 'responses' in record && 'result' in record;
+  });
+}
+
 @customElement('study-conductor-app')
 export class StudyConductorApp extends LitElement {
   @state() private studyId = '';
@@ -139,10 +148,14 @@ export class StudyConductorApp extends LitElement {
           <div class="button-row compact">
             <button class="primary-button large-answer-button" type="button" @click=${this.generateParticipantLink}>Generate link</button>
             <label class="file-button secondary-button">
-              Import saved configuration JSON
+              Import configuration JSON
               <input class="sr-only" type="file" accept="application/json,.json" @change=${this.importConfiguration} />
             </label>
           </div>
+          <p class="support-boundary">
+            Import only the JSON downloaded from <strong>Configuration ready</strong>. Completed-result JSON is a different
+            record type and is not imported here.
+          </p>
 
           ${this.generatedConfig
             ? html`<div class="generated-link" role="region" aria-labelledby="generated-link-heading">
@@ -260,8 +273,7 @@ export class StudyConductorApp extends LitElement {
       this.useConfiguration(config);
       this.message = 'Participant link and configuration generated.';
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'The study configuration could not be generated.';
-      void this.updateComplete.then(() => this.querySelector<HTMLElement>('#conductor-error')?.focus());
+      this.showError(error instanceof Error ? error.message : 'The study configuration could not be generated.');
     }
   };
 
@@ -291,15 +303,32 @@ export class StudyConductorApp extends LitElement {
     this.errorMessage = '';
     try {
       const candidate = JSON.parse(await file.text()) as unknown;
-      if (!isStudyConfig(candidate)) throw new Error('This is not a valid Version 0.5 study configuration.');
+      if (!isStudyConfig(candidate)) {
+        if (looksLikeCompletedResult(candidate)) {
+          throw new Error(
+            'This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready.',
+          );
+        }
+        throw new Error('This is not a valid Version 0.5 study configuration.');
+      }
       this.useConfiguration(candidate);
       this.message = 'Configuration imported and participant link regenerated.';
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'The configuration file could not be read.';
+      this.showError(error instanceof Error ? error.message : 'The configuration file could not be read.');
     } finally {
       input.value = '';
     }
   };
+
+  private showError(message: string) {
+    this.errorMessage = message;
+    void this.updateComplete.then(() => {
+      const summary = this.querySelector<HTMLElement>('#conductor-error');
+      if (!summary) return;
+      summary.focus();
+      summary.scrollIntoView?.({ block: 'start' });
+    });
+  }
 
   private refreshResults = () => {
     this.completedResults = loadCompletedResults();
