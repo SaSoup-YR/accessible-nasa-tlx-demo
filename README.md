@@ -11,10 +11,10 @@ Use synthetic test codes only. This candidate has not been approved for particip
 
 | Role | Page | Responsibility |
 | --- | --- | --- |
-| Study conductor | `study.html` | Enters study details, prepares starting support, generates and archives the configuration, gives out the participant link, and exports results. |
-| Participant | `index.html` through the generated link | Enters a pseudonymous study code and completes the prepared questionnaire. No initial setup is required. |
+| Study conductor | `study.html` | Enters non-identifying study details, prepares and normally locks support, generates and archives the configuration, gives out the participant link, and exports results. |
+| Participant | `index.html` through the generated link | Enters the pseudonymous code supplied by the conductor and completes the prepared questionnaire. No initial accessibility setup is required. |
 
-The conductor can allow optional personal support changes when the protocol permits them. The final settings and actual input routes are recorded separately from the NASA-TLX score.
+Participant adjustments are locked by default. The conductor can deliberately allow optional changes when the approved protocol permits personalisation. The final settings and actual input routes are recorded separately from the NASA-TLX score.
 
 ## What is saved and exported?
 
@@ -52,4 +52,4 @@ npm test
 npm run build:standalone
 ```
 
-The release passed 39 automated tests across nine files, including three axe-core structural scans, plus TypeScript and production builds. Automated and researcher-led tests do not establish WCAG conformance, psychometric equivalence, improved comprehension or accessibility for a disability group.
+The release passed 42 automated tests across ten files, including three axe-core structural scans, plus TypeScript and production builds. Automated and researcher-led tests do not establish WCAG conformance, psychometric equivalence, improved comprehension or accessibility for a disability group.
