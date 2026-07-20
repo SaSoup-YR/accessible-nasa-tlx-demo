@@ -26,6 +26,7 @@ The import problem combined ambiguous terminology with incomplete focus manageme
 - Stale recognition callbacks are ignored by checking instance identity.
 - A visible manual or gaze answer cancels any pending voice proposal before replacing it.
 - Smiley checked state now follows the official selected value. Input-route provenance remains separately recorded as voice, manual or gaze and is not used to suppress the visible answer.
+- After voice confirmation, focus moves to the matching native answer control. This preserves a visible focus indicator and gives assistive technology a concrete selected control after the confirmation panel is removed.
 - Participant and conductor error helpers now focus and scroll the visible error summary.
 - The configuration importer explicitly states that it accepts the file downloaded from **Configuration ready**. A completed-result object or result array receives a file-type-specific error.
 
@@ -50,4 +51,3 @@ Version 0.5 is one workflow with two role-specific pages, not one mixed page:
 - `index.html#study=...` is used by the participant to enter a pseudonymous code and answer the prepared questionnaire.
 
 The readable implementations are `source/src/study-conductor.ts` and `source/src/accessible-nasa-tlx.ts`. The single-file `source/demo/accessible-nasa-tlx-v0.5.html` is deliberately participant-only and is not the study workflow.
-
