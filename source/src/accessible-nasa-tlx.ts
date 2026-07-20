@@ -150,6 +150,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private readingAloud = false;
   @state() private readAloudUsed = false;
   @state() private audioGuidance = false;
+  @state() private audioStatusMessage = '';
   @state() private interruptionSummaryShown = false;
   @state() private voiceState: VoiceState = 'idle';
   @state() private voiceMessage = '';
@@ -193,7 +194,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   disconnectedCallback() {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-    this.stopReading();
+    this.stopReading(false);
     this.recognition?.stop();
     this.stopGazeInput();
     super.disconnectedCallback();
@@ -528,6 +529,9 @@ export class AccessibleNasaTlx extends LitElement {
         >
           ${this.readingAloud ? 'Stop summary' : 'Hear a summary of this step'}
         </button>
+        ${this.audioStatusMessage
+          ? html`<p class="audio-status" role="status" aria-atomic="true">${this.audioStatusMessage}</p>`
+          : nothing}
         ${this.canAdjustSupport
           ? html`<label class="audio-guidance-toggle">
               <input
@@ -1364,7 +1368,7 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private restart = () => {
-    this.stopReading();
+    this.stopReading(false);
     this.stopGazeInput();
     this.recognition?.stop();
     this.clearSavedProgress();
@@ -1388,6 +1392,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.voiceState = 'idle';
     this.pendingVoiceAnswer = null;
     this.audioGuidance = false;
+    this.audioStatusMessage = '';
     this.gazeUsed = false;
     this.gazeActionCount = 0;
     this.applyConfiguredSupport();
@@ -1397,7 +1402,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private toggleReadAloud = () => {
     if (this.readingAloud) {
-      this.stopReading();
+      this.stopReading(true);
       return;
     }
     this.speakText(this.currentStepSpeech());
@@ -1405,9 +1410,11 @@ export class AccessibleNasaTlx extends LitElement {
 
   private speakText(text: string) {
     if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
-      this.statusMessage = 'Built-in audio is unavailable in this browser.';
+      this.audioStatusMessage = 'Built-in audio is unavailable in this browser. External screen readers can still read the page.';
       return;
     }
+    const synthesis = window.speechSynthesis;
+    const replaceExistingSpeech = this.readingAloud || synthesis.speaking || synthesis.pending || synthesis.paused;
     const requestId = ++this.speechRequestId;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-GB';
@@ -1419,30 +1426,51 @@ export class AccessibleNasaTlx extends LitElement {
     utterance.onend = () => {
       if (requestId !== this.speechRequestId) return;
       this.readingAloud = false;
-      this.statusMessage = 'Spoken summary finished.';
+      this.audioStatusMessage = 'Spoken summary finished.';
     };
-    utterance.onerror = () => {
+    utterance.onerror = (event) => {
       if (requestId !== this.speechRequestId) return;
       this.readingAloud = false;
-      this.statusMessage = 'The spoken summary stopped because the browser reported an error.';
+      const error = event.error ? ` (${event.error})` : '';
+      this.audioStatusMessage = `No audio was played because the browser reported a speech error${error}. Check the device volume and try the button again.`;
     };
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.resume();
-    window.speechSynthesis.speak(utterance);
-    this.readingAloud = true;
-    this.readAloudUsed = true;
-    this.statusMessage = 'Playing a spoken summary of the current step.';
+
+    const startSpeech = () => {
+      if (requestId !== this.speechRequestId) return;
+      try {
+        synthesis.speak(utterance);
+        this.readingAloud = true;
+        this.readAloudUsed = true;
+        this.audioStatusMessage = 'Playing a spoken summary of the current step.';
+      } catch {
+        this.readingAloud = false;
+        this.audioStatusMessage = 'Built-in audio could not start in this browser. Check the device volume and try the button again.';
+      }
+    };
+
+    // Some browsers fail the first utterance when cancel() or resume() is called
+    // before speech has ever started. Only clear a queue that actually exists.
+    if (replaceExistingSpeech) {
+      synthesis.cancel();
+      window.setTimeout(startSpeech, 0);
+    } else {
+      startSpeech();
+    }
   }
 
-  private stopReading() {
+  private stopReading(announce = false) {
     this.speechRequestId += 1;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     this.readingAloud = false;
+    if (announce) this.audioStatusMessage = 'Spoken summary stopped.';
   }
 
   private currentStepSpeech() {
     if (this.stage === 'intro') {
-      return 'Before you begin. Think about one task that you have just completed. First rate six aspects of workload. Then make fifteen comparisons. Finally review and submit.';
+      const task = this.studyConfig
+        ? `Think about ${this.studyConfig.taskLabel}.`
+        : 'Think about one task that you have just completed.';
+      return `Before you begin. ${task} First rate six aspects of workload. Then make fifteen comparisons. Finally review and submit.`;
     }
     if (this.stage === 'ratings') {
       const dimension = dimensions[this.ratingIndex];
