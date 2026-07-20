@@ -10,6 +10,7 @@ Use synthetic data only. Do not recruit or collect participant data until the su
 4. Keep experimental gaze off unless gaze is specifically being tested.
 5. Generate the participant link.
 6. Download the configuration JSON, then import it and confirm that the same configuration ID and link are regenerated.
+7. Try the configuration importer with a completed-result JSON. Confirm that it identifies the wrong file type and moves focus and the viewport to the visible error summary.
 
 ## 2. Participant route
 
@@ -17,6 +18,9 @@ Use synthetic data only. Do not recruit or collect participant data until the su
 2. Confirm that the study title, ID, task and prepared settings are already present.
 3. Confirm that the support controls are absent when the configuration is locked.
 4. Select **Hear a summary of this step** on the first page. Confirm that speech starts on the first request and names the configured task.
+5. On a rating, recognise and confirm a spoken value, then immediately select **Next question**. Confirm that navigation advances once and the stored route is voice.
+6. Start voice input again, then choose a visible value instead of confirming the proposal. Confirm that the proposal closes, the visible answer replaces it and **Next question** works.
+7. With smiley landmarks configured, confirm a spoken landmark value. Confirm that the matching native smiley radio shows its selected state and the precise scale reports the same value.
 5. Enter a synthetic code such as `TEST-001`; do not enter a name or email address.
 6. Complete six ratings and fifteen comparisons.
 7. Review, correct and deliberately submit.
