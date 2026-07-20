@@ -195,7 +195,7 @@ export class AccessibleNasaTlx extends LitElement {
   disconnectedCallback() {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     this.stopReading(false);
-    this.recognition?.stop();
+    this.releaseRecognition();
     this.stopGazeInput();
     super.disconnectedCallback();
   }
@@ -800,7 +800,7 @@ export class AccessibleNasaTlx extends LitElement {
                   type="radio"
                   name=${`smiley-${dimension.id}`}
                   value=${value}
-                  .checked=${selected === value && this.ratingInputRoutes[dimension.id] === 'smiley-landmark'}
+                  .checked=${selected === value}
                   aria-label=${`${value}, ${this.landmarkLabel(dimension, value)}, for ${dimension.name}`}
                   aria-describedby=${`smiley-help-${dimension.id}`}
                   @change=${() => this.selectRating(dimension.id, value, 'smiley-landmark')}
@@ -1175,6 +1175,7 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private selectRating(dimension: DimensionId, value: number, route: RatingInputRoute) {
+    if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
     const effectiveRoute = this.gazeActivationInProgress
       ? route === 'smiley-landmark'
         ? 'gaze-smiley-landmark'
@@ -1189,6 +1190,7 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private selectPair(pairId: string, dimension: DimensionId, route: PairInputRoute) {
+    if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
     const effectiveRoute = this.gazeActivationInProgress ? 'gaze' : route;
     this.pairResponses = { ...this.pairResponses, [pairId]: dimension };
     this.pairInputRoutes = { ...this.pairInputRoutes, [pairId]: effectiveRoute };
@@ -1208,7 +1210,6 @@ export class AccessibleNasaTlx extends LitElement {
       if (!validParticipantCode(this.participantCode)) {
         this.participantCodeError = 'Enter the valid pseudonymous participant code supplied by the study conductor.';
         this.showError(this.participantCodeError);
-        void this.updateComplete.then(() => this.querySelector<HTMLInputElement>('#participant-code')?.focus());
         return;
       }
     }
@@ -1370,7 +1371,7 @@ export class AccessibleNasaTlx extends LitElement {
   private restart = () => {
     this.stopReading(false);
     this.stopGazeInput();
-    this.recognition?.stop();
+    this.releaseRecognition();
     this.clearSavedProgress();
     this.stage = 'intro';
     this.ratingIndex = 0;
@@ -1716,6 +1717,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.stopReading();
     const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Constructor) return;
+    this.releaseRecognition();
     this.pendingVoiceAnswer = null;
     this.voiceMessage = 'Listening for one answer.';
     this.voiceState = 'listening';
@@ -1726,11 +1728,13 @@ export class AccessibleNasaTlx extends LitElement {
     recognition.interimResults = false;
     recognition.maxAlternatives = 5;
     recognition.onresult = (event) => {
+      if (this.recognition !== recognition) return;
       const alternatives = Array.from({ length: event.results[0].length }, (_, index) => event.results[0][index].transcript);
       for (const transcript of alternatives) {
         if (context === 'rating') {
           const value = parseRatingTranscript(transcript, first);
           if (value !== null) {
+            this.releaseRecognition(recognition);
             this.pendingVoiceAnswer = { context, transcript, value, label: `${value} for ${first.name}` };
             this.voiceState = 'pending';
             this.voiceMessage = 'Check the proposed answer, then confirm it.';
@@ -1739,6 +1743,7 @@ export class AccessibleNasaTlx extends LitElement {
         } else {
           const value = parsePairTranscript(transcript, [first.id, second!.id]);
           if (value) {
+            this.releaseRecognition(recognition);
             this.pendingVoiceAnswer = { context, transcript, value, label: dimensionById.get(value)!.name };
             this.voiceState = 'pending';
             this.voiceMessage = 'Check the proposed answer, then confirm it.';
@@ -1746,25 +1751,30 @@ export class AccessibleNasaTlx extends LitElement {
           }
         }
       }
+      this.releaseRecognition(recognition);
       this.voiceState = 'error';
       this.voiceMessage = `The answer was not recognised. ${context === 'rating' ? 'Say a multiple of five from 0 to 100.' : `Say ${first.name} or ${second!.name}.`}`;
     };
     recognition.onerror = (event) => {
+      if (this.recognition !== recognition) return;
+      this.releaseRecognition(recognition);
       this.voiceState = 'error';
       this.voiceMessage = event.error === 'not-allowed'
         ? 'Microphone permission was not granted. Use the visible answer buttons or system voice control.'
         : 'Voice recognition did not complete. Use the visible answer buttons or try again.';
     };
     recognition.onend = () => {
+      if (this.recognition !== recognition) return;
+      this.recognition = null;
       if (this.voiceState === 'listening') {
         this.voiceState = 'error';
         this.voiceMessage = 'No answer was recognised. Try again or use the visible answer buttons.';
       }
-      this.recognition = null;
     };
     try {
       recognition.start();
     } catch {
+      this.releaseRecognition(recognition);
       this.voiceState = 'error';
       this.voiceMessage = 'Voice recognition could not start in this browser context.';
     }
@@ -1786,12 +1796,24 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private clearVoiceAnswer = () => {
-    this.recognition?.stop();
-    this.recognition = null;
+    this.releaseRecognition();
     this.voiceState = 'idle';
     this.voiceMessage = '';
     this.pendingVoiceAnswer = null;
   };
+
+  private releaseRecognition(recognition = this.recognition) {
+    if (!recognition) return;
+    if (this.recognition === recognition) this.recognition = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try {
+      recognition.stop();
+    } catch {
+      // Browsers may report InvalidStateError when a one-shot recogniser has already ended.
+    }
+  }
 
   private handleVisibilityChange = () => {
     if (document.hidden) {
@@ -1961,7 +1983,12 @@ export class AccessibleNasaTlx extends LitElement {
 
   private showError(message: string) {
     this.errorMessage = message;
-    void this.updateComplete.then(() => this.querySelector<HTMLElement>('#error-summary')?.focus());
+    void this.updateComplete.then(() => {
+      const summary = this.querySelector<HTMLElement>('#error-summary');
+      if (!summary) return;
+      summary.focus();
+      summary.scrollIntoView?.({ block: 'start' });
+    });
   }
 
   private clearError() {

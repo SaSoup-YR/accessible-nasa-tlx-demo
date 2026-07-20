@@ -175,7 +175,7 @@ Version 0.5 adds automated checks for:
 - structural axe scans of the study-conductor page;
 - Version 0.5 standalone syntax and boot.
 
-At this decision point, 42 tests across ten files and both production builds pass. The clean-clone standalone build now creates its output directory when absent. Manual browser, keyboard, screen-reader, reflow, contrast, cross-device and storage-clearance checks remain necessary before a freeze.
+At this decision point, 47 tests across ten files and both production builds pass. The clean-clone standalone build now creates its output directory when absent. Manual browser, keyboard, screen-reader, reflow, contrast, cross-device and storage-clearance checks remain necessary before a freeze.
 
 ## Authoritative external guidance used
 

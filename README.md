@@ -16,6 +16,17 @@ Use synthetic test codes only. This candidate has not been approved for particip
 
 Participant adjustments are locked by default. The conductor can deliberately allow optional changes when the approved protocol permits personalisation. The final settings and actual input routes are recorded separately from the NASA-TLX score.
 
+Version 0.5 is one workflow with two role-specific pages. The conductor interface does not contain the participant questionnaire; it generates a link to the separate participant page. Both pages use the same instrument, scoring, configuration and result code.
+
+## Where is each page in GitHub?
+
+| Purpose | Readable source | Built/deployed file |
+| --- | --- | --- |
+| Study-conductor page | [`source/study.html`](source/study.html), [`source/src/study-conductor.ts`](source/src/study-conductor.ts) | [`study.html`](study.html) |
+| Participant page | [`source/index.html`](source/index.html), [`source/src/accessible-nasa-tlx.ts`](source/src/accessible-nasa-tlx.ts) | [`index.html`](index.html) |
+| Shared study/result schema | [`source/src/study.ts`](source/src/study.ts) | compiled into the hashed assets |
+| Self-contained technical file | [`source/demo/accessible-nasa-tlx-v0.5.html`](source/demo/accessible-nasa-tlx-v0.5.html) | participant-only; see [`source/demo/README.md`](source/demo/README.md) |
+
 ## What is saved and exported?
 
 A completed record contains the study/configuration IDs, pseudonymous participant code, timestamps, prototype version, all six ratings, all fifteen pairwise choices, randomized pair order, weights, weighted score, configured support, final support state and input-route metadata.
@@ -38,6 +49,7 @@ The prototype preserves the six NASA-TLX dimensions, 0–100 ratings in five-poi
 
 - [`source/`](source/) is the readable Version 0.5 source-and-test snapshot used for this release.
 - [`docs/STUDY-WORKFLOW.md`](docs/STUDY-WORKFLOW.md) records the role, configuration, data and repository decisions.
+- [`docs/VOICE-AND-ERROR-CORRECTION.md`](docs/VOICE-AND-ERROR-CORRECTION.md) records the voice-state, smiley-state and error-focus correction.
 - [`TESTING.md`](TESTING.md) gives an end-to-end technical checklist.
 - [`BUILD-INFO.json`](BUILD-INFO.json) identifies the canonical commit and verification state used to produce this deployment.
 
@@ -52,4 +64,4 @@ npm test
 npm run build:standalone
 ```
 
-The release passed 42 automated tests across ten files, including three axe-core structural scans, plus TypeScript and production builds. Automated and researcher-led tests do not establish WCAG conformance, psychometric equivalence, improved comprehension or accessibility for a disability group.
+The release passed 47 automated tests across ten files, including three axe-core structural scans, plus TypeScript and production builds. Automated and researcher-led tests do not establish WCAG conformance, psychometric equivalence, improved comprehension or accessibility for a disability group.

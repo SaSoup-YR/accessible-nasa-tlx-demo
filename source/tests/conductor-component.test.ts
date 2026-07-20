@@ -64,4 +64,26 @@ describe('study conductor defaults and guidance', () => {
     expect(new URL(link).pathname).toMatch(/index\.html$/);
     expect(component.textContent).toContain('Configuration ready');
   });
+
+  it('identifies a result export as the wrong file type and moves focus to the import error', async () => {
+    const component = await renderConductor();
+    const fileInput = component.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const resultExport = {
+      schemaVersion: 1,
+      study: { studyId: 'TLX-TECH-01' },
+      responses: { ratings: {} },
+      result: { weightedScore: 50 },
+    };
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{ text: async () => JSON.stringify(resultExport) }],
+    });
+
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    expect(component.querySelector('#conductor-error')?.textContent).toContain('completed result file');
+    expect(document.activeElement).toBe(component.querySelector('#conductor-error'));
+  });
 });
