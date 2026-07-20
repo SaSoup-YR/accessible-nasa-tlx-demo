@@ -196,6 +196,7 @@ describe('interruption recovery', () => {
 describe('speech support integration', () => {
   it('produces audible browser speech when built-in audio guidance is enabled', async () => {
     const spoken: string[] = [];
+    const cancel = vi.fn();
     class FakeUtterance {
       lang = '';
       rate = 1;
@@ -207,7 +208,7 @@ describe('speech support integration', () => {
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
       value: {
-        cancel: vi.fn(),
+        cancel,
         resume: vi.fn(),
         speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
         getVoices: () => [],
@@ -218,6 +219,16 @@ describe('speech support integration', () => {
     const component = await renderComponent();
     const summaryButton = [...component.querySelectorAll<HTMLButtonElement>('.audio-guidance button')][0];
     expect(summaryButton.textContent?.trim()).toBe('Hear a summary of this step');
+    summaryButton.click();
+    await component.updateComplete;
+    expect(spoken.at(-1)).toContain('Before you begin');
+    expect(cancel).not.toHaveBeenCalled();
+    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing a spoken summary');
+
+    summaryButton.click();
+    await component.updateComplete;
+    expect(cancel).toHaveBeenCalledTimes(1);
+
     const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
       label.textContent?.includes('Automatically read new questions'),
     )!.querySelector<HTMLInputElement>('input')!;
@@ -226,10 +237,12 @@ describe('speech support integration', () => {
     expect(spoken.at(-1)).toContain('Built-in audio guidance is on');
 
     await startRatings(component);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await component.updateComplete;
     expect(spoken.at(-1)).toContain('Rating 1 of 6. Mental Demand');
 
     component.querySelector<HTMLInputElement>('.rating-option input[value="70"]')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(spoken.at(-1)).toContain('Mental Demand, 70, selected');
   });
 
@@ -350,4 +363,3 @@ describe('review and experimental gaze route', () => {
     expect(component.querySelector<HTMLInputElement>('input[value="50"]')?.checked).toBe(true);
   });
 });
-

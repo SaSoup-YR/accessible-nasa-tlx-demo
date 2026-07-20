@@ -1,4 +1,4 @@
-import{a as s,t as u,i as g,m as b,b as c,n as m,o as y,f as v,q as f,A as h,h as l,u as w}from"./study-RvZhL_qY.js";var C=Object.defineProperty,k=Object.getOwnPropertyDescriptor,a=(e,o,r,i)=>{for(var n=i>1?void 0:i?k(o,r):o,d=e.length-1,p;d>=0;d--)(p=e[d])&&(n=(i?p(o,r,n):p(n))||n);return i&&n&&C(o,r,n),n};let t=class extends g{constructor(){super(...arguments),this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.allowParticipantChanges=!0,this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.generateParticipantLink=()=>{this.errorMessage="";try{const e=b({studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.errorMessage=e instanceof Error?e.message:"The study configuration could not be generated.",this.updateComplete.then(()=>this.querySelector("#conductor-error")?.focus())}},this.copyParticipantLink=async()=>{if(this.participantUrl)try{await navigator.clipboard.writeText(this.participantUrl),this.message="Participant link copied."}catch{this.message="Automatic copy was unavailable. Select and copy the link from the text box."}},this.downloadConfiguration=()=>{this.generatedConfig&&c(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const o=e.currentTarget,r=o.files?.[0];if(r){this.errorMessage="";try{const i=JSON.parse(await r.text());if(!m(i))throw new Error("This is not a valid Version 0.5 study configuration.");this.useConfiguration(i),this.message="Configuration imported and participant link regenerated."}catch(i){this.errorMessage=i instanceof Error?i.message:"The configuration file could not be read."}finally{o.value=""}}},this.refreshResults=()=>{this.completedResults=y()},this.exportResultsJson=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${v(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed NASA-TLX record stored by this site in this browser? Confirm only after checking the exported files.")&&(f(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}render(){return l`
+import{a as s,t as u,i as g,m as b,b as c,n as m,o as y,f,q as v,A as h,h as l,u as w}from"./study-D8YKTcJL.js";var C=Object.defineProperty,k=Object.getOwnPropertyDescriptor,a=(e,o,r,i)=>{for(var n=i>1?void 0:i?k(o,r):o,d=e.length-1,p;d>=0;d--)(p=e[d])&&(n=(i?p(o,r,n):p(n))||n);return i&&n&&C(o,r,n),n};let t=class extends g{constructor(){super(...arguments),this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.allowParticipantChanges=!1,this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.generateParticipantLink=()=>{this.errorMessage="";try{const e=b({studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.errorMessage=e instanceof Error?e.message:"The study configuration could not be generated.",this.updateComplete.then(()=>this.querySelector("#conductor-error")?.focus())}},this.copyParticipantLink=async()=>{if(this.participantUrl)try{await navigator.clipboard.writeText(this.participantUrl),this.message="Participant link copied."}catch{this.message="Automatic copy was unavailable. Select and copy the link from the text box."}},this.downloadConfiguration=()=>{this.generatedConfig&&c(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const o=e.currentTarget,r=o.files?.[0];if(r){this.errorMessage="";try{const i=JSON.parse(await r.text());if(!m(i))throw new Error("This is not a valid Version 0.5 study configuration.");this.useConfiguration(i),this.message="Configuration imported and participant link regenerated."}catch(i){this.errorMessage=i instanceof Error?i.message:"The configuration file could not be read."}finally{o.value=""}}},this.refreshResults=()=>{this.completedResults=y()},this.exportResultsJson=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${f(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed NASA-TLX record stored by this site in this browser? Confirm only after checking the exported files.")&&(v(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}render(){return l`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
@@ -11,7 +11,8 @@ import{a as s,t as u,i as g,m as b,b as c,n as m,o as y,f as v,q as f,A as h,h a
           <h2>What this page does</h2>
           <p>
             This separates study setup from participant answering. Participants receive a configured questionnaire and do not
-            have to set it up themselves. Optional personal changes can remain available when the protocol allows them.
+            have to set it up themselves. This researcher page generates a separate participant page. Participant adjustments
+            are locked by default and should be enabled only when the approved protocol permits them.
           </p>
           <p>
             <strong>Current storage boundary:</strong> completed records stay in this browser on this device until the study conductor
@@ -27,21 +28,25 @@ import{a as s,t as u,i as g,m as b,b as c,n as m,o as y,f as v,q as f,A as h,h a
 
         <section class="panel conductor-panel" aria-labelledby="study-details-heading">
           <h2 id="study-details-heading">1. Study details</h2>
+          <p class="support-boundary">
+            These fields identify the questionnaire configuration, not the participant. Give each participant a separate
+            pseudonymous code such as P-001; they enter that code on the participant page.
+          </p>
           <div class="form-grid">
             <label>
               <strong>Study ID</strong>
-              <span>Example: TLX-PILOT-01. Do not use a participant name.</span>
-              <input .value=${this.studyId} maxlength="64" @input=${e=>{this.studyId=e.currentTarget.value}} />
+              <span>Internal label shared by records from one study or condition. Example: TLX-TECH-01. Do not use a participant name.</span>
+              <input placeholder="TLX-TECH-01" autocomplete="off" spellcheck="false" .value=${this.studyId} maxlength="64" @input=${e=>{this.studyId=e.currentTarget.value}} />
             </label>
             <label>
               <strong>Study title</strong>
-              <span>Shown to participants.</span>
-              <input .value=${this.studyTitle} maxlength="120" @input=${e=>{this.studyTitle=e.currentTarget.value}} />
+              <span>Participant-facing name of the study. Example: Route-planning workload study.</span>
+              <input placeholder="Route-planning workload study" autocomplete="off" .value=${this.studyTitle} maxlength="120" @input=${e=>{this.studyTitle=e.currentTarget.value}} />
             </label>
             <label class="full-width">
               <strong>Task label</strong>
-              <span>State exactly which completed task the participant should rate.</span>
-              <input .value=${this.taskLabel} maxlength="160" @input=${e=>{this.taskLabel=e.currentTarget.value}} />
+              <span>Exact activity the participant has just completed and must rate. Example: planning a route from A to B using the prototype.</span>
+              <input placeholder="planning a route from A to B using the prototype" autocomplete="off" .value=${this.taskLabel} maxlength="160" @input=${e=>{this.taskLabel=e.currentTarget.value}} />
             </label>
           </div>
         </section>
@@ -58,7 +63,7 @@ import{a as s,t as u,i as g,m as b,b as c,n as m,o as y,f as v,q as f,A as h,h a
             ${this.booleanOption("Save incomplete progress on this device",this.recoveryEnabled,e=>{this.recoveryEnabled=e})}
             ${this.booleanOption("Allow confirmed built-in voice answers",this.voiceInputAvailable,e=>{this.voiceInputAvailable=e})}
             ${this.booleanOption("Allow experimental webcam gaze input",this.gazeInputAvailable,e=>{this.gazeInputAvailable=e},"Default off because current gaze accuracy is recorded as Partial.")}
-            ${this.booleanOption("Let participants adjust support after opening the link",this.allowParticipantChanges,e=>{this.allowParticipantChanges=e},"Recommended for accessibility autonomy; every final setting is recorded separately from the score.")}
+            ${this.booleanOption("Allow optional participant adjustments after opening the link",this.allowParticipantChanges,e=>{this.allowParticipantChanges=e},"Default off for a controlled study. Turn on only when the approved protocol allows personalisation; the final settings are recorded.")}
             ${this.booleanOption("Show the weighted score to the participant",this.showScoreToParticipant,e=>{this.showScoreToParticipant=e},"Default off for a study; the conductor receives the score in the export.")}
           </div>
 
