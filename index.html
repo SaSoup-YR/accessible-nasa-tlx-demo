@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Accessible NASA-TLX Version 0.4</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:2rem;background:#eef2f6;color:#1d2733}
+    main{max-width:46rem;margin:auto;background:#fff;padding:2rem;border:1px solid #c7d1dc;border-radius:12px}
+    p{line-height:1.5}
+  </style>
+</head>
+<body>
+  <main id="status" role="status" aria-live="polite">
+    <h1>Loading Accessible NASA-TLX</h1>
+    <p>The research prototype is loading.</p>
+  </main>
+  <script>
+    (async()=>{
+      const parts=[
+        "assets/bundle-01.txt","assets/bundle-02.txt","assets/bundle-03.txt","assets/bundle-04.txt",
+        "assets/chunk-05.txt","assets/chunk-06.txt","assets/chunk-07.txt","assets/chunk-08.txt","assets/chunk-09.txt",
+        "assets/part-10.txt","assets/part-11.txt","assets/part-12.txt","assets/part-13.txt","assets/part-14.txt",
+        "assets/part-15.txt","assets/part-16.txt","assets/part-17.txt","assets/part-18.txt","assets/part-19.txt","assets/part-20.txt"
+      ];
+      try{
+        if(!("DecompressionStream" in window)) throw new Error("This browser is not supported. Please use a recent Chrome, Edge, Firefox or Safari.");
+        let base64="";
+        for(const path of parts){
+          const response=await fetch(path,{cache:"no-store"});
+          if(!response.ok) throw new Error(`Could not load ${path}`);
+          base64+=(await response.text()).trim();
+        }
+        const binary=atob(base64);
+        const compressed=new Uint8Array(binary.length);
+        for(let i=0;i<binary.length;i++) compressed[i]=binary.charCodeAt(i);
+        const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip"));
+        const html=await new Response(stream).text();
+        document.open();
+        document.write(html);
+        document.close();
+      }catch(error){
+        document.getElementById("status").innerHTML=`<h1>Prototype could not load</h1><p>${error.message}</p>`;
+      }
+    })();
+  </script>
+</body>
+</html>
