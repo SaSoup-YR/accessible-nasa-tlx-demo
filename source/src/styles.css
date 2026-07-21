@@ -350,6 +350,14 @@ figcaption {
   margin: 0.35rem 0 0;
 }
 
+.audio-status {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-left: 4px solid #294c70;
+  background: #fff;
+}
+
 .audio-guidance-toggle {
   display: flex;
   flex: 1 1 25rem;
