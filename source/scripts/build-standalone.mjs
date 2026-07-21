@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -36,5 +36,6 @@ if (doctypeCount !== 1 || componentCount !== 1 || html.includes('./assets/')) {
   throw new Error('Standalone verification failed: the output is duplicated or still depends on Vite assets.');
 }
 
+mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, html);
 console.log(`Wrote verified standalone demo: ${outputPath}`);

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/accessible-nasa-tlx';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 import { buildParticipantUrl, createStudyConfig, loadCompletedResults, type StudyResultRecord } from '../src/study';
@@ -66,9 +66,48 @@ afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
   window.history.replaceState({}, '', '/');
+  delete (window as any).speechSynthesis;
+  delete (globalThis as any).SpeechSynthesisUtterance;
+  vi.restoreAllMocks();
 });
 
 describe('study-conductor and participant separation', () => {
+  it('speaks the configured task on the first participant-page request without pre-cancelling speech', async () => {
+    const spoken: string[] = [];
+    const cancel = vi.fn();
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speaking: false,
+        pending: false,
+        paused: false,
+        cancel,
+        speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
+        getVoices: () => [],
+      },
+    });
+    (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
+
+    const component = await renderConfiguredComponent();
+    const summary = [...component.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+      button.textContent?.includes('Hear a summary of this step'),
+    )!;
+    summary.click();
+    await component.updateComplete;
+
+    expect(spoken[0]).toContain('Think about the route-planning task');
+    expect(cancel).not.toHaveBeenCalled();
+    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing a spoken summary');
+  });
+
   it('applies a locked configuration and requires a pseudonymous participant code', async () => {
     const component = await renderConfiguredComponent();
     expect(component.textContent).toContain('Configured NASA-TLX study');
