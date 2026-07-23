@@ -4,6 +4,7 @@ import axe from 'axe-core';
 import '../src/accessible-nasa-tlx';
 import '../src/study-conductor';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
+import { buildParticipantUrl, createStudyConfig } from '../src/study';
 
 async function renderComponent() {
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
@@ -35,6 +36,7 @@ beforeEach(() => {
 afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
+  window.history.replaceState({}, '', '/');
 });
 
 describe('automated structural accessibility scan', () => {
@@ -69,6 +71,31 @@ describe('automated structural accessibility scan', () => {
     const result = await axe.run(conductor, {
       rules: { 'color-contrast': { enabled: false } },
     });
+    expect(result.violations).toEqual([]);
+  });
+
+  it('finds no detectable violations in the configured presentation-only preference route', async () => {
+    const config = createStudyConfig({
+      studyId: 'A11Y-01',
+      studyTitle: 'Accessibility route check',
+      taskLabel: 'the test task',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'presentation-only',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const url = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', url.pathname + url.hash);
+    const component = await renderComponent();
+    const result = await scan(component);
     expect(result.violations).toEqual([]);
   });
 });

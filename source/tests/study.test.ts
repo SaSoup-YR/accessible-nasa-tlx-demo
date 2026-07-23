@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { dimensions, pairs, type DimensionId } from '../src/nasa-tlx';
+import { calculateResult } from '../src/scoring';
 import {
   buildParticipantUrl,
   clearCompletedResults,
+  COMPLETED_RESULTS_KEY,
   createStudyConfig,
   createStudyResultRecord,
   decodeStudyConfig,
@@ -20,7 +22,7 @@ const support = {
   largeText: true,
   audioGuidance: false,
   recoveryEnabled: true,
-  allowParticipantChanges: true,
+  participantAdjustmentPolicy: 'presentation-only' as const,
   voiceInputAvailable: true,
   gazeInputAvailable: false,
 };
@@ -33,6 +35,7 @@ function config() {
       taskLabel: 'the checkout task',
       showScoreToParticipant: false,
       support,
+      collection: { mode: 'local' },
     },
     { configId: 'config-fixed', createdAt: '2026-07-20T12:00:00.000Z' },
   );
@@ -40,8 +43,6 @@ function config() {
 
 function record() {
   const ratings = Object.fromEntries(dimensions.map(({ id }) => [id, 50])) as Record<DimensionId, number>;
-  const weights = Object.fromEntries(dimensions.map(({ id }, index) => [id, index])) as Record<DimensionId, number>;
-  const adjustedRatings = Object.fromEntries(dimensions.map(({ id }, index) => [id, index * 50])) as Record<DimensionId, number>;
   const pairwiseChoices = Object.fromEntries(pairs.map((pair) => [pair.id, pair.left]));
   const metadata: SupportMetadata = {
     simplerExplanationsShownAtSubmission: true,
@@ -56,6 +57,15 @@ function record() {
     gazeEngine: null,
     ratingInputRoutes: Object.fromEntries(dimensions.map(({ id }) => [id, 'standard-scale'])),
     pairInputRoutes: Object.fromEntries(pairs.map(({ id }) => [id, 'standard-choice'])),
+    supportChanges: [
+      {
+        setting: 'text-size',
+        from: 'standard',
+        to: 'large',
+        stage: 'intro',
+        changedAt: '2026-07-20T12:00:30.000Z',
+      },
+    ],
   };
   return createStudyResultRecord({
     config: config(),
@@ -65,7 +75,7 @@ function record() {
     submissionId: 'submission-fixed',
     pairPresentationOrder: pairs.map(({ id }) => id),
     pairwiseChoices,
-    result: { ratings, weights, adjustedRatings, weightedScore: 50 },
+    result: calculateResult(pairs, pairwiseChoices, ratings),
     supportMetadata: metadata,
   });
 }
@@ -93,6 +103,7 @@ describe('study configuration', () => {
       taskLabel: 'Task',
       showScoreToParticipant: false,
       support,
+      collection: { mode: 'local' },
     })).toThrow(/Study ID/);
   });
 });
@@ -111,6 +122,20 @@ describe('completed result records', () => {
     expect(loadCompletedResults()).toEqual([]);
   });
 
+  it('rejects a structurally plausible record when its calculated result was altered', () => {
+    const altered = record();
+    altered.result = { ...altered.result, weightedScore: 99 };
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('rejects an impossible support-change value instead of accepting corrupted provenance', () => {
+    const altered = record();
+    altered.supportMetadata.supportChanges[0].to = 'smiley';
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
   it('exports stable CSV columns for scores, ratings, weights, pair choices and routes', () => {
     const csv = resultsToCsv([record()]);
     const [header, row] = csv.split('\r\n');
@@ -120,6 +145,7 @@ describe('completed result records', () => {
     expect(header).toContain('pair_mental-physical');
     expect(header).toContain('rating_route_frustration');
     expect(header).toContain('configured_gazeInputAvailable');
+    expect(header).toContain('support_change_count');
     expect(row).toContain('P-001');
   });
 });
