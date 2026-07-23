@@ -1,61 +1,65 @@
-# Accessible NASA-TLX Version 0.5 candidate
+# Accessible NASA-TLX Version 0.7 release candidate
 
-A public, inspectable release of a full weighted NASA Task Load Index prototype with a separate study-conductor workflow and configurable accessibility support.
+A public, inspectable implementation of the full weighted NASA Task Load Index with separate study-conductor and participant roles, configurable accessibility support, auditable participant preferences and an origin-bound UCL Qualtrics collection bridge.
 
-- **[Prepare a study and export same-device results](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html)**
-- **[Open the participant questionnaire / technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
+- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html)**
+- **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
-Use synthetic test codes only. This candidate has not been approved for participant data collection.
+Use synthetic codes only. The supervisor must review this release candidate before participant data collection.
 
-## Who uses which page?
+## Role and collection model
 
-| Role | Page | Responsibility |
+| Role | Entry point | Responsibility |
 | --- | --- | --- |
-| Study conductor | `study.html` | Enters non-identifying study details, prepares and normally locks support, generates and archives the configuration, gives out the participant link, and exports results. |
-| Participant | `index.html` through the generated link | Enters the pseudonymous code supplied by the conductor and completes the prepared questionnaire. No initial accessibility setup is required. |
+| Study conductor | `study.html` | Defines the study/task, prepares support defaults, selects the participant-adjustment policy and local or Qualtrics collection, generates the configuration and exports local test records. |
+| Participant | generated `index.html#study=...` configuration inside the approved study route | Enters a pseudonymous code, completes six ratings and fifteen comparisons and submits one versioned record. No accessibility setup is required before starting. |
+| UCL Qualtrics | activated Qualtrics distribution link | Hosts the participant page in an iframe, stores the complete record in the researcher's Qualtrics response and returns a matching receipt. |
 
-Participant adjustments are locked by default. The conductor can deliberately allow optional changes when the approved protocol permits personalisation. The final settings and actual input routes are recorded separately from the NASA-TLX score.
+The public GitHub demonstration still saves only in the current browser. Central collection is activated only when the conductor selects Qualtrics, enters the exact HTTPS survey origin and embeds the generated participant URL in the Qualtrics question. Participants receive the Qualtrics distribution link, not the raw GitHub URL.
 
-Version 0.5 is one workflow with two role-specific pages. The conductor interface does not contain the participant questionnaire; it generates a link to the separate participant page. Both pages use the same instrument, scoring, configuration and result code.
+See [`docs/QUALTRICS-INTEGRATION.md`](docs/QUALTRICS-INTEGRATION.md) for the copy-paste bridge, Embedded Data field manifest and mandatory synthetic cross-device check.
 
-## Where is each page in GitHub?
+## Participant adjustment decision
 
-| Purpose | Readable source | Built/deployed file |
+The conductor always provides usable starting settings. Version 0.7 offers three protocol-level policies:
+
+| Policy | Appropriate use |
+| --- | --- |
+| Prepared settings only | Controlled NASA-TLX condition where support presentation must remain fixed. |
+| Display, audio and recovery preferences | Participant may change text size, automatic speech and interruption recovery; wording support and rating presentation remain fixed. |
+| Prepared defaults with optional participant choice | Recommended for this project's formative accessibility evaluation. Participant may change optional support without being required to configure it. |
+
+For the third policy, every change records the setting, old value, new value, questionnaire stage and timestamp. The result also records final settings and each rating/pair input route. These metadata never enter the NASA-TLX calculation. Official dimensions, anchors, values, fifteen pairs and weighted scoring remain unchanged.
+
+## Cross-device result safety
+
+The Qualtrics bridge:
+
+- sends results only to the exact HTTPS parent origin stored in the signed-off configuration;
+- validates the source window and message origin in both directions;
+- uses a stable submission ID and accepts only a matching receipt;
+- leaves answers on Review when Qualtrics fails or times out, allowing retry with the same ID;
+- places no Qualtrics API token or other secret in GitHub or the participant browser;
+- stores analysis fields plus a lossless JSON record split into bounded Embedded Data chunks.
+
+UCL guidance allows Qualtrics for information that is not highly confidential. If the study links identities, diagnoses or other highly confidential data, obtain UCL information-governance advice; REDCap in the Data Safe Haven may be required. The supplied prototype asks only for a study-issued pseudonymous code, but support-use metadata still requires an approved data-management decision.
+
+## Repository map
+
+| Purpose | Readable source or document | Built/deployed output |
 | --- | --- | --- |
-| Study-conductor page | [`source/study.html`](source/study.html), [`source/src/study-conductor.ts`](source/src/study-conductor.ts) | [`study.html`](study.html) |
-| Participant page | [`source/index.html`](source/index.html), [`source/src/accessible-nasa-tlx.ts`](source/src/accessible-nasa-tlx.ts) | [`index.html`](index.html) |
-| Shared study/result schema | [`source/src/study.ts`](source/src/study.ts) | compiled into the hashed assets |
-| Self-contained technical file | [`source/demo/accessible-nasa-tlx-v0.5.html`](source/demo/accessible-nasa-tlx-v0.5.html) | participant-only; see [`source/demo/README.md`](source/demo/README.md) |
+| Study conductor | [`source/src/study-conductor.ts`](source/src/study-conductor.ts) | [`study.html`](study.html) |
+| Participant questionnaire | [`source/src/accessible-nasa-tlx.ts`](source/src/accessible-nasa-tlx.ts) | [`index.html`](index.html) |
+| Configuration/result schema and exports | [`source/src/study.ts`](source/src/study.ts) | compiled asset |
+| Receipt and Qualtrics child sink | [`source/src/result-sink.ts`](source/src/result-sink.ts) | compiled asset |
+| Qualtrics parent bridge | [`integrations/qualtrics/`](integrations/qualtrics/) | pasted into the approved Qualtrics survey |
+| Standalone technical file | [`source/demo/accessible-nasa-tlx-v0.7.html`](source/demo/accessible-nasa-tlx-v0.7.html) | participant-only; no central collection from `file://` |
+| Study workflow decision | [`docs/STUDY-WORKFLOW.md`](docs/STUDY-WORKFLOW.md) | public evidence |
+| Collection and permission rationale | [`docs/REMOTE-COLLECTION-AND-PERMISSIONS.md`](docs/REMOTE-COLLECTION-AND-PERMISSIONS.md) | public evidence |
 
-## What is saved and exported?
+The private `accessible-hci-questionnaire-library` remains the canonical dissertation/evidence repository. This public repository is the tested release snapshot and stable GitHub Pages deployment.
 
-A completed record contains the study/configuration IDs, pseudonymous participant code, timestamps, prototype version, all six ratings, all fifteen pairwise choices, randomized pair order, weights, weighted score, configured support, final support state and input-route metadata.
-
-JSON is the complete lossless record. CSV is the flattened analysis format.
-
-### Current same-device mode
-
-GitHub Pages is static hosting; it is not a research database. In the implemented mode, completed records stay in this site's browser storage on the device where the questionnaire was completed. Return to `study.html` in that same browser to export all records as CSV or JSON. Verify the export before using the erase control.
-
-### Remote participants
-
-A completion on another device does **not** appear on the conductor's device. The component emits a versioned `nasa-tlx-complete` browser event for a future approved host adapter. Do not use participant download-and-email as the normal collection procedure. Remote collection requires the supervisor-approved UCL platform, ethics/data-protection route and frozen prototype.
-
-## Measurement and support boundary
-
-The prototype preserves the six NASA-TLX dimensions, 0–100 ratings in five-point increments, reversed Performance direction, fifteen unique pairwise comparisons, factor weights and weighted-score calculation. Optional simpler explanations, smiley landmarks, audio, voice, recovery and experimental webcam gaze remain a separate interface layer. Webcam gaze is off by default because current accuracy evidence is Partial.
-
-## Inspect and learn from the implementation
-
-- [`source/`](source/) is the readable Version 0.5 source-and-test snapshot used for this release.
-- [`docs/STUDY-WORKFLOW.md`](docs/STUDY-WORKFLOW.md) records the role, configuration, data and repository decisions.
-- [`docs/VOICE-AND-ERROR-CORRECTION.md`](docs/VOICE-AND-ERROR-CORRECTION.md) records the voice-state, smiley-state and error-focus correction.
-- [`TESTING.md`](TESTING.md) gives an end-to-end technical checklist.
-- [`BUILD-INFO.json`](BUILD-INFO.json) identifies the canonical commit and verification state used to produce this deployment.
-
-The complete dissertation history and evidence remain in `accessible-hci-questionnaire-library`, the single canonical development repository. This public repository is a one-way release mirror, not a second independently edited implementation.
-
-## Build and verify the source snapshot
+## Build and verify
 
 ```bash
 cd source
@@ -64,4 +68,4 @@ npm test
 npm run build:standalone
 ```
 
-The release passed 47 automated tests across ten files, including three axe-core structural scans, plus TypeScript and production builds. Automated and researcher-led tests do not establish WCAG conformance, psychometric equivalence, improved comprehension or accessibility for a disability group.
+The automated suite covers scoring, schema validation, role separation, participant-policy boundaries, support-change provenance, Qualtrics origin/receipt behaviour, voice/gaze state, recovery, standalone packaging and four axe-core structural scans. Passing automation does not establish accessibility for a disability group, psychometric equivalence, WebGazer accuracy or a participant benefit. Those claims require the approved evaluation.
