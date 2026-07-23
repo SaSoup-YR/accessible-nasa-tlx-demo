@@ -1,11 +1,29 @@
 import { dimensions, pairs, type DimensionId } from './nasa-tlx';
 import { calculateResult, type PairResponses, type TlxResult } from './scoring';
 
-export const PROTOTYPE_VERSION = '0.6.0';
-export const COMPLETED_RESULTS_KEY = 'accessible-nasa-tlx-v0.6-completed-results';
+export const PROTOTYPE_VERSION = '0.7.0';
+export const COMPLETED_RESULTS_KEY = 'accessible-nasa-tlx-v0.7-completed-results';
 
 export type AnswerMode = 'standard' | 'smiley';
-export type ParticipantAdjustmentPolicy = 'locked' | 'presentation-only';
+export type ParticipantAdjustmentPolicy = 'locked' | 'presentation-only' | 'participant-choice';
+export type SupportChangeSetting =
+  | 'simpler-explanations'
+  | 'answer-mode'
+  | 'text-size'
+  | 'automatic-audio'
+  | 'interruption-recovery';
+
+export type StudyCollectionConfig =
+  | { mode: 'local' }
+  | { mode: 'qualtrics'; parentOrigin: string };
+
+export interface SupportChange {
+  setting: SupportChangeSetting;
+  from: boolean | AnswerMode | 'standard' | 'large';
+  to: boolean | AnswerMode | 'standard' | 'large';
+  stage: 'intro' | 'ratings' | 'pairs' | 'review';
+  changedAt: string;
+}
 
 export interface StudySupportConfig {
   showSimpleLanguage: boolean;
@@ -19,7 +37,7 @@ export interface StudySupportConfig {
 }
 
 export interface StudyConfig {
-  schemaVersion: 2;
+  schemaVersion: 3;
   configId: string;
   createdAt: string;
   prototypeVersion: typeof PROTOTYPE_VERSION;
@@ -28,6 +46,7 @@ export interface StudyConfig {
   taskLabel: string;
   showScoreToParticipant: boolean;
   support: StudySupportConfig;
+  collection: StudyCollectionConfig;
 }
 
 export interface SupportMetadata {
@@ -43,10 +62,11 @@ export interface SupportMetadata {
   gazeEngine: string | null;
   ratingInputRoutes: Partial<Record<DimensionId, string>>;
   pairInputRoutes: Record<string, string>;
+  supportChanges: SupportChange[];
 }
 
 export interface StudyResultRecord {
-  schemaVersion: 2;
+  schemaVersion: 3;
   submissionId: string;
   study: {
     studyId: string;
@@ -67,6 +87,7 @@ export interface StudyResultRecord {
     name: 'NASA Task Load Index';
     version: 'full weighted';
   };
+  collection: StudyCollectionConfig;
   configuration: StudySupportConfig;
   responses: {
     ratings: Record<DimensionId, number>;
@@ -83,6 +104,7 @@ export interface StudyConfigDraft {
   taskLabel: string;
   showScoreToParticipant: boolean;
   support: StudySupportConfig;
+  collection: StudyCollectionConfig;
 }
 
 export interface StudyResultInput {
@@ -137,9 +159,34 @@ function validSupportConfig(value: unknown): value is StudySupportConfig {
     isBoolean(support.largeText) &&
     isBoolean(support.audioGuidance) &&
     isBoolean(support.recoveryEnabled) &&
-    (support.participantAdjustmentPolicy === 'locked' || support.participantAdjustmentPolicy === 'presentation-only') &&
+    (
+      support.participantAdjustmentPolicy === 'locked' ||
+      support.participantAdjustmentPolicy === 'presentation-only' ||
+      support.participantAdjustmentPolicy === 'participant-choice'
+    ) &&
     isBoolean(support.voiceInputAvailable) &&
     isBoolean(support.gazeInputAvailable)
+  );
+}
+
+export function normaliseHttpsOrigin(value: string) {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== 'https:' || url.origin === 'null') return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function validCollectionConfig(value: unknown): value is StudyCollectionConfig {
+  if (!value || typeof value !== 'object') return false;
+  const collection = value as Record<string, unknown>;
+  if (collection.mode === 'local') return true;
+  return (
+    collection.mode === 'qualtrics' &&
+    typeof collection.parentOrigin === 'string' &&
+    normaliseHttpsOrigin(collection.parentOrigin) === collection.parentOrigin
   );
 }
 
@@ -149,8 +196,9 @@ export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pi
     throw new Error('Study ID must use 1–64 letters, numbers, hyphens or underscores, and start with a letter or number.');
   }
   if (!validSupportConfig(draft.support)) throw new Error('The support configuration is incomplete.');
+  if (!validCollectionConfig(draft.collection)) throw new Error('The result-collection configuration is incomplete.');
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     configId: overrides.configId ?? randomId('config'),
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     prototypeVersion: PROTOTYPE_VERSION,
@@ -159,6 +207,7 @@ export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pi
     taskLabel: cleanText(draft.taskLabel, 'Task label', 160),
     showScoreToParticipant: draft.showScoreToParticipant,
     support: { ...draft.support },
+    collection: { ...draft.collection },
   };
 }
 
@@ -166,7 +215,7 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
   if (!value || typeof value !== 'object') return false;
   const config = value as Record<string, unknown>;
   return (
-    config.schemaVersion === 2 &&
+    config.schemaVersion === 3 &&
     config.prototypeVersion === PROTOTYPE_VERSION &&
     typeof config.configId === 'string' &&
     config.configId.length > 0 &&
@@ -180,7 +229,8 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
     config.taskLabel.length > 0 &&
     config.taskLabel.length <= 160 &&
     isBoolean(config.showScoreToParticipant) &&
-    validSupportConfig(config.support)
+    validSupportConfig(config.support) &&
+    validCollectionConfig(config.collection)
   );
 }
 
@@ -229,13 +279,13 @@ export function buildParticipantUrl(baseUrl: string, config: StudyConfig) {
 
 export function progressStorageKey(configId: string, participantCode: string) {
   if (!validParticipantCode(participantCode)) throw new Error('Invalid participant code.');
-  return `accessible-nasa-tlx-v0.6-progress:${configId}:${participantCode}`;
+  return `accessible-nasa-tlx-v0.7-progress:${configId}:${participantCode}`;
 }
 
 export function createStudyResultRecord(input: StudyResultInput): StudyResultRecord {
   if (!validParticipantCode(input.participantCode)) throw new Error('A valid pseudonymous participant code is required.');
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     submissionId: input.submissionId ?? randomId('submission'),
     study: {
       studyId: input.config.studyId,
@@ -250,6 +300,7 @@ export function createStudyResultRecord(input: StudyResultInput): StudyResultRec
     },
     prototype: { name: 'Accessible NASA-TLX', version: PROTOTYPE_VERSION },
     instrument: { name: 'NASA Task Load Index', version: 'full weighted' },
+    collection: { ...input.config.collection },
     configuration: { ...input.config.support },
     responses: {
       ratings: { ...input.result.ratings },
@@ -269,7 +320,7 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
   if (!value || typeof value !== 'object') return false;
   const record = value as StudyResultRecord;
   if (
-    record.schemaVersion !== 2 ||
+    record.schemaVersion !== 3 ||
     typeof record.submissionId !== 'string' ||
     !record.submissionId ||
     !validParticipantCode(record.participantCode) ||
@@ -286,6 +337,7 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
     record.prototype?.version !== PROTOTYPE_VERSION ||
     record.instrument?.name !== 'NASA Task Load Index' ||
     record.instrument?.version !== 'full weighted' ||
+    !validCollectionConfig(record.collection) ||
     !validSupportConfig(record.configuration) ||
     !record.responses ||
     !record.result ||
@@ -302,10 +354,42 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
     const choice = record.responses.pairwiseChoices?.[id];
     return choice === left || choice === right;
   });
+  const supportChangesValid =
+    Array.isArray(record.supportMetadata.supportChanges) &&
+    record.supportMetadata.supportChanges.every((change) => {
+      if (!change || typeof change !== 'object') return false;
+      const commonValid =
+        [
+          'simpler-explanations',
+          'answer-mode',
+          'text-size',
+          'automatic-audio',
+          'interruption-recovery',
+        ].includes(change.setting) &&
+        ['intro', 'ratings', 'pairs', 'review'].includes(change.stage) &&
+        typeof change.changedAt === 'string';
+      if (!commonValid) return false;
+      if (change.setting === 'answer-mode') {
+        return (
+          (change.from === 'standard' || change.from === 'smiley') &&
+          (change.to === 'standard' || change.to === 'smiley') &&
+          change.from !== change.to
+        );
+      }
+      if (change.setting === 'text-size') {
+        return (
+          (change.from === 'standard' || change.from === 'large') &&
+          (change.to === 'standard' || change.to === 'large') &&
+          change.from !== change.to
+        );
+      }
+      return typeof change.from === 'boolean' && typeof change.to === 'boolean' && change.from !== change.to;
+    });
   const pairOrder = record.responses.pairPresentationOrder;
   if (
     !ratingValuesValid ||
     !pairResponsesValid ||
+    !supportChangesValid ||
     !Array.isArray(pairOrder) ||
     pairOrder.length !== pairs.length ||
     new Set(pairOrder).size !== pairs.length
@@ -379,6 +463,7 @@ function resultRow(record: StudyResultRecord): Record<string, unknown> {
     started_at: record.timing.startedAt,
     completed_at: record.timing.completedAt,
     prototype_version: record.prototype.version,
+    collection_mode: record.collection.mode,
     weighted_score: record.result.weightedScore,
   };
   dimensions.forEach(({ id }) => {
@@ -402,6 +487,8 @@ function resultRow(record: StudyResultRecord): Record<string, unknown> {
   row.gaze_used = record.supportMetadata.gazeUsed;
   row.gaze_action_count = record.supportMetadata.gazeActionCount;
   row.gaze_engine = record.supportMetadata.gazeEngine;
+  row.support_change_count = record.supportMetadata.supportChanges.length;
+  row.support_changes_json = JSON.stringify(record.supportMetadata.supportChanges);
   row.pair_presentation_order = record.responses.pairPresentationOrder.join('|');
   return row;
 }

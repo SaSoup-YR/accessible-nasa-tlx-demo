@@ -28,7 +28,7 @@ afterEach(() => {
 });
 
 describe('study conductor defaults and guidance', () => {
-  it('separates participant identity and locks participant adjustments by default', async () => {
+  it('separates participant identity and starts with optional participant choice for an accessibility evaluation', async () => {
     const component = await renderConductor();
     expect(component.textContent).toContain('This researcher page generates a separate participant page');
     expect(component.textContent).toContain('P-001');
@@ -36,11 +36,11 @@ describe('study conductor defaults and guidance', () => {
     expect(inputFor(component, 'Study title').placeholder).toBe('Route-planning workload study');
     expect(inputFor(component, 'Task label').placeholder).toContain('planning a route');
 
-    const locked = inputFor(component, 'Prepared settings only');
-    expect(locked.checked).toBe(true);
+    const participantChoice = inputFor(component, 'Prepared defaults with optional participant choice');
+    expect(participantChoice.checked).toBe(true);
   });
 
-  it('generates a separate participant link with the prepared support locked', async () => {
+  it('generates a separate local participant link with prepared defaults and optional participant choice', async () => {
     const component = await renderConductor();
     const values = [
       ['Study ID', 'TLX-TECH-01'],
@@ -60,9 +60,45 @@ describe('study conductor defaults and guidance', () => {
 
     const link = component.querySelector<HTMLTextAreaElement>('#participant-link')!.value;
     const config = readStudyConfigFromHash(new URL(link).hash);
-    expect(config?.support.participantAdjustmentPolicy).toBe('locked');
+    expect(config?.support.participantAdjustmentPolicy).toBe('participant-choice');
+    expect(config?.collection.mode).toBe('local');
     expect(new URL(link).pathname).toMatch(/index\.html$/);
     expect(component.textContent).toContain('Configuration ready');
+  });
+
+  it('generates an origin-bound Qualtrics iframe configuration without placing an account token in the link', async () => {
+    const component = await renderConductor();
+    inputFor(component, 'UCL Qualtrics central collection').click();
+    await (component as any).updateComplete;
+
+    const qualtricsUrl = component.querySelector<HTMLInputElement>('input[placeholder*="qualtrics.com"]')!;
+    qualtricsUrl.value = 'https://ucl-example.eu.qualtrics.com/jfe/form/SV_TEST';
+    qualtricsUrl.dispatchEvent(new Event('input', { bubbles: true }));
+    const values = [
+      ['Study ID', 'TLX-REMOTE-01'],
+      ['Study title', 'Remote workload study'],
+      ['Task label', 'completing the route-planning task'],
+    ] as const;
+    for (const [label, value] of values) {
+      const input = inputFor(component, label);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Generate link')!
+      .click();
+    await (component as any).updateComplete;
+
+    const participantUrl = component.querySelector<HTMLTextAreaElement>('#participant-link')!.value;
+    const config = readStudyConfigFromHash(new URL(participantUrl).hash);
+    expect(config?.collection).toEqual({
+      mode: 'qualtrics',
+      parentOrigin: 'https://ucl-example.eu.qualtrics.com',
+    });
+    expect(participantUrl).not.toContain('SV_TEST');
+    expect(component.querySelector<HTMLTextAreaElement>('.qualtrics-setup textarea')!.value)
+      .toContain('id="accessible-nasa-tlx-frame"');
   });
 
   it('identifies a result export as the wrong file type and moves focus to the import error', async () => {

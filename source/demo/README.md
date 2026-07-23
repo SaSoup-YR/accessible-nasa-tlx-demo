@@ -1,6 +1,6 @@
 # Standalone participant file
 
-`accessible-nasa-tlx-v0.6.html` is a self-contained **participant questionnaire** for offline code inspection and a single-browser technical demonstration. It is not the Version 0.6 study-conductor page.
+`accessible-nasa-tlx-v0.7.html` is a self-contained **participant questionnaire** for offline code inspection and a single-browser technical demonstration. It is not the Version 0.7 study-conductor page and cannot use the Qualtrics parent bridge from `file://`.
 
 The complete hosted workflow has two entry points built from one source tree:
 

@@ -1,119 +1,105 @@
 # Remote collection and participant-permission decision
 
 Decision date: 23 July 2026  
-Prototype: Accessible NASA-TLX Version 0.6 final-candidate
+Prototype: Accessible NASA-TLX Version 0.7 release candidate
 
-## Decision summary
+## Decision
 
-Two independent problems must not be collapsed:
+Version 0.7 selects UCL Qualtrics as the default remote collection route for a pseudonymous study that does not collect highly confidential data. REDCap in the Data Safe Haven remains the required alternative if the approved protocol links identities, diagnoses or other highly confidential information.
 
-1. A static participant page needs an approved study platform to store results from different devices.
-2. A prepared questionnaire must not require a participant with an impairment to configure the study condition, while optional personal preferences must not be removed without reason.
+This is not a generic upload endpoint. The participant page is embedded inside one Qualtrics response and sends the complete record only to the exact HTTPS Qualtrics origin saved by the conductor. The Qualtrics page validates the GitHub origin, stores analysis fields and a lossless chunked JSON record, returns a receipt for the same submission ID and advances the survey. A failed receipt keeps the participant on Review for retry.
 
-Version 0.6 therefore implements:
+The selected participant policy for a formative accessibility evaluation is **prepared defaults with optional participant choice**:
 
-- a host-owned result-sink contract with an idempotent submission ID, positive receipt, retry-safe failure state and no client-side secret;
-- prepared settings as the default;
-- a conductor-selected `locked` or `presentation-only` participant policy;
-- fixed simpler-explanation and standard/smiley presentation settings in every configured study;
-- optional participant control of text size, automatic spoken guidance and interruption recovery only when the approved protocol permits it;
-- conductor-controlled availability of voice and experimental gaze, with the participant choosing among permitted answer routes during completion.
+- the conductor supplies a complete and usable starting configuration;
+- no participant must discover or configure support before answering;
+- the participant may voluntarily change optional support if it helps;
+- every change and every answer route is exported separately from the NASA-TLX calculation;
+- a controlled study can instead lock all settings or allow presentation-only preferences.
 
-## Why GitHub Pages cannot centrally collect results
+## Why Qualtrics is preferred here
 
-GitHub describes Pages as static hosting for repository HTML, CSS and JavaScript. Browser `localStorage` is isolated by origin and browser profile; it is not synchronised between a participant's device and a conductor's device. Adding a public database URL or API credential to the participant code would introduce an uncontrolled data destination and would expose any client-side secret.
+UCL's Research Information Governance FAQ allows staff and students to use Qualtrics for information that is not highly confidential and directs highly confidential information to REDCap in the Data Safe Haven. UCL's accessibility guidance states that a Qualtrics survey can be created to be accessible and has an accessibility checker, while noting that REDCap has many accessibility issues.
 
-The questionnaire therefore does not claim that the raw GitHub Pages link is a research database. Local saving remains an explicit technical-demonstration and same-device route.
+The prototype requests a study-issued pseudonymous code and does not request a name, email address or diagnosis. This supports, but does not determine, the Qualtrics route. The final classification must include recruitment, linkage, consent and support-use metadata. Even pseudonymised data remains personal data when a separate re-identification key exists.
 
-## Approved-host result contract
+## Options compared
 
-An approved host page can install the following runtime object before submission:
+| Option | Benefit | Critical limitation | Decision |
+| --- | --- | --- | --- |
+| Participant downloads and sends JSON | No platform integration | Creates an additional participant task, uncontrolled copies and avoidable transfer errors | Rejected as the normal route |
+| Public database endpoint in GitHub code | Immediate central storage | Exposes destination/credentials and creates an unapproved data service | Rejected |
+| REDCap client API call | Central research platform | A browser cannot safely hold a REDCap API token; UCL also reports accessibility limitations | Retain only through an approved server-side/DSH workflow |
+| Qualtrics iframe plus parent bridge | Central UCL account, no client secret, participant remains in one survey | Requires UCL custom JavaScript/HTML permission and a verified survey setup | Selected |
 
-```ts
-window.accessibleNasaTlxResultSink = {
-  name: 'Approved study platform',
-  async submit(record) {
-    const receipt = await saveThroughApprovedPlatform(record);
-    return {
-      accepted: true,
-      submissionId: record.submissionId,
-      receiptId: receipt.id,
-    };
-  },
-};
-```
+## Receipt and failure semantics
 
-The concrete `saveThroughApprovedPlatform` implementation belongs to the selected UCL data-collection platform. It must not place a Qualtrics, REDCap or other service credential in the public browser bundle.
+One stable `submissionId` is created when the participant first submits. Qualtrics accepts fields into the current response and returns `qualtrics-accepted-{submissionId}`. The participant page completes only for a receipt containing the same ID. Timeout, origin mismatch, invalid record or Qualtrics rejection returns the participant to Review with the answers retained. Repeating Submit reuses the same ID, allowing the host to identify duplicates.
 
-The questionnaire:
+The bridge receipt is acceptance into the active Qualtrics response, not independent proof of long-term server retention. Before recruitment, the researcher must complete a synthetic response from another device and confirm that the row appears in Data & Analysis and exports correctly.
 
-1. creates one versioned record and stable submission ID;
-2. calls the host sink only when the host explicitly installed it;
-3. accepts completion only when the receipt contains the same submission ID;
-4. avoids a second local completed-record copy after a confirmed host save;
-5. retains the record on the review page when the host rejects, times out or returns an invalid receipt;
-6. permits a retry with the same submission ID so the host can de-duplicate it;
-7. still emits the versioned `nasa-tlx-complete` event after confirmed completion.
+## Participant adjustment policy
 
-This contract is implemented in `source/src/result-sink.ts` and covered by unit and component tests. It is provider-neutral because the approved platform has not yet been selected.
+### Why optional choice is not the same as making the participant configure the study
 
-## Platform activation boundary
+The conductor chooses and distributes complete defaults. The Start control remains available without opening the optional preferences. A participant who needs no change does nothing. A participant who discovers a barrier may change support before or during completion.
 
-UCL's Research Information Governance FAQ states that staff and students can use Qualtrics for information that is not highly confidential, while highly confidential information should use REDCap in the Data Safe Haven. The final choice depends on the actual fields, linkage, recruitment method, disability-related data and approved data-management plan.
+This distinction resolves two competing risks:
 
-Before remote recruitment, the study needs:
+- requiring adjustment shifts implementation work to the person encountering the barrier;
+- prohibiting benign adjustment can preserve an avoidable barrier and prevents the study from observing which support is actually selected.
 
-- supervisor confirmation of the platform and whether support-route metadata is treated as disability-related or special-category data;
-- the required ethics approval and data-protection registration;
-- an approved participant information sheet, consent flow, retention period and withdrawal procedure;
-- a platform-side result adapter that validates the Version 0.6 record and returns a receipt;
-- an end-to-end test from a second device into the researcher's restricted account;
-- a frozen commit, configuration JSON and test record retained with the protocol.
+W3C cognitive-accessibility guidance supports personalization while requiring the default presentation to remain usable. It also stresses that needs vary: a presentation that helps one cognitive profile can obstruct another. This supports prepared defaults plus voluntary choice; it does not support making configuration a prerequisite.
 
-Until those conditions are met, a remote GitHub completion is deliberately described as local rather than falsely reported as centrally collected.
+For the formative accessibility study, the second risk is more important because the research objective includes support usefulness and preference. For a controlled comparison of NASA-TLX scores, the answer presentation and wording support should be locked because changing them can introduce an uncontrolled source of variation. Text size, audio and recovery may remain adjustable only if the protocol defines them as non-instrument presentation preferences.
 
-## Permission options considered
+### Recorded provenance
 
-| Option | Benefit | Main risk | Decision |
-|---|---|---|---|
-| Participant can change every support setting | Maximum apparent flexibility | Makes the participant configure the instrument; can alter wording support and response presentation after condition assignment | Rejected for configured studies |
-| Conductor locks every support and interaction preference | Strong condition consistency | Can prevent an individual from changing benign presentation preferences needed to complete the task | Available as the default policy |
-| Conductor fixes measurement-adjacent support; optional presentation-only personalisation | Preserves a reproducible study condition while retaining limited autonomy | Protocol must state which preferences are allowed and analysis must record actual use | Selected optional policy |
+The complete result contains:
 
-### Fixed by the conductor
+- the conductor's starting configuration;
+- final simpler-language, answer-mode, text, audio and recovery state;
+- a chronological change log with setting, before/after value, questionnaire stage and timestamp;
+- the input route for every rating and pair;
+- read-aloud, interruption summary and gaze-use metadata.
 
-- official wording, six factors, values, anchors, pairs and scoring;
-- whether simpler explanations are shown;
-- standard or experimental smiley rating presentation;
-- whether built-in voice and experimental gaze routes are available;
-- whether the score is shown to the participant.
+These values support process analysis and fidelity checks. They do not prove why a participant made a change or that the change improved accessibility.
 
-Simpler explanations and smileys are fixed because they can influence interpretation or the response interface. They should be prespecified as a condition rather than changed ad hoc by a participant during the study.
+## Security and privacy controls
 
-### Optionally adjustable by the participant
+- exact-origin `postMessage` in both directions;
+- exact iframe source-window check in the Qualtrics parent;
+- no names, emails, answers, API tokens or passwords in the participant URL;
+- no wildcard message destination;
+- one accepted submission ID per Qualtrics page;
+- raw JSON split into 900-character fields with a fixed maximum;
+- local fallback only when the conductor explicitly selects local mode;
+- IP recording disabled unless the approved protocol requires it;
+- participant code-to-identity mapping kept outside this prototype.
 
-- standard or large text;
-- automatic spoken guidance;
-- interruption recovery.
+## Activation gate
 
-These controls change presentation or continuity without replacing official response values or scoring. They are still preconfigured by the conductor, so no adjustment is required. The conductor can leave the policy locked when strict control is necessary.
+Before any participant data collection:
 
-### Chosen during answering
-
-- visible buttons and keyboard;
-- built-in confirmed voice when available;
-- experimental gaze when available.
-
-These are input routes, not questionnaire-configuration duties. The actual route is recorded independently for each answer.
+1. obtain supervisor review of this frozen prototype;
+2. confirm ethics and information-governance requirements;
+3. create the UCL Qualtrics survey and install [`QUALTRICS-INTEGRATION.md`](QUALTRICS-INTEGRATION.md);
+4. complete and export a synthetic cross-device response;
+5. freeze the Git commit, configuration JSON, survey version and test evidence;
+6. define access, retention, withdrawal and deletion procedures.
 
 ## Claim boundary
 
-Version 0.6 demonstrates a tested storage boundary, provider-neutral host contract and reproducible permission policy. It does not demonstrate that Qualtrics or REDCap integration has been activated, that remote data governance has been approved, or that the interface is more accessible for a disability group. Those claims require the selected platform, approved study documents and participant evidence.
+Version 0.7 implements a testable cross-device collection architecture and auditable support-choice policy. The feature strengthens implementation readiness, reproducibility and alignment with the supervisor's export/saving question. It does not itself demonstrate that the questionnaire is more accessible. A claim of improved accessibility requires relevant participants, defined outcomes and analysis.
 
 ## Authoritative sources
 
-- [GitHub: What is GitHub Pages?](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
 - [UCL Research Information Governance FAQs](https://www.ucl.ac.uk/advanced-research-computing/platforms-services/information-governance-advisory-service/research-information-governance-faqs)
-- [UCL: Do I need ethical approval?](https://www.ucl.ac.uk/research-innovation-services/compliance-and-assurance/research-ethics-service/do-i-need-ethical-approval)
-- [UCL student ethics guidance: data storage and access](https://www.ucl.ac.uk/ioe/research/research-ethics/ethics-applications-ioe-students/student-ethics-application-guidance)
-- [W3C WAI: Involving Users in Evaluating Web Accessibility](https://www.w3.org/WAI/test-evaluate/involving-users/)
+- [UCL forms and survey tools accessibility guidance](https://www.ucl.ac.uk/isd/services/digital-accessibility-services/creating-accessible-content/forms-and-survey-tools)
+- [W3C: Support adaptation and personalization](https://www.w3.org/WAI/WCAG2/supplemental/objectives/o8-personalization/)
+- [W3C: Support a personalized and familiar interface](https://www.w3.org/WAI/WCAG2/supplemental/patterns/o8p04-interface/)
+- [W3C: Making Content Usable for People with Cognitive and Learning Disabilities](https://www.w3.org/TR/coga-usable/)
+- [Qualtrics: Add JavaScript](https://www.qualtrics.com/support/survey-platform/survey-module/question-options/add-javascript/)
+- [Qualtrics: Embedded Data](https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/embedded-data/)
+- [Qualtrics: Export response data](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/download-data/export-data-overview/)
+- [ICO: Data protection by design and by default](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/accountability-and-governance/guide-to-accountability-and-governance/data-protection-by-design-and-by-default/)

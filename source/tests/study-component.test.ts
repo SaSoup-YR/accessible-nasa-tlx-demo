@@ -29,6 +29,7 @@ async function renderConfiguredComponent(
         voiceInputAvailable: false,
         gazeInputAvailable: false,
       },
+      collection: { mode: 'local' },
     },
     { configId: 'config-study-01', createdAt: '2026-07-20T12:00:00.000Z' },
   );
@@ -141,6 +142,37 @@ describe('study-conductor and participant separation', () => {
     expect(settings.textContent).not.toContain('Smiley landmarks');
     expect(component.textContent).toContain('answer presentation and simpler-explanation setting remain fixed');
     expect(component.querySelector('.audio-guidance-toggle')).not.toBeNull();
+  });
+
+  it('starts from prepared defaults, allows optional support choice and exports every participant change', async () => {
+    const component = await renderConfiguredComponent('participant-choice');
+    const settings = component.querySelector('.participant-support-setup .support-settings')!;
+    expect(settings.textContent).toContain('Show simpler explanations');
+    expect(settings.textContent).toContain('Smiley landmarks');
+    expect(component.textContent).toContain('You do not need to change anything before starting');
+
+    const simpler = settings.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    simpler.click();
+    const smiley = [...settings.querySelectorAll<HTMLInputElement>('input[type="radio"]')]
+      .find((input) => input.value === 'smiley')!;
+    smiley.click();
+    await component.updateComplete;
+
+    await completeQuestionnaire(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await component.updateComplete;
+
+    const [stored] = loadCompletedResults();
+    expect(stored.configuration.showSimpleLanguage).toBe(true);
+    expect(stored.supportMetadata.simplerExplanationsShownAtSubmission).toBe(false);
+    expect(stored.supportMetadata.answerModeAtSubmission).toBe('smiley');
+    expect(stored.supportMetadata.supportChanges.map(({ setting }) => setting)).toEqual([
+      'simpler-explanations',
+      'answer-mode',
+    ]);
+    expect(stored.supportMetadata.supportChanges.every(({ stage }) => stage === 'intro')).toBe(true);
   });
 
   it('stores the complete record locally, emits the host event and hides the score when configured', async () => {

@@ -13,6 +13,7 @@ import {
 import { calculateResult, type PairResponses, type Ratings, type TlxResult } from './scoring';
 import {
   configuredResultSink,
+  installStudyResultSink,
   submitToApprovedResultSink,
   type ResultSinkReceipt,
 } from './result-sink';
@@ -29,6 +30,8 @@ import {
   type AnswerMode,
   type StudyConfig,
   type StudyResultRecord,
+  type SupportChange,
+  type SupportChangeSetting,
   type SupportMetadata,
 } from './study';
 import { parsePairTranscript, parseRatingTranscript } from './voice-input';
@@ -56,7 +59,7 @@ interface PendingVoiceAnswer {
 }
 
 interface SavedSession {
-  version: 2;
+  version: 3;
   savedAt: number;
   startedAt: string;
   configId: string;
@@ -69,6 +72,7 @@ interface SavedSession {
   ratings: Partial<Ratings>;
   ratingInputRoutes: Partial<Record<DimensionId, RatingInputRoute>>;
   pairInputRoutes: Record<string, PairInputRoute>;
+  supportChanges: SupportChange[];
   support: {
     answerMode: AnswerMode;
     showSimpleLanguage: boolean;
@@ -146,6 +150,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private ratings: Partial<Ratings> = {};
   @state() private ratingInputRoutes: Partial<Record<DimensionId, RatingInputRoute>> = {};
   @state() private pairInputRoutes: Record<string, PairInputRoute> = {};
+  @state() private supportChanges: SupportChange[] = [];
   @state() private answerMode: AnswerMode = 'standard';
   @state() private showSimpleLanguage = false;
   @state() private largeText = false;
@@ -225,6 +230,27 @@ export class AccessibleNasaTlx extends LitElement {
     if (!config) return;
     this.studyConfig = config;
     this.applyConfiguredSupport();
+    if (config.collection.mode === 'qualtrics') {
+      if (window.parent === window) {
+        this.configurationError =
+          'This centrally collected questionnaire must be opened from the approved Qualtrics survey link. Ask the study conductor for that link.';
+        return;
+      }
+      if (document.referrer) {
+        try {
+          if (new URL(document.referrer).origin !== config.collection.parentOrigin) {
+            this.configurationError =
+              'This questionnaire was embedded by an unexpected website. Ask the study conductor for the approved Qualtrics survey link.';
+            return;
+          }
+        } catch {
+          this.configurationError =
+            'The embedding website could not be verified. Ask the study conductor for the approved Qualtrics survey link.';
+          return;
+        }
+      }
+      installStudyResultSink(config);
+    }
   }
 
   private applyConfiguredSupport() {
@@ -238,11 +264,15 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private get canAdjustAllSupport() {
-    return !this.studyConfig;
+    return !this.studyConfig || this.studyConfig.support.participantAdjustmentPolicy === 'participant-choice';
   }
 
   private get canAdjustPresentationSupport() {
-    return !this.studyConfig || this.studyConfig.support.participantAdjustmentPolicy === 'presentation-only';
+    return (
+      !this.studyConfig ||
+      this.studyConfig.support.participantAdjustmentPolicy === 'presentation-only' ||
+      this.studyConfig.support.participantAdjustmentPolicy === 'participant-choice'
+    );
   }
 
   private get voiceInputAvailable() {
@@ -259,7 +289,7 @@ export class AccessibleNasaTlx extends LitElement {
       <main class=${`app-shell${this.largeText ? ' large-text' : ''}`} id="main-content">
         <p class="sr-only" aria-live="polite" aria-atomic="true">${this.statusMessage}</p>
         <header class="app-header">
-          <p class="eyebrow">Research prototype · Version 0.6 final-candidate</p>
+          <p class="eyebrow">Research prototype · Version 0.7 release candidate</p>
           <h1>NASA Task Load Index</h1>
           <p class="subtitle">Weighted NASA-TLX with configurable reading, answering and recovery support</p>
         </header>
@@ -285,7 +315,16 @@ export class AccessibleNasaTlx extends LitElement {
   private renderInQuestionSupport() {
     return html`
       ${this.studyConfig
-        ? this.canAdjustPresentationSupport
+        ? this.canAdjustAllSupport
+          ? html`<details class="support-toolbar">
+              <summary>Adjust accessibility support (optional)</summary>
+              <p>
+                The study conductor has already prepared usable starting settings. You may change optional support if it
+                helps you complete the questionnaire; every change is recorded separately from your NASA-TLX answers.
+              </p>
+              ${this.renderSupportSettings('toolbar', 'all')}
+            </details>`
+          : this.canAdjustPresentationSupport
           ? html`<details class="support-toolbar">
               <summary>Adjust display, audio or recovery (optional)</summary>
               <p>
@@ -364,7 +403,16 @@ export class AccessibleNasaTlx extends LitElement {
 
         ${this.studyConfig ? this.renderConfiguredSupportSummary() : nothing}
         ${this.studyConfig
-          ? this.canAdjustPresentationSupport
+          ? this.canAdjustAllSupport
+            ? html`<details class="support-toolbar participant-support-setup">
+                <summary>Adjust accessibility support (optional)</summary>
+                <p>
+                  The study settings are already applied. You do not need to change anything before starting. If an
+                  optional support preference helps, you may change it and the change will be recorded for the researcher.
+                </p>
+                ${this.renderSupportSettings('intro', 'all')}
+              </details>`
+            : this.canAdjustPresentationSupport
             ? html`<details class="support-toolbar participant-support-setup">
                 <summary>Adjust display, audio or recovery (optional)</summary>
                 <p>
@@ -408,6 +456,10 @@ export class AccessibleNasaTlx extends LitElement {
           <div><dt>Study</dt><dd>${this.studyConfig.studyTitle}</dd></div>
           <div><dt>Study ID</dt><dd>${this.studyConfig.studyId}</dd></div>
           <div><dt>Task</dt><dd>${this.studyConfig.taskLabel}</dd></div>
+          <div>
+            <dt>Result collection</dt>
+            <dd>${this.studyConfig.collection.mode === 'qualtrics' ? 'UCL Qualtrics' : 'This browser only'}</dd>
+          </div>
         </dl>
         <label class="participant-code-field" for="participant-code">
           <strong>Pseudonymous participant code</strong>
@@ -448,9 +500,11 @@ export class AccessibleNasaTlx extends LitElement {
           <li>${support.gazeInputAvailable ? 'Experimental gaze input available' : 'Experimental gaze input not included'}</li>
         </ul>
         <p>
-          ${support.participantAdjustmentPolicy === 'presentation-only'
-            ? 'You may optionally change text size, automatic spoken guidance or interruption recovery. The answer presentation and simpler-explanation setting remain fixed.'
-            : 'The prepared settings remain fixed for this study. You can still use any answer route that the study conductor made available.'}
+          ${support.participantAdjustmentPolicy === 'participant-choice'
+            ? 'The starting settings are already applied. You may optionally change simpler explanations, answer presentation, text size, automatic spoken guidance or interruption recovery. Each change is recorded separately from your answers.'
+            : support.participantAdjustmentPolicy === 'presentation-only'
+              ? 'You may optionally change text size, automatic spoken guidance or interruption recovery. The answer presentation and simpler-explanation setting remain fixed.'
+              : 'The prepared settings remain fixed for this study. You can still use any answer route that the study conductor made available.'}
         </p>
       </aside>
     `;
@@ -1177,8 +1231,29 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private setSimpleLanguage(event: Event) {
-    this.showSimpleLanguage = (event.currentTarget as HTMLInputElement).checked;
+    const value = (event.currentTarget as HTMLInputElement).checked;
+    this.recordSupportChange('simpler-explanations', this.showSimpleLanguage, value);
+    this.showSimpleLanguage = value;
+    this.invalidatePendingSubmission();
     this.persistProgress();
+  }
+
+  private recordSupportChange(
+    setting: SupportChangeSetting,
+    from: SupportChange['from'],
+    to: SupportChange['to'],
+  ) {
+    if (!this.studyConfig || from === to || this.stage === 'complete') return;
+    this.supportChanges = [
+      ...this.supportChanges,
+      {
+        setting,
+        from,
+        to,
+        stage: this.stage,
+        changedAt: new Date().toISOString(),
+      },
+    ];
   }
 
   private setParticipantCode = (event: Event) => {
@@ -1192,23 +1267,33 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private setAnswerMode(mode: AnswerMode) {
+    this.recordSupportChange('answer-mode', this.answerMode, mode);
     this.answerMode = mode;
+    this.invalidatePendingSubmission();
     this.persistProgress();
   }
 
   private setLargeText(value: boolean) {
+    this.recordSupportChange('text-size', this.largeText ? 'large' : 'standard', value ? 'large' : 'standard');
     this.largeText = value;
+    this.invalidatePendingSubmission();
     this.persistProgress();
   }
 
   private setRecovery(event: Event) {
-    this.recoveryEnabled = (event.currentTarget as HTMLInputElement).checked;
+    const value = (event.currentTarget as HTMLInputElement).checked;
+    this.recordSupportChange('interruption-recovery', this.recoveryEnabled, value);
+    this.recoveryEnabled = value;
+    this.invalidatePendingSubmission();
     if (this.recoveryEnabled) this.persistProgress();
     else this.clearSavedProgress();
   }
 
   private setAudioGuidance = (event: Event) => {
-    this.audioGuidance = (event.currentTarget as HTMLInputElement).checked;
+    const value = (event.currentTarget as HTMLInputElement).checked;
+    this.recordSupportChange('automatic-audio', this.audioGuidance, value);
+    this.audioGuidance = value;
+    this.invalidatePendingSubmission();
     if (this.audioGuidance) this.speakText('Built-in audio guidance is on. New questions and selected answers will be spoken.');
     else this.stopReading();
     this.persistProgress();
@@ -1341,7 +1426,7 @@ export class AccessibleNasaTlx extends LitElement {
   private effectiveStudyConfig(): StudyConfig {
     if (this.studyConfig) return this.studyConfig;
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       configId: 'demo-config',
       createdAt: this.startedAt || new Date().toISOString(),
       prototypeVersion: PROTOTYPE_VERSION,
@@ -1359,6 +1444,7 @@ export class AccessibleNasaTlx extends LitElement {
         voiceInputAvailable: true,
         gazeInputAvailable: true,
       },
+      collection: { mode: 'local' },
     };
   }
 
@@ -1376,6 +1462,7 @@ export class AccessibleNasaTlx extends LitElement {
       gazeEngine: this.gazeUsed ? `WebGazer ${WEBGAZER_VERSION}` : null,
       ratingInputRoutes: this.ratingInputRoutes,
       pairInputRoutes: this.pairInputRoutes,
+      supportChanges: [...this.supportChanges],
     };
   }
 
@@ -1467,6 +1554,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.ratings = {};
     this.ratingInputRoutes = {};
     this.pairInputRoutes = {};
+    this.supportChanges = [];
     this.resumeSummaryVisible = false;
     this.savedSession = null;
     this.result = null;
@@ -1954,7 +2042,7 @@ export class AccessibleNasaTlx extends LitElement {
     const storageKey = this.currentProgressStorageKey();
     if (!storageKey) return;
     const session: SavedSession = {
-      version: 2,
+      version: 3,
       savedAt: Date.now(),
       startedAt: this.startedAt || new Date().toISOString(),
       configId: this.studyConfig?.configId ?? 'demo-config',
@@ -1967,6 +2055,7 @@ export class AccessibleNasaTlx extends LitElement {
       ratings: this.ratings,
       ratingInputRoutes: this.ratingInputRoutes,
       pairInputRoutes: this.pairInputRoutes,
+      supportChanges: this.supportChanges,
       support: {
         answerMode: this.answerMode,
         showSimpleLanguage: this.showSimpleLanguage,
@@ -1997,7 +2086,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private validSavedSession(session: SavedSession) {
     return (
-      session?.version === 2 &&
+      session?.version === 3 &&
       session.configId === (this.studyConfig?.configId ?? 'demo-config') &&
       session.participantCode === (this.studyConfig ? this.participantCode : 'DEMO') &&
       typeof session.startedAt === 'string' &&
@@ -2005,7 +2094,8 @@ export class AccessibleNasaTlx extends LitElement {
       Array.isArray(session.pairOrder) &&
       session.pairOrder.length === pairs.length &&
       Number.isInteger(session.ratingIndex) &&
-      Number.isInteger(session.pairIndex)
+      Number.isInteger(session.pairIndex) &&
+      Array.isArray(session.supportChanges)
     );
   }
 
@@ -2020,6 +2110,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.ratings = session.ratings;
     this.ratingInputRoutes = session.ratingInputRoutes;
     this.pairInputRoutes = session.pairInputRoutes;
+    this.supportChanges = session.supportChanges;
     this.startedAt = session.startedAt;
     if (this.canAdjustAllSupport) {
       this.answerMode = session.support.answerMode;

@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { configuredResultSink, submitToApprovedResultSink } from '../src/result-sink';
+import {
+  QUALTRICS_RECEIPT_MESSAGE,
+  QUALTRICS_SUBMIT_MESSAGE,
+  configuredResultSink,
+  createQualtricsParentResultSink,
+  submitToApprovedResultSink,
+} from '../src/result-sink';
 import type { StudyResultRecord } from '../src/study';
 
 const record = {
@@ -52,5 +60,70 @@ describe('approved host result sink', () => {
       },
     };
     await expect(submitToApprovedResultSink(record, sink, 5)).rejects.toThrow(/did not confirm receipt in time/i);
+  });
+
+  it('sends a record only to the configured Qualtrics origin and accepts a matching parent receipt', async () => {
+    let receiveMessage: ((event: MessageEvent) => void) | undefined;
+    const parent = {
+      postMessage(message: any, targetOrigin: string) {
+        expect(message.type).toBe(QUALTRICS_SUBMIT_MESSAGE);
+        expect(message.record).toBe(record);
+        expect(targetOrigin).toBe('https://ucl-example.eu.qualtrics.com');
+        queueMicrotask(() => receiveMessage?.({
+          source: parent,
+          origin: targetOrigin,
+          data: {
+            type: QUALTRICS_RECEIPT_MESSAGE,
+            accepted: true,
+            submissionId: record.submissionId,
+            receiptId: 'qualtrics-accepted-submission-fixed',
+          },
+        } as unknown as MessageEvent));
+      },
+    };
+    const windowRef = {
+      parent,
+      setTimeout: window.setTimeout.bind(window),
+      clearTimeout: window.clearTimeout.bind(window),
+      addEventListener(type: string, listener: EventListener) {
+        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+      },
+      removeEventListener() {
+        receiveMessage = undefined;
+      },
+    } as unknown as Window;
+    const sink = createQualtricsParentResultSink(
+      'https://ucl-example.eu.qualtrics.com',
+      windowRef,
+      20,
+    );
+
+    await expect(sink.submit(record)).resolves.toEqual({
+      accepted: true,
+      submissionId: 'submission-fixed',
+      receiptId: 'qualtrics-accepted-submission-fixed',
+    });
+  });
+
+  it('rejects direct opening instead of pretending Qualtrics collected the response', async () => {
+    const directWindow = {
+      setTimeout: window.setTimeout.bind(window),
+      clearTimeout: window.clearTimeout.bind(window),
+    } as unknown as Window;
+    Object.defineProperty(directWindow, 'parent', { value: directWindow });
+    const sink = createQualtricsParentResultSink('https://ucl-example.eu.qualtrics.com', directWindow);
+    await expect(sink.submit(record)).rejects.toThrow(/opened through its Qualtrics survey/i);
+  });
+
+  it('ships a syntactically valid Qualtrics parent bridge with exact-origin messaging and bounded raw fields', () => {
+    const bridge = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+      'utf8',
+    );
+    expect(() => new Function(bridge)).not.toThrow();
+    expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
+    expect(bridge).toContain('var rawChunkLength = 900');
+    expect(bridge).toContain('var maximumRawChunks = 24');
+    expect(bridge).not.toMatch(/postMessage\([^)]*,\s*['"]\*['"]\s*\)/);
   });
 });
