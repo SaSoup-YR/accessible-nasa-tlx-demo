@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 
-const standalonePath = new URL('../demo/accessible-nasa-tlx-v0.6.html', import.meta.url);
+const standalonePath = new URL('../demo/accessible-nasa-tlx-v0.7.html', import.meta.url);
 
-describe('self-contained Version 0.6 participant demonstration', () => {
+describe('self-contained Version 0.7 participant demonstration', () => {
   it('contains one document and a syntactically valid inline application bundle', () => {
     const html = readFileSync(standalonePath, 'utf8');
     const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
@@ -21,7 +21,7 @@ describe('self-contained Version 0.6 participant demonstration', () => {
     const html = readFileSync(standalonePath, 'utf8').replace('<script type="module">', '<script>');
     const dom = new JSDOM(html, {
       runScripts: 'dangerously',
-      url: 'file:///accessible-nasa-tlx-v0.6.html',
+      url: 'file:///accessible-nasa-tlx-v0.7.html',
     });
 
     await new Promise((resolve) => dom.window.setTimeout(resolve, 20));
