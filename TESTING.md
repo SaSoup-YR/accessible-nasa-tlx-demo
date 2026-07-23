@@ -1,73 +1,62 @@
-# Version 0.6 technical test checklist
+# Version 0.7 technical test checklist
 
 Use synthetic data only. Do not recruit or collect participant data until the supervisor has reviewed the frozen candidate and the ethics/data-management route is confirmed.
 
 ## 1. Study-conductor setup
 
 1. Open [the study-conductor page](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html).
-2. Enter a non-identifying study ID such as `TLX-PILOT-01`, a title and an exact task label.
-3. Choose the starting support. Keep **Prepared settings only** unless the approved protocol permits presentation-only personalisation.
-4. If presentation-only personalisation is enabled, confirm that participants can change only text size, automatic spoken guidance and recovery. Simpler explanations and standard/smiley presentation must remain fixed.
-5. Keep experimental gaze off unless gaze is specifically being tested.
-6. Generate the participant link.
-7. Download the configuration JSON, then import it and confirm that the same configuration ID and link are regenerated.
-8. Try the configuration importer with a completed-result JSON. Confirm that it identifies the wrong file type and moves focus and the viewport to the visible error summary.
+2. Enter a non-identifying study ID, participant-facing title and exact task label.
+3. Confirm that **Prepared defaults with optional participant choice** is selected for an accessibility-support evaluation.
+4. Switch among all three adjustment policies and confirm their descriptions distinguish controlled measurement from formative accessibility evaluation.
+5. Generate a local configuration, download it, import it and confirm the same configuration ID/link.
+6. Import a completed-result JSON and confirm that the visible error explains the wrong file type and receives focus.
 
-## 2. Participant route
+## 2. Participant configuration and provenance
 
-1. Open the generated link in a new tab in the same browser.
-2. Confirm that the study title, ID, task and prepared settings are already present.
-3. Confirm that the support controls are absent when the configuration is locked.
-4. Select **Hear a summary of this step** on the first page. Confirm that speech starts on the first request and names the configured task.
-5. On a rating, recognise and confirm a spoken value, then immediately select **Next question**. Confirm that navigation advances once and the stored route is voice.
-6. Start voice input again, then choose a visible value instead of confirming the proposal. Confirm that the proposal closes, the visible answer replaces it and **Next question** works.
-7. With smiley landmarks configured, confirm a spoken landmark value. Confirm that the matching native smiley radio shows its selected state and focus indicator, and the precise scale reports the same value.
-8. Enter a synthetic code such as `TEST-001`; do not enter a name or email address.
-9. Complete six ratings and fifteen comparisons.
-10. Review, correct and deliberately submit.
-11. Confirm that the completion page says the record is local and offers JSON/CSV backup files.
-12. If the score-display option was off, confirm that the participant page does not show the weighted score.
+1. Open the generated local link.
+2. Confirm that study/task context and prepared settings are already applied.
+3. With participant-choice enabled, start without opening preferences; no setting is mandatory.
+4. Change simpler explanations, answer presentation, text size, automatic audio and recovery at different stages.
+5. Complete six ratings and fifteen pair comparisons using visible controls, keyboard and permitted voice/gaze routes.
+6. Submit and export JSON/CSV.
+7. Verify that the record contains the starting configuration, final support state, chronological support changes and per-answer input routes.
+8. Confirm that changing support does not change the six official dimensions, rating values, pair count or scoring.
 
-## 3. Conductor export
+## 3. Voice, errors, recovery and gaze
 
-1. Return to `study.html` in the same browser and device.
-2. Confirm the row shows the correct study ID, synthetic participant code, completion time and weighted score.
-3. Export all results as JSON and CSV.
-4. Check that JSON contains configuration, responses, calculation and support metadata.
-5. Check that CSV contains rating, weight, weighted-rating, pair-choice and input-route columns.
-6. Only after verifying both files, test the explicit erase control.
+1. Confirm and replace voice-proposed numeric and smiley answers; Next must work immediately and selected visuals must stay synchronized.
+2. Trigger each validation/import/submission error and confirm focus and viewport move to the error summary.
+3. Save, close and resume with the same configuration/code; the return summary and support-change history must be preserved.
+4. Treat WebGazer target accuracy as Partial. Verify permission, positioning, calibration, proposal, separate confirmation, recalibration and camera stop without claiming accurate independent control.
 
-## 4. Remote collection boundary
+## 4. Qualtrics cross-device collection
 
-### Raw GitHub Pages
+Complete every step in [`docs/QUALTRICS-INTEGRATION.md`](docs/QUALTRICS-INTEGRATION.md):
 
-Open the participant link in another browser profile or device. A result completed there must not appear in the first browser's conductor page. This confirms the static-hosting boundary.
+1. create the UCL Qualtrics survey and declare every Embedded Data field;
+2. paste the generated iframe HTML and tested question JavaScript;
+3. disable IP recording unless approved;
+4. open the Qualtrics distribution/preview link on a second device;
+5. complete `TEST-001` and confirm automatic Qualtrics advancement;
+6. verify one central Data & Analysis row, all six ratings/weights, fifteen pair choices, support metadata and raw JSON chunks;
+7. interrupt the network at submission and confirm Review/retry instead of false completion;
+8. confirm the participant link/bundle contains no token and accepts receipts only from the configured Qualtrics origin.
 
-### Approved host-adapter test
-
-After the UCL-selected platform installs `window.accessibleNasaTlxResultSink`:
-
-1. Complete from a second device.
-2. Confirm the participant sees a platform receipt rather than the local-only message.
-3. Confirm the same submission ID appears once in the researcher's restricted platform.
-4. Simulate a failed save. Confirm the participant remains on Review, focus moves to the error, answers remain available and retry uses the same submission ID.
-5. Confirm no credential appears in the participant URL, JavaScript bundle, browser storage or exported configuration.
+Do not describe cross-device collection as activated until the synthetic row has been observed and exported from the actual UCL account.
 
 ## 5. Accessibility and resilience
 
-Record each route as Pass, Partial, Fail or Not supported:
+Record Pass, Partial, Fail or Not supported for:
 
-- keyboard-only navigation and visible focus;
-- NVDA with Chrome or Edge, and VoiceOver with Safari as a separate check;
-- standard and large text, 200% zoom and 320 CSS-pixel reflow;
+- keyboard-only navigation, native radios and visible focus;
+- NVDA with Chrome/Edge and VoiceOver with Safari;
+- standard/large text, 200% zoom and 320 CSS-pixel reflow;
 - standard ratings, experimental smiley landmarks and precise-scale fallback;
-- simpler explanations and built-in spoken guidance;
-- confirmed voice input with visible-control fallback;
-- save, close, reopen and resume with the same configuration and code;
-- invalid/missing participant code and invalid configuration-link errors;
-- webcam consent, positioning, calibration, dwell proposal, separate confirmation and camera stop;
-- storage-disabled or storage-full failure messaging;
-- CSV/JSON export in Chrome, Edge, Firefox and Safari;
-- approved-host receipt, duplicate-submission and retry behaviour on a second device.
+- simpler explanations and built-in spoken summaries;
+- confirmed voice with visible-control fallback;
+- iPhone portrait/landscape;
+- storage disabled/full;
+- Qualtrics iframe title, focus order and screen-reader behaviour;
+- Chrome, Edge, Firefox and Safari export/collection routes.
 
-Webcam gaze remains experimental and current target accuracy is recorded as Partial. Technical operation is not evidence of reliable independent use.
+Automated structural scans, jsdom interaction tests and a mocked WebGazer engine do not establish accessibility, disability-group benefit, gaze accuracy or psychometric equivalence.
