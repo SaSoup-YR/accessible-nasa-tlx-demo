@@ -12,6 +12,11 @@ import {
 } from './nasa-tlx';
 import { calculateResult, type PairResponses, type Ratings, type TlxResult } from './scoring';
 import {
+  configuredResultSink,
+  submitToApprovedResultSink,
+  type ResultSinkReceipt,
+} from './result-sink';
+import {
   PROTOTYPE_VERSION,
   createStudyResultRecord,
   downloadTextFile,
@@ -173,6 +178,10 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private startedAt = '';
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
+  @state() private completionSavedByHost = false;
+  @state() private hostSinkName = '';
+  @state() private hostReceipt: ResultSinkReceipt | null = null;
+  @state() private submittingResult = false;
 
   private hiddenAt: number | null = null;
   private recognition: SpeechRecognitionLike | null = null;
@@ -228,8 +237,12 @@ export class AccessibleNasaTlx extends LitElement {
     this.recoveryEnabled = support.recoveryEnabled;
   }
 
-  private get canAdjustSupport() {
-    return !this.studyConfig || this.studyConfig.support.allowParticipantChanges;
+  private get canAdjustAllSupport() {
+    return !this.studyConfig;
+  }
+
+  private get canAdjustPresentationSupport() {
+    return !this.studyConfig || this.studyConfig.support.participantAdjustmentPolicy === 'presentation-only';
   }
 
   private get voiceInputAvailable() {
@@ -246,7 +259,7 @@ export class AccessibleNasaTlx extends LitElement {
       <main class=${`app-shell${this.largeText ? ' large-text' : ''}`} id="main-content">
         <p class="sr-only" aria-live="polite" aria-atomic="true">${this.statusMessage}</p>
         <header class="app-header">
-          <p class="eyebrow">Research prototype · Version 0.5 study-workflow candidate</p>
+          <p class="eyebrow">Research prototype · Version 0.6 final-candidate</p>
           <h1>NASA Task Load Index</h1>
           <p class="subtitle">Weighted NASA-TLX with configurable reading, answering and recovery support</p>
         </header>
@@ -271,12 +284,21 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderInQuestionSupport() {
     return html`
-      ${this.canAdjustSupport
-        ? html`<details class="support-toolbar">
+      ${this.studyConfig
+        ? this.canAdjustPresentationSupport
+          ? html`<details class="support-toolbar">
+              <summary>Adjust display, audio or recovery (optional)</summary>
+              <p>
+                The study answer presentation and simpler-explanation setting remain fixed. You do not need to
+                change these optional preferences to continue.
+              </p>
+              ${this.renderSupportSettings('toolbar', 'presentation-only')}
+            </details>`
+          : this.renderConfiguredSupportSummary()
+        : html`<details class="support-toolbar">
             <summary>Adjust accessibility support (optional)</summary>
-            ${this.renderSupportSettings('toolbar')}
-          </details>`
-        : this.renderConfiguredSupportSummary()}
+            ${this.renderSupportSettings('toolbar', 'all')}
+          </details>`}
       ${this.renderReadAloudControl()}
       ${this.renderGazeSetup()}
     `;
@@ -340,13 +362,22 @@ export class AccessibleNasaTlx extends LitElement {
           )}
         </details>
 
-        ${this.canAdjustSupport
-          ? html`<details class="support-toolbar participant-support-setup">
+        ${this.studyConfig ? this.renderConfiguredSupportSummary() : nothing}
+        ${this.studyConfig
+          ? this.canAdjustPresentationSupport
+            ? html`<details class="support-toolbar participant-support-setup">
+                <summary>Adjust display, audio or recovery (optional)</summary>
+                <p>
+                  The study settings are already applied. You do not need to change anything before starting.
+                  Simpler explanations and the standard/smiley answer presentation remain fixed by the study conductor.
+                </p>
+                ${this.renderSupportSettings('intro', 'presentation-only')}
+              </details>`
+            : nothing
+          : html`<details class="support-toolbar participant-support-setup">
               <summary>Adjust accessibility support (optional)</summary>
-              <p>The study settings are already applied. You do not need to change anything before starting.</p>
-              ${this.renderSupportSettings('intro')}
-            </details>`
-          : this.renderConfiguredSupportSummary()}
+              ${this.renderSupportSettings('intro', 'all')}
+            </details>`}
         ${this.renderReadAloudControl()} ${this.renderGazeSetup()}
 
         <button
@@ -416,57 +447,64 @@ export class AccessibleNasaTlx extends LitElement {
           <li>${support.voiceInputAvailable ? 'Confirmed voice input available' : 'Built-in voice input not included'}</li>
           <li>${support.gazeInputAvailable ? 'Experimental gaze input available' : 'Experimental gaze input not included'}</li>
         </ul>
+        <p>
+          ${support.participantAdjustmentPolicy === 'presentation-only'
+            ? 'You may optionally change text size, automatic spoken guidance or interruption recovery. The answer presentation and simpler-explanation setting remain fixed.'
+            : 'The prepared settings remain fixed for this study. You can still use any answer route that the study conductor made available.'}
+        </p>
       </aside>
     `;
   }
 
-  private renderSupportSettings(context: 'intro' | 'toolbar') {
+  private renderSupportSettings(context: 'intro' | 'toolbar', scope: 'all' | 'presentation-only') {
     const prefix = `support-${context}`;
     return html`
       <fieldset class="support-settings">
-        <legend>Accessibility support options</legend>
+        <legend>${scope === 'all' ? 'Accessibility support options' : 'Display and recovery preferences'}</legend>
 
-        <label class="toggle-card" for=${`${prefix}-simple`}>
-          <input
-            id=${`${prefix}-simple`}
-            type="checkbox"
-            .checked=${this.showSimpleLanguage}
-            @change=${(event: Event) => this.setSimpleLanguage(event)}
-          />
-          <span>
-            <strong>Show simpler explanations</strong>
-            <small>The official NASA wording remains visible once, without being duplicated inside the help.</small>
-          </span>
-        </label>
-
-        <fieldset class="answer-mode-control">
-          <legend>Rating answer format</legend>
-          <label for=${`${prefix}-standard-answer`}>
+        ${scope === 'all'
+          ? html`<label class="toggle-card" for=${`${prefix}-simple`}>
             <input
-              id=${`${prefix}-standard-answer`}
-              type="radio"
-              name=${`${prefix}-answer-mode`}
-              value="standard"
-              .checked=${this.answerMode === 'standard'}
-              @change=${() => this.setAnswerMode('standard')}
-            />
-            <span><strong>Standard 21-point scale</strong><small>Default NASA-TLX presentation.</small></span>
-          </label>
-          <label for=${`${prefix}-smiley-answer`}>
-            <input
-              id=${`${prefix}-smiley-answer`}
-              type="radio"
-              name=${`${prefix}-answer-mode`}
-              value="smiley"
-              .checked=${this.answerMode === 'smiley'}
-              @change=${() => this.setAnswerMode('smiley')}
+              id=${`${prefix}-simple`}
+              type="checkbox"
+              .checked=${this.showSimpleLanguage}
+              @change=${(event: Event) => this.setSimpleLanguage(event)}
             />
             <span>
-              <strong>Smiley landmarks</strong>
-              <small>Experimental five-value view; the precise scale is available only on request.</small>
+              <strong>Show simpler explanations</strong>
+              <small>The official NASA wording remains visible once, without being duplicated inside the help.</small>
             </span>
           </label>
-        </fieldset>
+
+          <fieldset class="answer-mode-control">
+            <legend>Rating answer format</legend>
+            <label for=${`${prefix}-standard-answer`}>
+              <input
+                id=${`${prefix}-standard-answer`}
+                type="radio"
+                name=${`${prefix}-answer-mode`}
+                value="standard"
+                .checked=${this.answerMode === 'standard'}
+                @change=${() => this.setAnswerMode('standard')}
+              />
+              <span><strong>Standard 21-point scale</strong><small>Default NASA-TLX presentation.</small></span>
+            </label>
+            <label for=${`${prefix}-smiley-answer`}>
+              <input
+                id=${`${prefix}-smiley-answer`}
+                type="radio"
+                name=${`${prefix}-answer-mode`}
+                value="smiley"
+                .checked=${this.answerMode === 'smiley'}
+                @change=${() => this.setAnswerMode('smiley')}
+              />
+              <span>
+                <strong>Smiley landmarks</strong>
+                <small>Experimental five-value view; the precise scale is available only on request.</small>
+              </span>
+            </label>
+          </fieldset>`
+          : nothing}
 
         <fieldset class="text-size-control">
           <legend>Text size</legend>
@@ -532,7 +570,7 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.audioStatusMessage
           ? html`<p class="audio-status" role="status" aria-atomic="true">${this.audioStatusMessage}</p>`
           : nothing}
-        ${this.canAdjustSupport
+        ${this.canAdjustPresentationSupport
           ? html`<label class="audio-guidance-toggle">
               <input
                 type="checkbox"
@@ -1024,9 +1062,10 @@ export class AccessibleNasaTlx extends LitElement {
             type="button"
             data-gaze-target
             data-gaze-label="Calculate and submit responses"
+            ?disabled=${this.submittingResult}
             @click=${this.submitResponses}
           >
-            Calculate and submit responses
+            ${this.submittingResult ? 'Submitting responses…' : 'Calculate and submit responses'}
           </button>
         </div>
       </section>
@@ -1043,7 +1082,16 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<p class="score">Weighted workload score: <strong>${this.result.weightedScore.toFixed(2)}</strong></p>`
           : html`<p>Your responses have been recorded. The study configuration does not display the calculated score on the participant page.</p>`}
         ${this.studyConfig
-          ? this.completionSavedLocally
+          ? this.completionSavedByHost
+            ? html`<div class="save-status" role="status">
+                <h3>Submitted to the study platform</h3>
+                <p>
+                  ${this.hostSinkName} confirmed receipt of submission
+                  <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>.
+                  The researcher should retrieve it from that approved platform.
+                </p>
+              </div>`
+            : this.completionSavedLocally
             ? html`<div class="save-status" role="status">
                 <h3>Saved on this device</h3>
                 <p>
@@ -1064,17 +1112,26 @@ export class AccessibleNasaTlx extends LitElement {
             </details>`
           : nothing}
         <div class="button-row compact">
-          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
-            Download JSON backup
-          </button>
-          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
-            Download CSV backup
-          </button>
+          ${this.completionSavedByHost
+            ? nothing
+            : html`<button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
+                Download JSON backup
+              </button>
+              <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
+                Download CSV backup
+              </button>`}
           ${!this.studyConfig
             ? html`<button class="secondary-button large-answer-button" type="button" @click=${this.restart}>Start again</button>`
             : nothing}
         </div>
-        ${this.studyConfig ? html`<p><strong>Participant:</strong> please return the device or completion notice to the study conductor.</p>` : nothing}
+        ${this.studyConfig
+          ? html`<p>
+              <strong>Participant:</strong>
+              ${this.completionSavedByHost
+                ? 'you may now follow the study platform instructions.'
+                : 'please return the device or completion notice to the study conductor.'}
+            </p>`
+          : nothing}
       </section>
     `;
   }
@@ -1266,6 +1323,7 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private returnToRatings = () => {
+    this.invalidatePendingSubmission();
     this.stage = 'ratings';
     this.ratingIndex = dimensions.length - 1;
     this.persistProgress();
@@ -1273,6 +1331,7 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private returnToPairs = () => {
+    this.invalidatePendingSubmission();
     this.stage = 'pairs';
     this.pairIndex = this.pairOrder.length - 1;
     this.persistProgress();
@@ -1282,7 +1341,7 @@ export class AccessibleNasaTlx extends LitElement {
   private effectiveStudyConfig(): StudyConfig {
     if (this.studyConfig) return this.studyConfig;
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       configId: 'demo-config',
       createdAt: this.startedAt || new Date().toISOString(),
       prototypeVersion: PROTOTYPE_VERSION,
@@ -1296,7 +1355,7 @@ export class AccessibleNasaTlx extends LitElement {
         largeText: false,
         audioGuidance: false,
         recoveryEnabled: false,
-        allowParticipantChanges: true,
+        participantAdjustmentPolicy: 'presentation-only',
         voiceInputAvailable: true,
         gazeInputAvailable: true,
       },
@@ -1320,21 +1379,47 @@ export class AccessibleNasaTlx extends LitElement {
     };
   }
 
-  private submitResponses = () => {
+  private submitResponses = async () => {
+    if (this.submittingResult) return;
     try {
-      this.result = calculateResult(this.pairOrder, this.pairResponses, this.ratings as Ratings);
-      this.submittedRecord = createStudyResultRecord({
-        config: this.effectiveStudyConfig(),
-        participantCode: this.studyConfig ? this.participantCode : 'DEMO',
-        startedAt: this.startedAt || new Date().toISOString(),
-        pairPresentationOrder: this.pairOrder.map(({ id }) => id),
-        pairwiseChoices: this.pairResponses,
-        result: this.result,
-        supportMetadata: this.currentSupportMetadata(),
-      });
-      this.completionSavedLocally = this.studyConfig
-        ? saveCompletedResult(this.submittedRecord)
-        : false;
+      if (!this.result || !this.submittedRecord) {
+        this.result = calculateResult(this.pairOrder, this.pairResponses, this.ratings as Ratings);
+        this.submittedRecord = createStudyResultRecord({
+          config: this.effectiveStudyConfig(),
+          participantCode: this.studyConfig ? this.participantCode : 'DEMO',
+          startedAt: this.startedAt || new Date().toISOString(),
+          pairPresentationOrder: this.pairOrder.map(({ id }) => id),
+          pairwiseChoices: this.pairResponses,
+          result: this.result,
+          supportMetadata: this.currentSupportMetadata(),
+        });
+      }
+      const sink = this.studyConfig ? configuredResultSink() : null;
+      this.completionSavedLocally = false;
+      this.completionSavedByHost = false;
+      this.hostSinkName = '';
+      this.hostReceipt = null;
+      if (sink) {
+        this.submittingResult = true;
+        this.statusMessage = `Submitting responses to ${sink.name}.`;
+        try {
+          this.hostReceipt = await submitToApprovedResultSink(this.submittedRecord, sink);
+          this.completionSavedByHost = true;
+          this.hostSinkName = sink.name;
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : 'The study platform did not accept the response.';
+          this.showError(
+            `${detail} Your answers remain on this page. Try submitting again or ask the study conductor for help.`,
+          );
+          return;
+        } finally {
+          this.submittingResult = false;
+        }
+      } else {
+        this.completionSavedLocally = this.studyConfig
+          ? saveCompletedResult(this.submittedRecord)
+          : false;
+      }
       this.dispatchEvent(new CustomEvent<StudyResultRecord>('nasa-tlx-complete', {
         detail: this.submittedRecord,
         bubbles: true,
@@ -1346,6 +1431,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.clearError();
       this.focusHeading();
     } catch (error) {
+      this.submittingResult = false;
       this.showError(error instanceof Error ? error.message : 'Responses could not be calculated.');
     }
   };
@@ -1386,6 +1472,10 @@ export class AccessibleNasaTlx extends LitElement {
     this.result = null;
     this.submittedRecord = null;
     this.completionSavedLocally = false;
+    this.completionSavedByHost = false;
+    this.hostSinkName = '';
+    this.hostReceipt = null;
+    this.submittingResult = false;
     this.startedAt = '';
     this.participantCodeError = '';
     if (this.studyConfig) this.participantCode = '';
@@ -1400,6 +1490,15 @@ export class AccessibleNasaTlx extends LitElement {
     this.statusMessage = 'A new questionnaire has started.';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  private invalidatePendingSubmission() {
+    this.result = null;
+    this.submittedRecord = null;
+    this.completionSavedLocally = false;
+    this.completionSavedByHost = false;
+    this.hostSinkName = '';
+    this.hostReceipt = null;
+  }
 
   private toggleReadAloud = () => {
     if (this.readingAloud) {
@@ -1922,13 +2021,17 @@ export class AccessibleNasaTlx extends LitElement {
     this.ratingInputRoutes = session.ratingInputRoutes;
     this.pairInputRoutes = session.pairInputRoutes;
     this.startedAt = session.startedAt;
-    if (this.canAdjustSupport) {
+    if (this.canAdjustAllSupport) {
       this.answerMode = session.support.answerMode;
       this.showSimpleLanguage = session.support.showSimpleLanguage;
       this.largeText = session.support.largeText;
       this.audioGuidance = Boolean(session.support.audioGuidance);
     } else {
       this.applyConfiguredSupport();
+      if (this.canAdjustPresentationSupport) {
+        this.largeText = session.support.largeText;
+        this.audioGuidance = Boolean(session.support.audioGuidance);
+      }
     }
     this.recoveryEnabled = true;
     this.savedSession = null;

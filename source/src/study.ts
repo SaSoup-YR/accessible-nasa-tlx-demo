@@ -1,10 +1,11 @@
 import { dimensions, pairs, type DimensionId } from './nasa-tlx';
-import type { PairResponses, TlxResult } from './scoring';
+import { calculateResult, type PairResponses, type TlxResult } from './scoring';
 
-export const PROTOTYPE_VERSION = '0.5.0';
-export const COMPLETED_RESULTS_KEY = 'accessible-nasa-tlx-v0.5-completed-results';
+export const PROTOTYPE_VERSION = '0.6.0';
+export const COMPLETED_RESULTS_KEY = 'accessible-nasa-tlx-v0.6-completed-results';
 
 export type AnswerMode = 'standard' | 'smiley';
+export type ParticipantAdjustmentPolicy = 'locked' | 'presentation-only';
 
 export interface StudySupportConfig {
   showSimpleLanguage: boolean;
@@ -12,13 +13,13 @@ export interface StudySupportConfig {
   largeText: boolean;
   audioGuidance: boolean;
   recoveryEnabled: boolean;
-  allowParticipantChanges: boolean;
+  participantAdjustmentPolicy: ParticipantAdjustmentPolicy;
   voiceInputAvailable: boolean;
   gazeInputAvailable: boolean;
 }
 
 export interface StudyConfig {
-  schemaVersion: 1;
+  schemaVersion: 2;
   configId: string;
   createdAt: string;
   prototypeVersion: typeof PROTOTYPE_VERSION;
@@ -45,7 +46,7 @@ export interface SupportMetadata {
 }
 
 export interface StudyResultRecord {
-  schemaVersion: 1;
+  schemaVersion: 2;
   submissionId: string;
   study: {
     studyId: string;
@@ -136,7 +137,7 @@ function validSupportConfig(value: unknown): value is StudySupportConfig {
     isBoolean(support.largeText) &&
     isBoolean(support.audioGuidance) &&
     isBoolean(support.recoveryEnabled) &&
-    isBoolean(support.allowParticipantChanges) &&
+    (support.participantAdjustmentPolicy === 'locked' || support.participantAdjustmentPolicy === 'presentation-only') &&
     isBoolean(support.voiceInputAvailable) &&
     isBoolean(support.gazeInputAvailable)
   );
@@ -149,7 +150,7 @@ export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pi
   }
   if (!validSupportConfig(draft.support)) throw new Error('The support configuration is incomplete.');
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     configId: overrides.configId ?? randomId('config'),
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     prototypeVersion: PROTOTYPE_VERSION,
@@ -165,7 +166,7 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
   if (!value || typeof value !== 'object') return false;
   const config = value as Record<string, unknown>;
   return (
-    config.schemaVersion === 1 &&
+    config.schemaVersion === 2 &&
     config.prototypeVersion === PROTOTYPE_VERSION &&
     typeof config.configId === 'string' &&
     config.configId.length > 0 &&
@@ -228,13 +229,13 @@ export function buildParticipantUrl(baseUrl: string, config: StudyConfig) {
 
 export function progressStorageKey(configId: string, participantCode: string) {
   if (!validParticipantCode(participantCode)) throw new Error('Invalid participant code.');
-  return `accessible-nasa-tlx-v0.5-progress:${configId}:${participantCode}`;
+  return `accessible-nasa-tlx-v0.6-progress:${configId}:${participantCode}`;
 }
 
 export function createStudyResultRecord(input: StudyResultInput): StudyResultRecord {
   if (!validParticipantCode(input.participantCode)) throw new Error('A valid pseudonymous participant code is required.');
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     submissionId: input.submissionId ?? randomId('submission'),
     study: {
       studyId: input.config.studyId,
@@ -260,17 +261,87 @@ export function createStudyResultRecord(input: StudyResultInput): StudyResultRec
   };
 }
 
+function sameNumber(left: number, right: number) {
+  return Number.isFinite(left) && Number.isFinite(right) && Math.abs(left - right) < 1e-9;
+}
+
+export function isStudyResultRecord(value: unknown): value is StudyResultRecord {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as StudyResultRecord;
+  if (
+    record.schemaVersion !== 2 ||
+    typeof record.submissionId !== 'string' ||
+    !record.submissionId ||
+    !validParticipantCode(record.participantCode) ||
+    !record.study ||
+    !validStudyId(record.study.studyId) ||
+    typeof record.study.configId !== 'string' ||
+    !record.study.configId ||
+    typeof record.study.studyTitle !== 'string' ||
+    typeof record.study.taskLabel !== 'string' ||
+    !record.timing ||
+    typeof record.timing.startedAt !== 'string' ||
+    typeof record.timing.completedAt !== 'string' ||
+    record.prototype?.name !== 'Accessible NASA-TLX' ||
+    record.prototype?.version !== PROTOTYPE_VERSION ||
+    record.instrument?.name !== 'NASA Task Load Index' ||
+    record.instrument?.version !== 'full weighted' ||
+    !validSupportConfig(record.configuration) ||
+    !record.responses ||
+    !record.result ||
+    !record.supportMetadata
+  ) {
+    return false;
+  }
+
+  const ratingValuesValid = dimensions.every(({ id }) => {
+    const rating = record.responses.ratings?.[id];
+    return Number.isInteger(rating) && rating >= 0 && rating <= 100 && rating % 5 === 0;
+  });
+  const pairResponsesValid = pairs.every(({ id, left, right }) => {
+    const choice = record.responses.pairwiseChoices?.[id];
+    return choice === left || choice === right;
+  });
+  const pairOrder = record.responses.pairPresentationOrder;
+  if (
+    !ratingValuesValid ||
+    !pairResponsesValid ||
+    !Array.isArray(pairOrder) ||
+    pairOrder.length !== pairs.length ||
+    new Set(pairOrder).size !== pairs.length
+  ) {
+    return false;
+  }
+
+  const pairById = new Map(pairs.map((pair) => [pair.id, pair]));
+  const orderedPairs = pairOrder.map((id) => pairById.get(id));
+  if (orderedPairs.some((pair) => !pair)) return false;
+
+  try {
+    const expected = calculateResult(
+      orderedPairs as Array<(typeof pairs)[number]>,
+      record.responses.pairwiseChoices,
+      record.responses.ratings,
+    );
+    return (
+      dimensions.every(({ id }) =>
+        sameNumber(record.result.ratings[id], expected.ratings[id]) &&
+        sameNumber(record.result.weights[id], expected.weights[id]) &&
+        sameNumber(record.result.adjustedRatings[id], expected.adjustedRatings[id])) &&
+      sameNumber(record.result.weightedScore, expected.weightedScore)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function loadCompletedResults(storage: StorageLike = localStorage): StudyResultRecord[] {
   try {
     const raw = storage.getItem(COMPLETED_RESULTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((record): record is StudyResultRecord => {
-      if (!record || typeof record !== 'object') return false;
-      const candidate = record as Partial<StudyResultRecord>;
-      return candidate.schemaVersion === 1 && typeof candidate.submissionId === 'string' && typeof candidate.participantCode === 'string';
-    });
+    return parsed.filter(isStudyResultRecord);
   } catch {
     return [];
   }

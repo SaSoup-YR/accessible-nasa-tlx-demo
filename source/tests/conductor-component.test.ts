@@ -36,8 +36,8 @@ describe('study conductor defaults and guidance', () => {
     expect(inputFor(component, 'Study title').placeholder).toBe('Route-planning workload study');
     expect(inputFor(component, 'Task label').placeholder).toContain('planning a route');
 
-    const adjustment = inputFor(component, 'Allow optional participant adjustments');
-    expect(adjustment.checked).toBe(false);
+    const locked = inputFor(component, 'Prepared settings only');
+    expect(locked.checked).toBe(true);
   });
 
   it('generates a separate participant link with the prepared support locked', async () => {
@@ -60,7 +60,7 @@ describe('study conductor defaults and guidance', () => {
 
     const link = component.querySelector<HTMLTextAreaElement>('#participant-link')!.value;
     const config = readStudyConfigFromHash(new URL(link).hash);
-    expect(config?.support.allowParticipantChanges).toBe(false);
+    expect(config?.support.participantAdjustmentPolicy).toBe('locked');
     expect(new URL(link).pathname).toMatch(/index\.html$/);
     expect(component.textContent).toContain('Configuration ready');
   });
@@ -69,7 +69,7 @@ describe('study conductor defaults and guidance', () => {
     const component = await renderConductor();
     const fileInput = component.querySelector<HTMLInputElement>('input[type="file"]')!;
     const resultExport = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       study: { studyId: 'TLX-TECH-01' },
       responses: { ratings: {} },
       result: { weightedScore: 50 },

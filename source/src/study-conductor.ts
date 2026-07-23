@@ -9,6 +9,7 @@ import {
   loadCompletedResults,
   resultsToCsv,
   type AnswerMode,
+  type ParticipantAdjustmentPolicy,
   type StudyConfig,
   type StudyResultRecord,
   type StudySupportConfig,
@@ -34,7 +35,7 @@ export class StudyConductorApp extends LitElement {
   @state() private largeText = false;
   @state() private audioGuidance = false;
   @state() private recoveryEnabled = true;
-  @state() private allowParticipantChanges = false;
+  @state() private participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'locked';
   @state() private voiceInputAvailable = true;
   @state() private gazeInputAvailable = false;
   @state() private generatedConfig: StudyConfig | null = null;
@@ -63,7 +64,7 @@ export class StudyConductorApp extends LitElement {
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
-          <p class="eyebrow">Study conductor · Version 0.5 candidate</p>
+          <p class="eyebrow">Study conductor · Version 0.6 final-candidate</p>
           <h1>Prepare an accessible NASA-TLX study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
@@ -72,8 +73,9 @@ export class StudyConductorApp extends LitElement {
           <h2>What this page does</h2>
           <p>
             This separates study setup from participant answering. Participants receive a configured questionnaire and do not
-            have to set it up themselves. This researcher page generates a separate participant page. Participant adjustments
-            are locked by default and should be enabled only when the approved protocol permits them.
+            have to set it up themselves. This researcher page generates a separate participant page. Measurement-adjacent
+            support remains fixed by the study configuration. Optional display, audio and recovery preferences are locked by
+            default and should be enabled only when the approved protocol permits personalisation.
           </p>
           <p>
             <strong>Current storage boundary:</strong> completed records stay in this browser on this device until the study conductor
@@ -126,9 +128,41 @@ export class StudyConductorApp extends LitElement {
             ${this.booleanOption('Save incomplete progress on this device', this.recoveryEnabled, (value) => { this.recoveryEnabled = value; })}
             ${this.booleanOption('Allow confirmed built-in voice answers', this.voiceInputAvailable, (value) => { this.voiceInputAvailable = value; })}
             ${this.booleanOption('Allow experimental webcam gaze input', this.gazeInputAvailable, (value) => { this.gazeInputAvailable = value; }, 'Default off because current gaze accuracy is recorded as Partial.')}
-            ${this.booleanOption('Allow optional participant adjustments after opening the link', this.allowParticipantChanges, (value) => { this.allowParticipantChanges = value; }, 'Default off for a controlled study. Turn on only when the approved protocol allows personalisation; the final settings are recorded.')}
             ${this.booleanOption('Show the weighted score to the participant', this.showScoreToParticipant, (value) => { this.showScoreToParticipant = value; }, 'Default off for a study; the conductor receives the score in the export.')}
           </div>
+
+          <fieldset class="answer-mode-control conductor-answer-mode">
+            <legend>Participant personalisation policy</legend>
+            <label>
+              <input
+                type="radio"
+                name="participant-adjustment-policy"
+                value="locked"
+                .checked=${this.participantAdjustmentPolicy === 'locked'}
+                @change=${() => { this.participantAdjustmentPolicy = 'locked'; }}
+              />
+              <span>
+                <strong>Prepared settings only</strong>
+                <small>Recommended default for a controlled study. The participant can still use any permitted answer route.</small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="participant-adjustment-policy"
+                value="presentation-only"
+                .checked=${this.participantAdjustmentPolicy === 'presentation-only'}
+                @change=${() => { this.participantAdjustmentPolicy = 'presentation-only'; }}
+              />
+              <span>
+                <strong>Allow display, audio and recovery preferences</strong>
+                <small>
+                  The participant may change text size, automatic spoken guidance and interruption recovery. Simpler
+                  explanations and the standard/smiley answer presentation remain fixed.
+                </small>
+              </span>
+            </label>
+          </fieldset>
 
           <fieldset class="answer-mode-control conductor-answer-mode">
             <legend>Starting rating presentation</legend>
@@ -213,10 +247,15 @@ export class StudyConductorApp extends LitElement {
         <section class="panel conductor-panel" aria-labelledby="remote-heading">
           <h2 id="remote-heading">Remote-study boundary</h2>
           <p>
-            A participant using another device would otherwise keep the result in that device's browser. Do not make the participant
-            download and email data as the normal study procedure. For remote collection, the host platform should listen for the
-            <code>nasa-tlx-complete</code> event and send the versioned result record to the UCL-approved Qualtrics or REDCap workflow
-            named in the ethics and data-management documents.
+            <strong>Central collection is not configured on this GitHub Pages deployment.</strong> A participant using another
+            device will otherwise keep the result in that device's browser. Do not make the participant download and email data
+            as the normal study procedure.
+          </p>
+          <p>
+            Version 0.6 provides the tested <code>accessibleNasaTlxResultSink</code> contract. The UCL-approved Qualtrics,
+            REDCap or other authorised host must install that contract and return a matching submission receipt. The participant
+            page then reports completion only after receipt; a failed save leaves the answers on Review for retry. Platform
+            selection, consent, retention and access must match the approved ethics and data-management documents.
           </p>
         </section>
       </main>
@@ -237,7 +276,7 @@ export class StudyConductorApp extends LitElement {
       largeText: this.largeText,
       audioGuidance: this.audioGuidance,
       recoveryEnabled: this.recoveryEnabled,
-      allowParticipantChanges: this.allowParticipantChanges,
+      participantAdjustmentPolicy: this.participantAdjustmentPolicy,
       voiceInputAvailable: this.voiceInputAvailable,
       gazeInputAvailable: this.gazeInputAvailable,
     };
@@ -254,7 +293,7 @@ export class StudyConductorApp extends LitElement {
     this.largeText = config.support.largeText;
     this.audioGuidance = config.support.audioGuidance;
     this.recoveryEnabled = config.support.recoveryEnabled;
-    this.allowParticipantChanges = config.support.allowParticipantChanges;
+    this.participantAdjustmentPolicy = config.support.participantAdjustmentPolicy;
     this.voiceInputAvailable = config.support.voiceInputAvailable;
     this.gazeInputAvailable = config.support.gazeInputAvailable;
     this.participantUrl = buildParticipantUrl(new URL('index.html', window.location.href).toString(), config);
@@ -309,7 +348,7 @@ export class StudyConductorApp extends LitElement {
             'This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready.',
           );
         }
-        throw new Error('This is not a valid Version 0.5 study configuration.');
+        throw new Error('This is not a valid Version 0.6 study configuration.');
       }
       this.useConfiguration(candidate);
       this.message = 'Configuration imported and participant link regenerated.';

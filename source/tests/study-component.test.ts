@@ -2,9 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/accessible-nasa-tlx';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
-import { buildParticipantUrl, createStudyConfig, loadCompletedResults, type StudyResultRecord } from '../src/study';
+import {
+  buildParticipantUrl,
+  createStudyConfig,
+  loadCompletedResults,
+  type ParticipantAdjustmentPolicy,
+  type StudyResultRecord,
+} from '../src/study';
 
-async function renderConfiguredComponent() {
+async function renderConfiguredComponent(
+  participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'locked',
+) {
   const config = createStudyConfig(
     {
       studyId: 'STUDY-01',
@@ -17,7 +25,7 @@ async function renderConfiguredComponent() {
         largeText: true,
         audioGuidance: false,
         recoveryEnabled: true,
-        allowParticipantChanges: false,
+        participantAdjustmentPolicy,
         voiceInputAvailable: false,
         gazeInputAvailable: false,
       },
@@ -67,6 +75,7 @@ afterEach(() => {
   localStorage.clear();
   window.history.replaceState({}, '', '/');
   delete (window as any).speechSynthesis;
+  delete window.accessibleNasaTlxResultSink;
   delete (globalThis as any).SpeechSynthesisUtterance;
   vi.restoreAllMocks();
 });
@@ -122,6 +131,18 @@ describe('study-conductor and participant separation', () => {
     expect(component.querySelector('.step-label')).toBeNull();
   });
 
+  it('allows only presentation preferences when the conductor permits participant personalisation', async () => {
+    const component = await renderConfiguredComponent('presentation-only');
+    const settings = component.querySelector('.participant-support-setup .support-settings')!;
+
+    expect(settings.textContent).toContain('Text size');
+    expect(settings.textContent).toContain('Save progress and show a return summary');
+    expect(settings.textContent).not.toContain('Show simpler explanations');
+    expect(settings.textContent).not.toContain('Smiley landmarks');
+    expect(component.textContent).toContain('answer presentation and simpler-explanation setting remain fixed');
+    expect(component.querySelector('.audio-guidance-toggle')).not.toBeNull();
+  });
+
   it('stores the complete record locally, emits the host event and hides the score when configured', async () => {
     const component = await renderConfiguredComponent();
     const emitted: StudyResultRecord[] = [];
@@ -139,5 +160,56 @@ describe('study-conductor and participant separation', () => {
     expect(component.querySelector('.save-status')?.textContent).toContain('stored only in this browser');
     expect(component.querySelector('.score')).toBeNull();
     expect(component.textContent).toContain('Download CSV backup');
+  });
+
+  it('uses an approved host sink for cross-device collection and does not duplicate the record locally', async () => {
+    const component = await renderConfiguredComponent();
+    const submitted: StudyResultRecord[] = [];
+    window.accessibleNasaTlxResultSink = {
+      name: 'UCL approved test platform',
+      async submit(record) {
+        submitted.push(record);
+        return {
+          accepted: true,
+          submissionId: record.submissionId,
+          receiptId: 'receipt-001',
+        };
+      },
+    };
+
+    await completeQuestionnaire(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+
+    expect(submitted).toHaveLength(1);
+    expect(loadCompletedResults()).toEqual([]);
+    expect(component.querySelector('.save-status')?.textContent).toContain('UCL approved test platform');
+    expect(component.querySelector('.save-status')?.textContent).toContain('receipt-001');
+    expect(component.textContent).not.toContain('Download JSON backup');
+  });
+
+  it('keeps answers on the review page when the approved host sink does not confirm receipt', async () => {
+    const component = await renderConfiguredComponent();
+    window.accessibleNasaTlxResultSink = {
+      name: 'Unavailable platform',
+      async submit() {
+        throw new Error('The platform is unavailable.');
+      },
+    };
+
+    await completeQuestionnaire(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+
+    expect(component.querySelector('#review-heading')).not.toBeNull();
+    expect(component.querySelector('#error-summary')?.textContent).toContain('answers remain on this page');
+    expect(document.activeElement).toBe(component.querySelector('#error-summary'));
+    expect(loadCompletedResults()).toEqual([]);
   });
 });

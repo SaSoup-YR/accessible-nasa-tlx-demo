@@ -1,6 +1,7 @@
-# Version 0.5 study-conductor, participant and data-boundary decision
+# Version 0.6 study-conductor, participant and data-boundary decision
 
-Decision date: 20 July 2026
+Initial role decision: 20 July 2026
+Remote-collection and permission refinement: 23 July 2026
 
 ## Trigger
 
@@ -10,11 +11,11 @@ Supervisor feedback identified three unresolved questions in Version 0.4:
 2. Why must a participant with an impairment configure the questionnaire before answering?
 3. How are the configuration and answers exported and where are answers saved?
 
-The feedback exposed an architecture problem rather than a missing download button. Version 0.4 combined study setup, participant support choices, questionnaire completion and result display in one interface. It saved only opted-in incomplete progress in `localStorage`, removed that progress at submission and displayed the final calculation without a download or host-integration route.
+The feedback exposed an architecture problem rather than a missing download button. Version 0.4 combined study setup, participant support choices, questionnaire completion and result display in one interface. It saved only opted-in incomplete progress in `localStorage`, removed that progress at submission and displayed the final calculation without a download or host-integration route. Version 0.6 further addresses cross-device collection and separates measurement-adjacent settings from presentation-only preferences.
 
 ## Decision
 
-Version 0.5 uses two pages backed by one tested source codebase:
+Version 0.6 uses two pages backed by one tested source codebase:
 
 - `study.html` is the **study-conductor page**. It records study context, prepares starting support, generates a participant link, exports the configuration and manages results stored in the same browser.
 - `index.html` is the **participant page**. It validates and applies the link configuration before answering, asks only for a pseudonymous study code and records the actual support/input routes separately from the NASA-TLX result.
@@ -37,7 +38,7 @@ This is role separation, not questionnaire duplication. Both pages import the sa
 
 1. Enter a non-identifying study ID, participant-facing study title and exact task label.
 2. Select starting support. Standard rating presentation is the recommended default; WebGazer is off by default because current accuracy evidence is Partial.
-3. Keep participant support changes locked by default. Enable optional changes only when personalisation is part of the approved protocol. This policy affects interface support only; it never unlocks official wording, response values, pairs or scoring.
+3. Keep **Prepared settings only** as the default. If the approved protocol permits personalisation, allow only text size, automatic spoken guidance and interruption recovery. Simpler explanations and the standard/smiley answer presentation remain fixed by configuration.
 4. Generate a versioned configuration with a unique configuration ID and creation timestamp.
 5. Download the configuration JSON as part of the protocol/freeze package.
 6. Give the generated link to the participant. No participant identifier or answer is placed in the link.
@@ -48,15 +49,12 @@ This is role separation, not questionnaire duplication. Both pages import the sa
 2. Enter the pseudonymous code supplied by the study conductor; no name or email is requested.
 3. Complete six ratings, fifteen comparisons, review and deliberate submission.
 4. The same official scoring function calculates ratings, weights, weighted products and weighted score.
-5. One versioned record is created, locally saved in same-device mode and emitted through the `nasa-tlx-complete` host event.
+5. One versioned record is created. It is locally saved in same-device mode, or sent through the installed approved-host result sink and completed only after a matching receipt. A confirmed completion emits the `nasa-tlx-complete` host event.
 
 ### Study conductor after completion
 
-1. Return to `study.html` in the same browser.
-2. Check the study ID, participant code, completion time and score in the local result table.
-3. Export all records as JSON and CSV.
-4. Verify the files and transfer them through the approved data-management route.
-5. Only then erase the local browser copy.
+1. In same-device mode, return to `study.html` in the same browser, export JSON/CSV, verify the files and only then erase the local copy.
+2. In approved-host mode, retrieve the records from the restricted platform account and reconcile the platform receipt/submission ID.
 
 ## Configuration design
 
@@ -75,10 +73,11 @@ The JSON export and participant link represent the same configuration ID. Re-imp
 
 ## Participant autonomy and study control
 
-Preconfiguration removes an avoidable setup task, but completely removing personal adjustment can also create barriers. W3C cognitive-accessibility guidance treats different user needs and personalisation as important beyond minimum WCAG conformance. Version 0.5 therefore separates two decisions:
+Preconfiguration removes an avoidable setup task, but completely removing personal adjustment can also create barriers. W3C cognitive-accessibility guidance treats different user needs and personalisation as important beyond minimum WCAG conformance. Version 0.6 therefore separates three decisions:
 
-- the conductor defines the starting study condition and whether experimental routes are available;
-- participant changes are locked by default, while a protocol can explicitly allow optional changes after opening; the final state and actual input route are recorded.
+- the conductor fixes measurement-adjacent support: simpler explanations and standard/smiley presentation;
+- the conductor defines whether voice and experimental gaze are available, while the participant chooses among permitted answer routes during completion;
+- prepared settings are the default, while an approved protocol may permit presentation-only changes to text size, automatic audio and interruption recovery.
 
 This does not solve the possible psychometric effect of simpler explanations or smiley presentation. If a study compares NASA-TLX scores, measurement-adjacent support should be fixed or analysed as a prespecified condition. If the study evaluates technical implementation routes, optional changes can be allowed but must not be treated as evidence that one interface suits every impairment.
 
@@ -103,7 +102,7 @@ Support metadata is never entered into the NASA-TLX calculation. Recording confi
 
 ## Saving and export boundary
 
-GitHub documents Pages as a static hosting service for HTML, CSS and JavaScript. It does not provide the authenticated research-data service required for central participant records. Version 0.5 therefore has two explicit modes:
+GitHub documents Pages as a static hosting service for HTML, CSS and JavaScript. It does not provide the authenticated research-data service required for central participant records. Version 0.6 therefore has two explicit modes:
 
 ### Implemented local same-device mode
 
@@ -117,7 +116,9 @@ This mode supports technical demonstration and a researcher-controlled same-devi
 
 ### Remote participant mode
 
-Remote devices do not share browser storage with the conductor. The participant must not be made responsible for routine result transfer. The `nasa-tlx-complete` event exposes the exact versioned record to an approved host adapter. UCL's current information-governance guidance identifies Qualtrics for information that is not highly confidential and REDCap/Data Safe Haven routes for higher-confidentiality work. The final platform depends on the approved data classification, procedure and ethics/data-management documents.
+Remote devices do not share browser storage with the conductor. The participant must not be made responsible for routine result transfer. Version 0.6 exposes an `accessibleNasaTlxResultSink` runtime contract to an approved host. It accepts completion only after the host returns a receipt containing the same idempotent submission ID. A failed or invalid receipt leaves the participant on Review with answers available for retry. The `nasa-tlx-complete` event is emitted after confirmed completion.
+
+UCL's current information-governance guidance identifies Qualtrics for information that is not highly confidential and REDCap/Data Safe Haven routes for higher-confidentiality work. The final platform depends on the approved data classification, procedure and ethics/data-management documents. The public GitHub link deliberately has no active remote destination.
 
 No API key or arbitrary upload URL is embedded in the participant link. Client-side secrets would not be secret, and an unrestricted destination would permit answer exfiltration.
 
@@ -160,22 +161,24 @@ Do not manually develop a divergent copy here. The stable public URL already sup
 
 ## Verification added
 
-Version 0.5 adds automated checks for:
+Version 0.6 adds automated checks for:
 
 - UTF-8 configuration encode/decode and exact-link regeneration;
 - invalid study identifiers;
 - complete local record saving and duplicate submission protection;
 - stable CSV columns for ratings, weights, pairs and routes;
 - configured participant-code gate and locked support;
+- presentation-only participant permissions that cannot change simpler explanations or standard/smiley presentation;
 - conductor guidance, separate participant-link generation and locked-by-default support;
 - first-request spoken summary without an unnecessary speech-queue cancellation;
 - configured task wording in the participant introduction summary;
 - complete-answer local saving and host-event emission;
+- approved-host submission receipts, false-receipt rejection, no duplicate local save and failure retention on Review;
 - hidden participant score policy;
 - structural axe scans of the study-conductor page;
-- Version 0.5 standalone syntax and boot.
+- Version 0.6 standalone syntax and boot.
 
-At this decision point, 47 tests across ten files and both production builds pass. The clean-clone standalone build now creates its output directory when absent. Manual browser, keyboard, screen-reader, reflow, contrast, cross-device and storage-clearance checks remain necessary before a freeze.
+At this decision point, 56 tests across eleven files and both production builds pass, including four axe-core structural scans. Manual browser, keyboard, screen-reader, reflow, contrast, approved-host cross-device and storage-clearance checks remain necessary before a freeze.
 
 ## Authoritative external guidance used
 
@@ -189,4 +192,4 @@ At this decision point, 47 tests across ten files and both production builds pas
 
 ## Claim boundary
 
-Version 0.5 demonstrates role separation, reproducible configuration, complete result construction, same-device saving/export and a host-integration contract. It does not demonstrate secure remote collection, approved research-data governance, participant usability, accessibility for a disability group, psychometric equivalence or improved comprehension. Participant involvement remains gated by supervisor review of the frozen prototype and the applicable ethics/data-protection route.
+Version 0.6 demonstrates role separation, reproducible configuration, complete result construction, same-device saving/export, a receipt-validated host contract and a prespecified participant-permission model. It does not demonstrate an activated Qualtrics/REDCap deployment, approved research-data governance, participant usability, accessibility for a disability group, psychometric equivalence or improved comprehension. Participant involvement remains gated by supervisor review of the frozen prototype and the applicable ethics/data-protection route.
