@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distHtmlPath = resolve(root, 'dist-standalone/index.html');
-const outputPath = resolve(root, 'demo/accessible-nasa-tlx-v0.5.html');
+const outputPath = resolve(root, 'demo/accessible-nasa-tlx-v0.6.html');
 
 let html = readFileSync(distHtmlPath, 'utf8');
 const scriptMatch = html.match(/src="\.\/(assets\/[^\"]+\.js)"/);
@@ -24,8 +24,8 @@ html = html
   .replace(/    <script type="module" crossorigin src="[^\"]+"><\/script>\n/, () => '')
   .replace(/    <link rel="stylesheet" crossorigin href="[^\"]+">/, () => `    <style>${stylesheet}</style>`)
   .replace(
-    'Participant questionnaire for the Accessible NASA-TLX Version 0.5 study-workflow candidate',
-    'Self-contained participant questionnaire for Accessible NASA-TLX Version 0.5',
+    'Participant questionnaire for the Accessible NASA-TLX Version 0.6 final-candidate',
+    'Self-contained participant questionnaire for Accessible NASA-TLX Version 0.6',
   )
   .replace('  </body>', () => `    <script type="module">${javascript}</script>\n  </body>`);
 
