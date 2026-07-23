@@ -90,6 +90,7 @@ describe('automated structural accessibility scan', () => {
         voiceInputAvailable: true,
         gazeInputAvailable: false,
       },
+      collection: { mode: 'local' },
     });
     const url = new URL(buildParticipantUrl(window.location.href, config));
     window.history.replaceState({}, '', url.pathname + url.hash);
