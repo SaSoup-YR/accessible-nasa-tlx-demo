@@ -1,20 +1,23 @@
 {
   "prototype": "Accessible NASA-TLX",
-  "version": "0.6.0",
-  "releaseStatus": "final-candidate architecture",
+  "version": "0.7.0",
+  "releaseStatus": "release candidate; UCL Qualtrics activation and supervisor review pending",
   "canonicalRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
-  "canonicalCommit": "7dc465f2e5c1aaaf9ab1e641bcda14a9aaee0ac7",
-  "builtAt": "2026-07-23T16:20:51Z",
+  "canonicalCommit": "0076e04ef3a58c33dcfb06c737ae37f12fcc49a5",
+  "builtAt": "2026-07-23T18:05:16Z",
   "verification": {
     "testFilesPassed": 11,
-    "testsPassed": 56,
+    "testsPassed": 62,
     "axeStructuralScansPassed": 4,
     "typescriptBuild": "passed",
-    "productionBuild": "passed"
+    "productionBuild": "passed",
+    "standaloneBuild": "passed",
+    "qualtricsBridgeTests": "passed",
+    "highLevelDependencyAudit": "0 vulnerabilities"
   },
   "entryPoints": {
     "participant": "index.html",
     "studyConductor": "study.html"
   },
-  "storageMode": "local fallback plus a receipt-validated approved-host result-sink contract; no active remote destination on raw GitHub Pages"
+  "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification"
 }
