@@ -1,18 +1,20 @@
-# Version 0.6 source snapshot
+# Version 0.7 source snapshot
 
-This directory is the readable source-and-test snapshot used to build the public Version 0.6 final-candidate. It is published so another researcher can inspect the measurement logic, role separation, configuration contract, result schema, approved-host boundary and verification tests.
+This directory builds the public Version 0.7 release candidate. It exposes the instrument, scoring, two-role study workflow, auditable support preferences, receipt validation, Qualtrics child sink and automated tests.
 
-The full dissertation history, earlier prototypes, audit evidence and decision trail remain in the private canonical repository `SaSoup-YR/accessible-hci-questionnaire-library`. Changes are implemented and tested there first, then released here in one direction. Do not maintain a separate implementation in this snapshot.
+The private `SaSoup-YR/accessible-hci-questionnaire-library` repository remains the canonical dissertation/evidence source. This public snapshot supports inspection and reproducibility.
 
 ## Structure
 
-- `src/nasa-tlx.ts` — instrument data and the fifteen unique pairs.
-- `src/scoring.ts` — weight and weighted-score calculation.
-- `src/study.ts` — versioned configuration/result schemas, link encoding, local saving and CSV/JSON export.
-- `src/result-sink.ts` — provider-neutral, receipt-validated contract for an approved host platform.
-- `src/study-conductor.ts` — conductor configuration and result-export page.
-- `src/accessible-nasa-tlx.ts` — participant questionnaire component.
-- `tests/` — measurement, interaction, study-workflow, standalone and structural-accessibility checks.
+- `src/nasa-tlx.ts` — six dimensions, anchors, rating values and fifteen pairs.
+- `src/scoring.ts` — full weighted NASA-TLX calculation.
+- `src/study.ts` — Version 0.7 configuration/result schemas, local export and support-change provenance.
+- `src/result-sink.ts` — provider contract and exact-origin Qualtrics child-to-parent sink.
+- `src/study-conductor.ts` — researcher setup, participant policies and local/Qualtrics collection choice.
+- `src/accessible-nasa-tlx.ts` — participant questionnaire.
+- `tests/` — measurement, interaction, workflow, collection, packaging and structural-accessibility checks.
+
+The matching Qualtrics parent script, HTML and Embedded Data manifest are in repository-root [`integrations/qualtrics/`](../integrations/qualtrics/).
 
 ## Run
 
@@ -23,12 +25,8 @@ npm run dev
 npm run build:standalone
 ```
 
-The participant development route is `/`; the study-conductor route is `/study.html`.
-
-The study conductor prepares the questionnaire and participant adjustments are locked by default. A generated link opens the separate participant route with the configuration already applied. If the approved protocol permits it, the conductor can allow only text-size, automatic-audio and recovery preferences. Simpler explanations and the standard/smiley answer presentation remain fixed.
-
-`demo/accessible-nasa-tlx-v0.6.html` is intentionally participant-only. It is not a second study-conductor implementation; see `demo/README.md` for the file and hosting boundary.
+The development routes are `/` for participants and `/study.html` for conductors. `demo/accessible-nasa-tlx-v0.7.html` is a participant-only technical file and cannot collect centrally from `file://`.
 
 ## Evidence boundary
 
-This source demonstrates technical behaviour. It does not establish WCAG conformance, psychometric equivalence, improved comprehension, secure remote data collection or effectiveness for a disability group. The experimental gaze route remains Partial. Participant data collection remains subject to supervisor review and the applicable ethics and data-protection route.
+This source demonstrates technical behaviour. It does not establish that the interface is more accessible for a disability group, that optional presentations are psychometrically equivalent or that WebGazer provides accurate independent control. Participant data collection remains gated by supervisor review, ethics/information-governance requirements and a successful synthetic Qualtrics cross-device test.
