@@ -1,14 +1,14 @@
 {
   "prototype": "Accessible NASA-TLX",
-  "version": "0.5.0",
-  "releaseStatus": "study-workflow candidate",
+  "version": "0.6.0",
+  "releaseStatus": "final-candidate architecture",
   "canonicalRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
-  "canonicalCommit": "640ce7f345483615db3a371ca68c31c618028bec",
-  "builtAt": "2026-07-20T23:49:17Z",
+  "canonicalCommit": "7dc465f2e5c1aaaf9ab1e641bcda14a9aaee0ac7",
+  "builtAt": "2026-07-23T16:20:51Z",
   "verification": {
-    "testFilesPassed": 10,
-    "testsPassed": 47,
-    "axeStructuralScansPassed": 3,
+    "testFilesPassed": 11,
+    "testsPassed": 56,
+    "axeStructuralScansPassed": 4,
     "typescriptBuild": "passed",
     "productionBuild": "passed"
   },
@@ -16,5 +16,5 @@
     "participant": "index.html",
     "studyConductor": "study.html"
   },
-  "storageMode": "same-origin browser storage with CSV/JSON export; no remote database"
+  "storageMode": "local fallback plus a receipt-validated approved-host result-sink contract; no active remote destination on raw GitHub Pages"
 }
