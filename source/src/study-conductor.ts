@@ -7,9 +7,11 @@ import {
   downloadTextFile,
   isStudyConfig,
   loadCompletedResults,
+  normaliseHttpsOrigin,
   resultsToCsv,
   type AnswerMode,
   type ParticipantAdjustmentPolicy,
+  type StudyCollectionConfig,
   type StudyConfig,
   type StudyResultRecord,
   type StudySupportConfig,
@@ -35,9 +37,11 @@ export class StudyConductorApp extends LitElement {
   @state() private largeText = false;
   @state() private audioGuidance = false;
   @state() private recoveryEnabled = true;
-  @state() private participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'locked';
+  @state() private participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'participant-choice';
   @state() private voiceInputAvailable = true;
   @state() private gazeInputAvailable = false;
+  @state() private collectionMode: StudyCollectionConfig['mode'] = 'local';
+  @state() private qualtricsSurveyUrl = '';
   @state() private generatedConfig: StudyConfig | null = null;
   @state() private participantUrl = '';
   @state() private message = '';
@@ -64,7 +68,7 @@ export class StudyConductorApp extends LitElement {
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
-          <p class="eyebrow">Study conductor · Version 0.6 final-candidate</p>
+          <p class="eyebrow">Study conductor · Version 0.7 release candidate</p>
           <h1>Prepare an accessible NASA-TLX study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
@@ -74,13 +78,13 @@ export class StudyConductorApp extends LitElement {
           <p>
             This separates study setup from participant answering. Participants receive a configured questionnaire and do not
             have to set it up themselves. This researcher page generates a separate participant page. Measurement-adjacent
-            support remains fixed by the study configuration. Optional display, audio and recovery preferences are locked by
-            default and should be enabled only when the approved protocol permits personalisation.
+            support starts from the study configuration. The conductor can keep it fixed or allow documented participant
+            preferences without making initial configuration a participant task.
           </p>
           <p>
-            <strong>Current storage boundary:</strong> completed records stay in this browser on this device until the study conductor
-            exports them. GitHub Pages does not provide a research database. Use this local mode only for an approved,
-            researcher-controlled same-device procedure. A remote study needs an approved UCL data-collection platform.
+            <strong>Collection boundary:</strong> local mode stays in this browser. Qualtrics mode sends a completed,
+            pseudonymous record to the exact approved Qualtrics survey origin through the documented bridge. It places no
+            account token in the participant page.
           </p>
         </aside>
 
@@ -143,7 +147,7 @@ export class StudyConductorApp extends LitElement {
               />
               <span>
                 <strong>Prepared settings only</strong>
-                <small>Recommended default for a controlled study. The participant can still use any permitted answer route.</small>
+                <small>Use for a controlled measurement condition. The participant can still use any permitted answer route.</small>
               </span>
             </label>
             <label>
@@ -162,6 +166,22 @@ export class StudyConductorApp extends LitElement {
                 </small>
               </span>
             </label>
+            <label>
+              <input
+                type="radio"
+                name="participant-adjustment-policy"
+                value="participant-choice"
+                .checked=${this.participantAdjustmentPolicy === 'participant-choice'}
+                @change=${() => { this.participantAdjustmentPolicy = 'participant-choice'; }}
+              />
+              <span>
+                <strong>Prepared defaults with optional participant choice</strong>
+                <small>
+                  Recommended for evaluating the accessibility support. Nothing must be configured before starting; the
+                  participant may change optional support, and every change is exported separately from the NASA-TLX answers.
+                </small>
+              </span>
+            </label>
           </fieldset>
 
           <fieldset class="answer-mode-control conductor-answer-mode">
@@ -177,8 +197,61 @@ export class StudyConductorApp extends LitElement {
           </fieldset>
         </section>
 
+        <section class="panel conductor-panel" aria-labelledby="collection-heading">
+          <h2 id="collection-heading">3. Choose where completed results are collected</h2>
+          <fieldset class="answer-mode-control conductor-answer-mode">
+            <legend>Result collection route</legend>
+            <label>
+              <input
+                type="radio"
+                name="collection-mode"
+                value="local"
+                .checked=${this.collectionMode === 'local'}
+                @change=${() => { this.collectionMode = 'local'; }}
+              />
+              <span>
+                <strong>This browser only</strong>
+                <small>Use for development and supervised same-device testing. It does not collect results across devices.</small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="collection-mode"
+                value="qualtrics"
+                .checked=${this.collectionMode === 'qualtrics'}
+                @change=${() => { this.collectionMode = 'qualtrics'; }}
+              />
+              <span>
+                <strong>UCL Qualtrics central collection</strong>
+                <small>Recommended for an approved remote study that does not collect highly confidential data.</small>
+              </span>
+            </label>
+          </fieldset>
+          ${this.collectionMode === 'qualtrics'
+            ? html`<label class="full-width">
+                <strong>Qualtrics survey or preview URL</strong>
+                <span>
+                  Paste the HTTPS URL opened by your UCL Qualtrics survey. Only its exact origin is stored in the
+                  questionnaire configuration; the survey identifier is not exposed in the result record.
+                </span>
+                <input
+                  placeholder="https://your-ucl-brand.eu.qualtrics.com/jfe/form/SV_..."
+                  autocomplete="off"
+                  spellcheck="false"
+                  .value=${this.qualtricsSurveyUrl}
+                  @input=${(event: Event) => { this.qualtricsSurveyUrl = (event.currentTarget as HTMLInputElement).value; }}
+                />
+              </label>
+              <p class="support-boundary">
+                Participants must receive the Qualtrics distribution link, not the embedded GitHub page URL. Complete the
+                one-question bridge setup and verify a synthetic record in Qualtrics Data &amp; Analysis before recruitment.
+              </p>`
+            : nothing}
+        </section>
+
         <section class="panel conductor-panel" aria-labelledby="link-heading">
-          <h2 id="link-heading">3. Generate the participant link</h2>
+          <h2 id="link-heading">4. Generate the participant configuration</h2>
           <div class="button-row compact">
             <button class="primary-button large-answer-button" type="button" @click=${this.generateParticipantLink}>Generate link</button>
             <label class="file-button secondary-button">
@@ -199,13 +272,29 @@ export class StudyConductorApp extends LitElement {
                   <div><dt>Configuration ID</dt><dd>${this.generatedConfig.configId}</dd></div>
                   <div><dt>Created</dt><dd>${this.generatedConfig.createdAt}</dd></div>
                 </dl>
-                <label for="participant-link"><strong>Participant link</strong></label>
+                <label for="participant-link">
+                  <strong>${this.generatedConfig.collection.mode === 'qualtrics'
+                    ? 'Participant page URL for the Qualtrics iframe'
+                    : 'Participant link'}</strong>
+                </label>
                 <textarea id="participant-link" readonly rows="5" .value=${this.participantUrl}></textarea>
                 <div class="button-row compact">
                   <button class="secondary-button" type="button" @click=${this.copyParticipantLink}>Copy link</button>
-                  <a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>
+                  ${this.generatedConfig.collection.mode === 'local'
+                    ? html`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`
+                    : nothing}
                   <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
                 </div>
+                ${this.generatedConfig.collection.mode === 'qualtrics'
+                  ? html`<div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
+                      <h3 id="qualtrics-setup-heading">Qualtrics iframe HTML</h3>
+                      <p>Paste this into the HTML view of the Qualtrics question, then install the tested question JavaScript from the integration guide.</p>
+                      <textarea readonly rows="8" .value=${this.qualtricsIframeHtml()}></textarea>
+                      <p>
+                        <a href="docs/QUALTRICS-INTEGRATION.md">Open the Qualtrics integration and verification guide</a>
+                      </p>
+                    </div>`
+                  : nothing}
                 <p class="support-boundary">
                   Save the JSON with the study protocol. Importing it later regenerates the same configuration ID and participant link.
                   The link contains settings only; it contains no participant name, email or answer.
@@ -215,7 +304,7 @@ export class StudyConductorApp extends LitElement {
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="results-heading">
-          <h2 id="results-heading">4. Results saved on this device</h2>
+          <h2 id="results-heading">5. Results saved on this device</h2>
           <p><strong>${this.completedResults.length}</strong> completed record${this.completedResults.length === 1 ? '' : 's'} found in this browser.</p>
           ${this.completedResults.length
             ? html`
@@ -252,10 +341,10 @@ export class StudyConductorApp extends LitElement {
             as the normal study procedure.
           </p>
           <p>
-            Version 0.6 provides the tested <code>accessibleNasaTlxResultSink</code> contract. The UCL-approved Qualtrics,
-            REDCap or other authorised host must install that contract and return a matching submission receipt. The participant
-            page then reports completion only after receipt; a failed save leaves the answers on Review for retry. Platform
-            selection, consent, retention and access must match the approved ethics and data-management documents.
+            Version 0.7 includes a tested Qualtrics parent bridge. The participant page sends a complete record only to the
+            exact HTTPS origin stored by the conductor; Qualtrics writes the fields into the current response and returns a
+            matching receipt before advancing. A failed save leaves the answers on Review for retry. Platform selection,
+            consent, retention and access must still match the approved ethics and data-management documents.
           </p>
         </section>
       </main>
@@ -282,6 +371,18 @@ export class StudyConductorApp extends LitElement {
     };
   }
 
+  private currentCollectionConfig(): StudyCollectionConfig {
+    if (this.collectionMode === 'local') return { mode: 'local' };
+    const parentOrigin = normaliseHttpsOrigin(this.qualtricsSurveyUrl);
+    if (!parentOrigin) {
+      throw new Error('Enter a valid HTTPS Qualtrics survey or preview URL for central collection.');
+    }
+    if (parentOrigin === window.location.origin) {
+      throw new Error('The Qualtrics origin must be different from this GitHub Pages website.');
+    }
+    return { mode: 'qualtrics', parentOrigin };
+  }
+
   private useConfiguration(config: StudyConfig) {
     this.generatedConfig = config;
     this.studyId = config.studyId;
@@ -296,7 +397,24 @@ export class StudyConductorApp extends LitElement {
     this.participantAdjustmentPolicy = config.support.participantAdjustmentPolicy;
     this.voiceInputAvailable = config.support.voiceInputAvailable;
     this.gazeInputAvailable = config.support.gazeInputAvailable;
+    this.collectionMode = config.collection.mode;
+    this.qualtricsSurveyUrl = config.collection.mode === 'qualtrics' ? config.collection.parentOrigin : '';
     this.participantUrl = buildParticipantUrl(new URL('index.html', window.location.href).toString(), config);
+  }
+
+  private qualtricsIframeHtml() {
+    if (!this.generatedConfig || this.generatedConfig.collection.mode !== 'qualtrics') return '';
+    const escapedUrl = this.participantUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    return [
+      '<iframe',
+      '  id="accessible-nasa-tlx-frame"',
+      `  src="${escapedUrl}"`,
+      '  title="Accessible NASA Task Load Index participant questionnaire"',
+      '  allow="camera; microphone"',
+      '  style="width:100%;min-height:1200px;border:0"',
+      '></iframe>',
+      '<p id="accessible-nasa-tlx-collection-status" role="status" aria-live="polite"></p>',
+    ].join('\n');
   }
 
   private generateParticipantLink = () => {
@@ -308,6 +426,7 @@ export class StudyConductorApp extends LitElement {
         taskLabel: this.taskLabel,
         showScoreToParticipant: this.showScoreToParticipant,
         support: this.currentSupportConfig(),
+        collection: this.currentCollectionConfig(),
       });
       this.useConfiguration(config);
       this.message = 'Participant link and configuration generated.';
@@ -348,7 +467,7 @@ export class StudyConductorApp extends LitElement {
             'This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready.',
           );
         }
-        throw new Error('This is not a valid Version 0.6 study configuration.');
+        throw new Error('This is not a valid Version 0.7 study configuration.');
       }
       this.useConfiguration(candidate);
       this.message = 'Configuration imported and participant link regenerated.';
