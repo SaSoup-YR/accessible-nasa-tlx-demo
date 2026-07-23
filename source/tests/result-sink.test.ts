@@ -124,6 +124,19 @@ describe('approved host result sink', () => {
     expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
     expect(bridge).toContain('var rawChunkLength = 900');
     expect(bridge).toContain('var maximumRawChunks = 24');
+    expect(bridge).toContain('var advanceDelayMs = 2500');
+    expect(bridge).toContain('}, advanceDelayMs);');
+    expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
+    expect(bridge).not.toContain('Qualtrics.SurveyEngine.setEmbeddedData(');
     expect(bridge).not.toMatch(/postMessage\([^)]*,\s*['"]\*['"]\s*\)/);
+
+    const embeddedDataFields = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/embedded-data-fields.txt'),
+      'utf8',
+    )
+      .trim()
+      .split(/\r?\n/);
+    expect(embeddedDataFields).toHaveLength(63);
+    expect(embeddedDataFields.every((field) => field.startsWith('__js_ANTLX_'))).toBe(true);
   });
 });

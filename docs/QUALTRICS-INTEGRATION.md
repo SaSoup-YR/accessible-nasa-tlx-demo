@@ -22,7 +22,7 @@ The supervisor must review the final prototype before any participant data are c
 4. Open the study-conductor page and select **UCL Qualtrics central collection**.
 5. Paste the active or preview Qualtrics URL, complete the study settings and generate the configuration.
 6. In the Qualtrics question's HTML view, paste the generated iframe HTML. The static template is also in [`integrations/qualtrics/question-html-template.html`](../integrations/qualtrics/question-html-template.html).
-7. Add an Embedded Data element near the start of Survey Flow. Declare every field in [`integrations/qualtrics/embedded-data-fields.txt`](../integrations/qualtrics/embedded-data-fields.txt). Leave their values unset.
+7. Add an Embedded Data element near the start of Survey Flow. Declare every field in [`integrations/qualtrics/embedded-data-fields.txt`](../integrations/qualtrics/embedded-data-fields.txt), including the `__js_` prefix, and leave the values unset. The JavaScript deliberately passes names without that prefix to `setJSEmbeddedData`; Qualtrics maps those calls to the prefixed Survey Flow fields.
 8. Open the question's JavaScript editor and replace its contents with [`integrations/qualtrics/qualtrics-question.js`](../integrations/qualtrics/qualtrics-question.js).
 9. Put an End of Survey element after the prototype page. Activate the survey only after the checks below pass.
 
@@ -36,17 +36,28 @@ Use a non-participant code such as `TEST-001`.
 2. Complete all six ratings and fifteen comparisons.
 3. Confirm that the participant page reports that UCL Qualtrics accepted the response and that Qualtrics advances to its next page.
 4. In Data & Analysis, verify one response with:
-   - `ANTLX_ACCEPTED = 1`;
-   - the same `ANTLX_SUBMISSION_ID` across the exported row;
+   - `__js_ANTLX_ACCEPTED = 1`;
+   - the same `__js_ANTLX_SUBMISSION_ID` across the exported row;
    - six ratings and six weights;
-   - fifteen pair choices in `ANTLX_PAIR_CHOICES_JSON`;
+   - fifteen pair choices in `__js_ANTLX_PAIR_CHOICES_JSON`;
    - the expected participant code and weighted score;
    - the configured support, final support state and support-change count.
-5. Export the response and reconstruct the lossless JSON by concatenating `ANTLX_RAW_01` through the number in `ANTLX_RAW_CHUNK_COUNT`.
+5. Export the response and reconstruct the lossless JSON by concatenating `__js_ANTLX_RAW_01` through the number in `__js_ANTLX_RAW_CHUNK_COUNT`.
 6. Retry once with the network interrupted at submission. The questionnaire must remain on Review and allow retry instead of reporting a false completion.
 7. Delete the synthetic response before recruitment if the approved plan requires a clean dataset.
 
 Record the survey ID, activated distribution URL, frozen Git commit, configuration JSON, test date, browser/device and exported synthetic row in the study log.
+
+After Qualtrics acknowledges the record, the bridge leaves the saved confirmation
+visible for 2.5 seconds before advancing. This short fixed delay makes the transition
+legible without adding another participant action after the response has already been
+submitted.
+
+Existing responses and old unprefixed fields are not populated retroactively. After
+changing the Survey Flow, publish it and create a new synthetic response. If an export
+must use headings without `__js_`, either rename the columns after export or add a
+second Embedded Data element after the NASA-TLX block that pipes each prefixed value
+into a separate unprefixed field.
 
 ## Participant preference policy
 

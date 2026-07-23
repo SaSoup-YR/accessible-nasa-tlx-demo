@@ -5,7 +5,7 @@
  * question that contains the iframe from question-html-template.html.
  * Keep the participant prototype on https://sasoup-yr.github.io.
  */
-Qualtrics.SurveyEngine.addOnReady(function () {
+Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var question = this;
   var childOrigin = 'https://sasoup-yr.github.io';
   var submitType = 'accessible-nasa-tlx:qualtrics-submit:v1';
@@ -17,6 +17,7 @@ Qualtrics.SurveyEngine.addOnReady(function () {
   var advancing = false;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
+  var advanceDelayMs = 2500;
 
   question.hideNextButton();
 
@@ -35,7 +36,10 @@ Qualtrics.SurveyEngine.addOnReady(function () {
   }
 
   function setField(name, value) {
-    Qualtrics.SurveyEngine.setEmbeddedData(name, value === null || value === undefined ? '' : String(value));
+    Qualtrics.SurveyEngine.setJSEmbeddedData(
+      name,
+      value === null || value === undefined ? '' : String(value)
+    );
   }
 
   function requireRecord(record) {
@@ -131,11 +135,11 @@ Qualtrics.SurveyEngine.addOnReady(function () {
       storeRecord(message.record);
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
-      setStatus('Response accepted. Qualtrics is saving the study record.');
+      setStatus('Response accepted. Qualtrics is saving the study record. Continuing shortly.');
       sendReceipt(event.source, true, acceptedSubmissionId);
-      window.setTimeout(function () {
+      window.setTimeout(function advanceAfterAcceptedRecord() {
         question.clickNextButton();
-      }, 800);
+      }, advanceDelayMs);
     } catch (error) {
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';
       setStatus(detail + ' Return to the questionnaire and try again.');
@@ -150,7 +154,7 @@ Qualtrics.SurveyEngine.addOnReady(function () {
 
   setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
-  Qualtrics.SurveyEngine.addOnUnload(function () {
+  Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleNasaTlxListener() {
     window.removeEventListener('message', receiveResult);
   });
 });
