@@ -1,8 +1,8 @@
-import{a as o,t as h,i as g,m,b as c,n as y,o as b,f,q as v,A as u,j as l,u as w}from"./study-DWGQuJDx.js";var C=Object.defineProperty,k=Object.getOwnPropertyDescriptor,s=(e,i,r,a)=>{for(var n=a>1?void 0:a?k(i,r):i,d=e.length-1,p;d>=0;d--)(p=e[d])&&(n=(a?p(i,r,n):p(n))||n);return a&&n&&C(i,r,n),n};function S(e){const i=Array.isArray(e)?e:[e];return i.length>0&&i.some(r=>{if(!r||typeof r!="object")return!1;const a=r;return"study"in a&&"responses"in a&&"result"in a})}let t=class extends g{constructor(){super(...arguments),this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.allowParticipantChanges=!1,this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.generateParticipantLink=()=>{this.errorMessage="";try{const e=m({studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{if(this.participantUrl)try{await navigator.clipboard.writeText(this.participantUrl),this.message="Participant link copied."}catch{this.message="Automatic copy was unavailable. Select and copy the link from the text box."}},this.downloadConfiguration=()=>{this.generatedConfig&&c(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const i=e.currentTarget,r=i.files?.[0];if(r){this.errorMessage="";try{const a=JSON.parse(await r.text());if(!y(a))throw S(a)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.5 study configuration.");this.useConfiguration(a),this.message="Configuration imported and participant link regenerated."}catch(a){this.showError(a instanceof Error?a.message:"The configuration file could not be read.")}finally{i.value=""}}},this.refreshResults=()=>{this.completedResults=b()},this.exportResultsJson=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${f(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed NASA-TLX record stored by this site in this browser? Confirm only after checking the exported files.")&&(v(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}render(){return l`
+import{a as i,t as h,i as g,n as m,e as c,o as y,q as b,g as f,u as v,A as u,k as l,w}from"./study-D66GjkPs.js";var k=Object.defineProperty,S=Object.getOwnPropertyDescriptor,s=(e,o,n,a)=>{for(var r=a>1?void 0:a?S(o,n):o,d=e.length-1,p;d>=0;d--)(p=e[d])&&(r=(a?p(o,n,r):p(r))||r);return a&&r&&k(o,n,r),r};function C(e){const o=Array.isArray(e)?e:[e];return o.length>0&&o.some(n=>{if(!n||typeof n!="object")return!1;const a=n;return"study"in a&&"responses"in a&&"result"in a})}let t=class extends g{constructor(){super(...arguments),this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="locked",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.generateParticipantLink=()=>{this.errorMessage="";try{const e=m({studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{if(this.participantUrl)try{await navigator.clipboard.writeText(this.participantUrl),this.message="Participant link copied."}catch{this.message="Automatic copy was unavailable. Select and copy the link from the text box."}},this.downloadConfiguration=()=>{this.generatedConfig&&c(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const o=e.currentTarget,n=o.files?.[0];if(n){this.errorMessage="";try{const a=JSON.parse(await n.text());if(!y(a))throw C(a)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.6 study configuration.");this.useConfiguration(a),this.message="Configuration imported and participant link regenerated."}catch(a){this.showError(a instanceof Error?a.message:"The configuration file could not be read.")}finally{o.value=""}}},this.refreshResults=()=>{this.completedResults=b()},this.exportResultsJson=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&c(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${f(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed NASA-TLX record stored by this site in this browser? Confirm only after checking the exported files.")&&(v(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}render(){return l`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
-          <p class="eyebrow">Study conductor · Version 0.5 candidate</p>
+          <p class="eyebrow">Study conductor · Version 0.6 final-candidate</p>
           <h1>Prepare an accessible NASA-TLX study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
@@ -11,8 +11,9 @@ import{a as o,t as h,i as g,m,b as c,n as y,o as b,f,q as v,A as u,j as l,u as w
           <h2>What this page does</h2>
           <p>
             This separates study setup from participant answering. Participants receive a configured questionnaire and do not
-            have to set it up themselves. This researcher page generates a separate participant page. Participant adjustments
-            are locked by default and should be enabled only when the approved protocol permits them.
+            have to set it up themselves. This researcher page generates a separate participant page. Measurement-adjacent
+            support remains fixed by the study configuration. Optional display, audio and recovery preferences are locked by
+            default and should be enabled only when the approved protocol permits personalisation.
           </p>
           <p>
             <strong>Current storage boundary:</strong> completed records stay in this browser on this device until the study conductor
@@ -63,9 +64,41 @@ import{a as o,t as h,i as g,m,b as c,n as y,o as b,f,q as v,A as u,j as l,u as w
             ${this.booleanOption("Save incomplete progress on this device",this.recoveryEnabled,e=>{this.recoveryEnabled=e})}
             ${this.booleanOption("Allow confirmed built-in voice answers",this.voiceInputAvailable,e=>{this.voiceInputAvailable=e})}
             ${this.booleanOption("Allow experimental webcam gaze input",this.gazeInputAvailable,e=>{this.gazeInputAvailable=e},"Default off because current gaze accuracy is recorded as Partial.")}
-            ${this.booleanOption("Allow optional participant adjustments after opening the link",this.allowParticipantChanges,e=>{this.allowParticipantChanges=e},"Default off for a controlled study. Turn on only when the approved protocol allows personalisation; the final settings are recorded.")}
             ${this.booleanOption("Show the weighted score to the participant",this.showScoreToParticipant,e=>{this.showScoreToParticipant=e},"Default off for a study; the conductor receives the score in the export.")}
           </div>
+
+          <fieldset class="answer-mode-control conductor-answer-mode">
+            <legend>Participant personalisation policy</legend>
+            <label>
+              <input
+                type="radio"
+                name="participant-adjustment-policy"
+                value="locked"
+                .checked=${this.participantAdjustmentPolicy==="locked"}
+                @change=${()=>{this.participantAdjustmentPolicy="locked"}}
+              />
+              <span>
+                <strong>Prepared settings only</strong>
+                <small>Recommended default for a controlled study. The participant can still use any permitted answer route.</small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="participant-adjustment-policy"
+                value="presentation-only"
+                .checked=${this.participantAdjustmentPolicy==="presentation-only"}
+                @change=${()=>{this.participantAdjustmentPolicy="presentation-only"}}
+              />
+              <span>
+                <strong>Allow display, audio and recovery preferences</strong>
+                <small>
+                  The participant may change text size, automatic spoken guidance and interruption recovery. Simpler
+                  explanations and the standard/smiley answer presentation remain fixed.
+                </small>
+              </span>
+            </label>
+          </fieldset>
 
           <fieldset class="answer-mode-control conductor-answer-mode">
             <legend>Starting rating presentation</legend>
@@ -146,14 +179,19 @@ import{a as o,t as h,i as g,m,b as c,n as y,o as b,f,q as v,A as u,j as l,u as w
         <section class="panel conductor-panel" aria-labelledby="remote-heading">
           <h2 id="remote-heading">Remote-study boundary</h2>
           <p>
-            A participant using another device would otherwise keep the result in that device's browser. Do not make the participant
-            download and email data as the normal study procedure. For remote collection, the host platform should listen for the
-            <code>nasa-tlx-complete</code> event and send the versioned result record to the UCL-approved Qualtrics or REDCap workflow
-            named in the ethics and data-management documents.
+            <strong>Central collection is not configured on this GitHub Pages deployment.</strong> A participant using another
+            device will otherwise keep the result in that device's browser. Do not make the participant download and email data
+            as the normal study procedure.
+          </p>
+          <p>
+            Version 0.6 provides the tested <code>accessibleNasaTlxResultSink</code> contract. The UCL-approved Qualtrics,
+            REDCap or other authorised host must install that contract and return a matching submission receipt. The participant
+            page then reports completion only after receipt; a failed save leaves the answers on Review for retry. Platform
+            selection, consent, retention and access must match the approved ethics and data-management documents.
           </p>
         </section>
       </main>
-    `}booleanOption(e,i,r,a=""){return l`<label class="toggle-card conductor-toggle">
-      <input type="checkbox" .checked=${i} @change=${n=>r(n.currentTarget.checked)} />
+    `}booleanOption(e,o,n,a=""){return l`<label class="toggle-card conductor-toggle">
+      <input type="checkbox" .checked=${o} @change=${r=>n(r.currentTarget.checked)} />
       <span><strong>${e}</strong>${a?l`<small>${a}</small>`:u}</span>
-    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.showSimpleLanguage,answerMode:this.answerMode,largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,allowParticipantChanges:this.allowParticipantChanges,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}useConfiguration(e){this.generatedConfig=e,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.allowParticipantChanges=e.support.allowParticipantChanges,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.participantUrl=w(new URL("index.html",window.location.href).toString(),e)}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const i=this.querySelector("#conductor-error");i&&(i.focus(),i.scrollIntoView?.({block:"start"}))})}};s([o()],t.prototype,"studyId",2);s([o()],t.prototype,"studyTitle",2);s([o()],t.prototype,"taskLabel",2);s([o()],t.prototype,"showScoreToParticipant",2);s([o()],t.prototype,"showSimpleLanguage",2);s([o()],t.prototype,"answerMode",2);s([o()],t.prototype,"largeText",2);s([o()],t.prototype,"audioGuidance",2);s([o()],t.prototype,"recoveryEnabled",2);s([o()],t.prototype,"allowParticipantChanges",2);s([o()],t.prototype,"voiceInputAvailable",2);s([o()],t.prototype,"gazeInputAvailable",2);s([o()],t.prototype,"generatedConfig",2);s([o()],t.prototype,"participantUrl",2);s([o()],t.prototype,"message",2);s([o()],t.prototype,"errorMessage",2);s([o()],t.prototype,"completedResults",2);t=s([h("study-conductor-app")],t);
+    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.showSimpleLanguage,answerMode:this.answerMode,largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}useConfiguration(e){this.generatedConfig=e,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.participantUrl=w(new URL("index.html",window.location.href).toString(),e)}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const o=this.querySelector("#conductor-error");o&&(o.focus(),o.scrollIntoView?.({block:"start"}))})}};s([i()],t.prototype,"studyId",2);s([i()],t.prototype,"studyTitle",2);s([i()],t.prototype,"taskLabel",2);s([i()],t.prototype,"showScoreToParticipant",2);s([i()],t.prototype,"showSimpleLanguage",2);s([i()],t.prototype,"answerMode",2);s([i()],t.prototype,"largeText",2);s([i()],t.prototype,"audioGuidance",2);s([i()],t.prototype,"recoveryEnabled",2);s([i()],t.prototype,"participantAdjustmentPolicy",2);s([i()],t.prototype,"voiceInputAvailable",2);s([i()],t.prototype,"gazeInputAvailable",2);s([i()],t.prototype,"generatedConfig",2);s([i()],t.prototype,"participantUrl",2);s([i()],t.prototype,"message",2);s([i()],t.prototype,"errorMessage",2);s([i()],t.prototype,"completedResults",2);t=s([h("study-conductor-app")],t);
