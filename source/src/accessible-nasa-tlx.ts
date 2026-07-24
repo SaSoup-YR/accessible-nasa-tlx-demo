@@ -1131,19 +1131,19 @@ export class AccessibleNasaTlx extends LitElement {
     const showScore = !this.studyConfig || this.studyConfig.showScoreToParticipant;
     return html`
       <section class="panel confirmation" id="question-panel" aria-labelledby="complete-heading">
-        <h2 id="complete-heading">${this.studyConfig ? 'Questionnaire complete' : 'Responses calculated'}</h2>
+        <h2 id="complete-heading">${this.studyConfig ? 'Result prepared' : 'Responses calculated'}</h2>
         ${showScore
           ? html`<p class="score">Weighted workload score: <strong>${this.result.weightedScore.toFixed(2)}</strong></p>`
           : html`<p>Your responses have been recorded. The study configuration does not display the calculated score on the participant page.</p>`}
         ${this.studyConfig
           ? this.completionSavedByHost
             ? html`<div class="save-status" role="status">
-                <h3>Scheduled for automatic completion</h3>
+                <h3>Completing in the study platform</h3>
                 <p>
                   ${this.hostSinkName} acknowledged submission
                   <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>.
-                  No further action is required. Please keep this page open while the study platform finishes the survey automatically after the result-review period.
-                  The final page will confirm when it has been recorded.
+                  No further action is required. The study platform is completing the response now
+                  and will display the recorded result page automatically.
                 </p>
               </div>`
             : this.completionSavedLocally
@@ -1183,7 +1183,7 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<p>
               <strong>Participant:</strong>
               ${this.completionSavedByHost
-                ? 'keep this page open while you review the result. The study platform will complete the survey automatically.'
+                ? 'please wait for the recorded result page to open automatically.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
