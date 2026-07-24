@@ -4,7 +4,7 @@
   "releaseStatus": "release candidate; UCL Qualtrics activation and supervisor review pending",
   "canonicalRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "canonicalCommit": "0076e04ef3a58c33dcfb06c737ae37f12fcc49a5",
-  "builtAt": "2026-07-23T18:05:16Z",
+  "builtAt": "2026-07-24T00:21:34Z",
   "verification": {
     "testFilesPassed": 11,
     "testsPassed": 62,
