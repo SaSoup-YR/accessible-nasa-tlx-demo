@@ -49,6 +49,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
     if (!record.study || !record.participantCode || !record.timing || !record.result) {
       throw new Error('The questionnaire record is incomplete.');
     }
+    if (!Number.isFinite(record.result.weightedScore)) {
+      throw new Error('The weighted NASA-TLX score is missing or invalid.');
+    }
     if (!record.responses || !record.responses.ratings || !record.responses.pairwiseChoices) {
       throw new Error('The questionnaire answers are incomplete.');
     }
@@ -75,7 +78,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
     setField('ANTLX_COMPLETED_AT', record.timing.completedAt);
     setField('ANTLX_PROTOTYPE_VERSION', record.prototype.version);
     setField('ANTLX_COLLECTION_MODE', record.collection.mode);
-    setField('ANTLX_WEIGHTED_SCORE', record.result.weightedScore);
+    setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));
 
     dimensions.forEach(function (dimension) {
       setField('ANTLX_RATING_' + dimension.toUpperCase(), record.result.ratings[dimension]);

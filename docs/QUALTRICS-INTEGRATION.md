@@ -24,7 +24,13 @@ The supervisor must review the final prototype before any participant data are c
 6. In the Qualtrics question's HTML view, paste the generated iframe HTML. The static template is also in [`integrations/qualtrics/question-html-template.html`](../integrations/qualtrics/question-html-template.html).
 7. Add an Embedded Data element near the start of Survey Flow. Declare every field in [`integrations/qualtrics/embedded-data-fields.txt`](../integrations/qualtrics/embedded-data-fields.txt), including the `__js_` prefix, and leave the values unset. The JavaScript deliberately passes names without that prefix to `setJSEmbeddedData`; Qualtrics maps those calls to the prefixed Survey Flow fields.
 8. Open the question's JavaScript editor and replace its contents with [`integrations/qualtrics/qualtrics-question.js`](../integrations/qualtrics/qualtrics-question.js).
-9. Put an End of Survey element after the prototype page. Activate the survey only after the checks below pass.
+9. At the bottom of the Survey editor, open **End of Survey**. Under **Messaging**,
+   select **Custom**, create a message and paste
+   [`integrations/qualtrics/end-of-survey-message.html`](../integrations/qualtrics/end-of-survey-message.html)
+   into its HTML view. Select that saved message and do not configure a redirect.
+   If Survey Flow contains a separate End of Survey element that overrides the survey
+   options, apply the same custom message there instead.
+10. Publish the survey only after the checks below pass.
 
 The UCL Qualtrics licence must permit custom JavaScript and HTML. If either control is unavailable, ask the UCL Qualtrics administrator rather than moving a token or confidential value into client code.
 
@@ -34,24 +40,35 @@ Use a non-participant code such as `TEST-001`.
 
 1. Open the Qualtrics preview or anonymous distribution link in a different browser or device.
 2. Complete all six ratings and fifteen comparisons.
-3. Confirm that the participant page reports that UCL Qualtrics accepted the response and that Qualtrics advances to its next page.
-4. In Data & Analysis, verify one response with:
+3. Confirm that the participant page reports that UCL Qualtrics accepted the response
+   and then advances to the custom final results page.
+4. Confirm that the final page:
+   - shows the current participant's score with two decimal places and `/100`;
+   - states that the response has been recorded;
+   - remains visible until the participant closes the page.
+5. In Data & Analysis, verify one response with:
    - `__js_ANTLX_ACCEPTED = 1`;
    - the same `__js_ANTLX_SUBMISSION_ID` across the exported row;
    - six ratings and six weights;
    - fifteen pair choices in `__js_ANTLX_PAIR_CHOICES_JSON`;
    - the expected participant code and weighted score;
    - the configured support, final support state and support-change count.
-5. Export the response and reconstruct the lossless JSON by concatenating `__js_ANTLX_RAW_01` through the number in `__js_ANTLX_RAW_CHUNK_COUNT`.
-6. Retry once with the network interrupted at submission. The questionnaire must remain on Review and allow retry instead of reporting a false completion.
-7. Delete the synthetic response before recruitment if the approved plan requires a clean dataset.
+6. Export the response and reconstruct the lossless JSON by concatenating `__js_ANTLX_RAW_01` through the number in `__js_ANTLX_RAW_CHUNK_COUNT`.
+7. Retry once with the network interrupted at submission. The questionnaire must remain on Review and allow retry instead of reporting a false completion.
+8. Delete the synthetic response before recruitment if the approved plan requires a clean dataset.
 
 Record the survey ID, activated distribution URL, frozen Git commit, configuration JSON, test date, browser/device and exported synthetic row in the study log.
 
-After Qualtrics acknowledges the record, the bridge leaves the saved confirmation
-visible for 2.5 seconds before advancing. This short fixed delay makes the transition
-legible without adding another participant action after the response has already been
-submitted.
+After Qualtrics acknowledges the record, the embedded prototype leaves its saved
+confirmation visible for 2.5 seconds before advancing. This is only a transition,
+not the participant's reading time. The custom End of Survey message is the persistent
+final results page: Qualtrics has completed the response before displaying it, and the
+page remains available until the participant closes it. Do not replace this with a
+longer fixed timer or a second participant submission action.
+
+The normalized `__js_ANTLX_WEIGHTED_SCORE` field is stored to two decimal places for
+participant display and convenient export. The lossless raw JSON chunks retain the
+unrounded numeric result.
 
 Existing responses and old unprefixed fields are not populated retroactively. After
 changing the Survey Flow, publish it and create a new synthetic response. If an export
@@ -85,4 +102,6 @@ Passing this integration test establishes that the implementation can collect co
 - [W3C: Making Content Usable for People with Cognitive and Learning Disabilities](https://www.w3.org/TR/coga-usable/)
 - [Qualtrics: Add JavaScript](https://www.qualtrics.com/support/survey-platform/survey-module/question-options/add-javascript/)
 - [Qualtrics: Embedded Data](https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/embedded-data/)
+- [Qualtrics: Editing the End of the Survey](https://www.qualtrics.com/support/survey-platform/survey-module/survey-options/survey-termination/)
+- [Qualtrics: Piped Text](https://www.qualtrics.com/support/survey-platform/survey-module/editing-questions/piped-text/piped-text-overview/)
 - [Qualtrics: Export response data](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/download-data/export-data-overview/)
