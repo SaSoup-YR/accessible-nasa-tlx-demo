@@ -18,7 +18,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var completionTimerId = null;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
-  var completionDelayMs = 800;
+  var completionDelayMs = 8000;
 
   question.hideNextButton();
 
