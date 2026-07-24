@@ -30,7 +30,10 @@ The supervisor must review the final prototype before any participant data are c
    into its HTML view. Select that saved message and do not configure a redirect.
    If Survey Flow contains a separate End of Survey element that overrides the survey
    options, apply the same custom message there instead.
-10. Publish the survey only after the checks below pass.
+10. Select the NASA-TLX block, open **Next / Previous button text**, and set its
+    Next button text to **Finish survey**. This button stays hidden until the
+    questionnaire record has passed validation and the score has been calculated.
+11. Publish the survey only after the checks below pass.
 
 The UCL Qualtrics licence must permit custom JavaScript and HTML. If either control is unavailable, ask the UCL Qualtrics administrator rather than moving a token or confidential value into client code.
 
@@ -40,8 +43,11 @@ Use a non-participant code such as `TEST-001`.
 
 1. Open the Qualtrics preview or anonymous distribution link in a different browser or device.
 2. Complete all six ratings and fifteen comparisons.
-3. Confirm that the participant page reports that UCL Qualtrics accepted the response
-   and then advances to the custom final results page.
+3. Confirm that the participant page displays the calculated result and the
+   **Finish survey** button. Check both completion routes:
+   - select **Finish survey** after reading the result;
+   - in a separate synthetic run, leave the page open and confirm that it advances
+     automatically after five minutes.
 4. Confirm that the final page:
    - shows the current participant's score with two decimal places and `/100`;
    - states that the response has been recorded;
@@ -59,12 +65,19 @@ Use a non-participant code such as `TEST-001`.
 
 Record the survey ID, activated distribution URL, frozen Git commit, configuration JSON, test date, browser/device and exported synthetic row in the study log.
 
-After Qualtrics acknowledges the record, the embedded prototype leaves its saved
-confirmation visible for 2.5 seconds before advancing. This is only a transition,
-not the participant's reading time. The custom End of Survey message is the persistent
-final results page: Qualtrics has completed the response before displaying it, and the
-page remains available until the participant closes it. Do not replace this with a
-longer fixed timer or a second participant submission action.
+After the embedded prototype validates the record and calculates the score, the
+Qualtrics **Finish survey** button becomes available. The participant may continue
+as soon as they have read the result. If they take no action, the page advances
+automatically after five minutes. The timer is cancelled if the participant finishes
+early, preventing a second navigation attempt.
+
+The receipt displayed inside the embedded prototype means that the parent Qualtrics
+page has acknowledged and staged the record. The response becomes a completed
+Qualtrics record only after the participant selects **Finish survey** or the five-minute
+fallback advances the page. Closing the browser before either event can leave the
+response incomplete. The custom End of Survey message is therefore the authoritative
+final confirmation: it appears after completion and remains visible until the
+participant closes the page.
 
 The normalized `__js_ANTLX_WEIGHTED_SCORE` field is stored to two decimal places for
 participant display and convenient export. The lossless raw JSON chunks retain the
