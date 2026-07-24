@@ -127,6 +127,9 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('var advanceDelayMs = 2500');
     expect(bridge).toContain('}, advanceDelayMs);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
+    expect(bridge).toContain(
+      "setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));",
+    );
     expect(bridge).not.toContain('Qualtrics.SurveyEngine.setEmbeddedData(');
     expect(bridge).not.toMatch(/postMessage\([^)]*,\s*['"]\*['"]\s*\)/);
 
@@ -138,5 +141,13 @@ describe('approved host result sink', () => {
       .split(/\r?\n/);
     expect(embeddedDataFields).toHaveLength(63);
     expect(embeddedDataFields.every((field) => field.startsWith('__js_ANTLX_'))).toBe(true);
+
+    const endOfSurveyMessage = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/end-of-survey-message.html'),
+      'utf8',
+    );
+    expect(endOfSurveyMessage).toContain('<h1>Questionnaire complete</h1>');
+    expect(endOfSurveyMessage).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(endOfSurveyMessage).toContain('Your response has been recorded successfully.');
   });
 });
