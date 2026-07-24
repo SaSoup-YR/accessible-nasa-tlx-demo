@@ -145,14 +145,15 @@ describe('approved host result sink', () => {
     expect(embeddedDataFields.every((field) => field.startsWith('__js_ANTLX_'))).toBe(true);
 
     const endOfSurveyMessage = readFileSync(
-      resolve(process.cwd(), '../integrations/qualtrics/end-of-survey-message.html'),
+      resolve(process.cwd(), '../integrations/qualtrics/end-of-survey-message.txt'),
       'utf8',
     );
     expect(endOfSurveyMessage).toContain(
-      '<h1>Thank you for completing the Accessible NASA-TLX questionnaire</h1>',
+      'Thank you for completing the Accessible NASA-TLX questionnaire.',
     );
     expect(endOfSurveyMessage).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
     expect(endOfSurveyMessage).toContain('It is not a measure of your ability or a clinical assessment.');
     expect(endOfSurveyMessage).toContain('Your response has been recorded successfully.');
+    expect(endOfSurveyMessage).not.toMatch(/<[^>]+>/);
   });
 });

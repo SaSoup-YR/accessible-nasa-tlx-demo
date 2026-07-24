@@ -1,0 +1,10 @@
+Thank you for completing the Accessible NASA-TLX questionnaire.
+
+Your weighted NASA-TLX workload score is:
+${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100
+
+This score reflects your perceived workload for the task you completed. It is not a measure of your ability or a clinical assessment.
+
+Your response has been recorded successfully.
+
+You may now close this page.

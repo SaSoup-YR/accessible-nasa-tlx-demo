@@ -25,9 +25,10 @@ The supervisor must review the final prototype before any participant data are c
 7. Add an Embedded Data element near the start of Survey Flow. Declare every field in [`integrations/qualtrics/embedded-data-fields.txt`](../integrations/qualtrics/embedded-data-fields.txt), including the `__js_` prefix, and leave the values unset. The JavaScript deliberately passes names without that prefix to `setJSEmbeddedData`; Qualtrics maps those calls to the prefixed Survey Flow fields.
 8. Open the question's JavaScript editor and replace its contents with [`integrations/qualtrics/qualtrics-question.js`](../integrations/qualtrics/qualtrics-question.js).
 9. At the bottom of the Survey editor, open **End of Survey**. Under **Messaging**,
-   select **Custom**, create a message and paste
-   [`integrations/qualtrics/end-of-survey-message.html`](../integrations/qualtrics/end-of-survey-message.html)
-   into its HTML view. Select that saved message and do not configure a redirect.
+   select **Custom**, create a message and paste the ordinary text from
+   [`integrations/qualtrics/end-of-survey-message.txt`](../integrations/qualtrics/end-of-survey-message.txt)
+   into the message box. The template contains no HTML. Select that saved message
+   and do not configure a redirect.
    If Survey Flow contains a separate End of Survey element that overrides the survey
    options, apply the same custom message there instead.
 10. Select the NASA-TLX block, open **Next / Previous button text**, and set its
