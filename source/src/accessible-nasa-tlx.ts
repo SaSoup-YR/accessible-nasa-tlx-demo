@@ -1142,7 +1142,7 @@ export class AccessibleNasaTlx extends LitElement {
                 <p>
                   ${this.hostSinkName} acknowledged submission
                   <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>.
-                  No further action is required. The study platform will finish the survey automatically after the result-review period.
+                  No further action is required. Please keep this page open while the study platform finishes the survey automatically after the result-review period.
                   The final page will confirm when it has been recorded.
                 </p>
               </div>`
@@ -1183,7 +1183,7 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<p>
               <strong>Participant:</strong>
               ${this.completionSavedByHost
-                ? 'review this result. The study platform will complete the survey automatically.'
+                ? 'keep this page open while you review the result. The study platform will complete the survey automatically.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
