@@ -124,8 +124,10 @@ describe('approved host result sink', () => {
     expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
     expect(bridge).toContain('var rawChunkLength = 900');
     expect(bridge).toContain('var maximumRawChunks = 24');
-    expect(bridge).toContain('var advanceDelayMs = 2500');
+    expect(bridge).toContain('var advanceDelayMs = 5 * 60 * 1000');
     expect(bridge).toContain('}, advanceDelayMs);');
+    expect(bridge).toContain('question.showNextButton();');
+    expect(bridge).toContain('window.clearTimeout(advanceTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
     expect(bridge).toContain(
       "setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));",
@@ -146,8 +148,11 @@ describe('approved host result sink', () => {
       resolve(process.cwd(), '../integrations/qualtrics/end-of-survey-message.html'),
       'utf8',
     );
-    expect(endOfSurveyMessage).toContain('<h1>Questionnaire complete</h1>');
+    expect(endOfSurveyMessage).toContain(
+      '<h1>Thank you for completing the Accessible NASA-TLX questionnaire</h1>',
+    );
     expect(endOfSurveyMessage).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(endOfSurveyMessage).toContain('It is not a measure of your ability or a clinical assessment.');
     expect(endOfSurveyMessage).toContain('Your response has been recorded successfully.');
   });
 });
