@@ -1138,11 +1138,12 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.studyConfig
           ? this.completionSavedByHost
             ? html`<div class="save-status" role="status">
-                <h3>Submitted to the study platform</h3>
+                <h3>Ready to finish in the study platform</h3>
                 <p>
-                  ${this.hostSinkName} confirmed receipt of submission
+                  ${this.hostSinkName} acknowledged submission
                   <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>.
-                  The researcher should retrieve it from that approved platform.
+                  Follow the study platform instructions to finish recording your response.
+                  The final page will confirm when it has been recorded.
                 </p>
               </div>`
             : this.completionSavedLocally
@@ -1182,7 +1183,7 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<p>
               <strong>Participant:</strong>
               ${this.completionSavedByHost
-                ? 'you may now follow the study platform instructions.'
+                ? 'review this result, then follow the study platform instructions to complete the survey.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
