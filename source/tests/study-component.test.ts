@@ -220,7 +220,12 @@ describe('study-conductor and participant separation', () => {
     expect(loadCompletedResults()).toEqual([]);
     expect(component.querySelector('.save-status')?.textContent).toContain('UCL approved test platform');
     expect(component.querySelector('.save-status')?.textContent).toContain('receipt-001');
-    expect(component.querySelector('.save-status')?.textContent).toContain('Ready to finish');
+    expect(component.querySelector('.save-status')?.textContent).toContain(
+      'Scheduled for automatic completion',
+    );
+    expect(component.querySelector('.save-status')?.textContent).toContain(
+      'No further action is required.',
+    );
     expect(component.querySelector('.save-status')?.textContent).toContain(
       'The final page will confirm when it has been recorded.',
     );

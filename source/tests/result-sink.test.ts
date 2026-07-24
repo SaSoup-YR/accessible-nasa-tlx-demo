@@ -126,7 +126,8 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('var maximumRawChunks = 24');
     expect(bridge).toContain('var advanceDelayMs = 5 * 60 * 1000');
     expect(bridge).toContain('}, advanceDelayMs);');
-    expect(bridge).toContain('question.showNextButton();');
+    expect(bridge).not.toContain('question.showNextButton();');
+    expect(bridge).toContain('No further action is required.');
     expect(bridge).toContain('window.clearTimeout(advanceTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
     expect(bridge).toContain(

@@ -140,11 +140,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your result is ready. Review the score, then select Finish survey when ready. ' +
-        'The survey will continue automatically in five minutes.'
+        'Your result is ready. No further action is required. ' +
+        'This page will remain available for five minutes, then the survey will finish automatically.'
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
-      question.showNextButton();
       advanceTimerId = window.setTimeout(function advanceAfterAcceptedRecord() {
         advanceTimerId = null;
         question.clickNextButton();
