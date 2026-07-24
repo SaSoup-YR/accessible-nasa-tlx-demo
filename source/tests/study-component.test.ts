@@ -227,6 +227,9 @@ describe('study-conductor and participant separation', () => {
       'No further action is required.',
     );
     expect(component.querySelector('.save-status')?.textContent).toContain(
+      'Please keep this page open',
+    );
+    expect(component.querySelector('.save-status')?.textContent).toContain(
       'The final page will confirm when it has been recorded.',
     );
     expect(component.textContent).not.toContain('Submitted to the study platform');

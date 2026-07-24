@@ -669,7 +669,7 @@
                 <p>
                   ${this.hostSinkName} acknowledged submission
                   <strong>${this.hostReceipt?.receiptId||this.submittedRecord.submissionId}</strong>.
-                  No further action is required. The study platform will finish the survey automatically after the result-review period.
+                  No further action is required. Please keep this page open while the study platform finishes the survey automatically after the result-review period.
                   The final page will confirm when it has been recorded.
                 </p>
               </div>`:this.completionSavedLocally?l`<div class="save-status" role="status">
@@ -698,7 +698,7 @@
         </div>
         ${this.studyConfig?l`<p>
               <strong>Participant:</strong>
-              ${this.completionSavedByHost?"review this result. The study platform will complete the survey automatically.":"please return the device or completion notice to the study conductor."}
+              ${this.completionSavedByHost?"keep this page open while you review the result. The study platform will complete the survey automatically.":"please return the device or completion notice to the study conductor."}
             </p>`:c}
       </section>
     `}renderSavedSessionOffer(){if(!this.savedSession)return c;const t=Object.keys(this.savedSession.ratings).length+Object.keys(this.savedSession.pairResponses).length;return l`

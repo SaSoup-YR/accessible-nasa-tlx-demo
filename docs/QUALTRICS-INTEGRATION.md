@@ -64,7 +64,8 @@ Record the survey ID, activated distribution URL, frozen Git commit, configurati
 After the embedded prototype validates the record and calculates the score, the
 Qualtrics navigation button remains hidden. The participant has no additional
 completion action. The result stays visible for five minutes and the page then
-advances automatically to the custom End of Survey confirmation.
+advances automatically to the custom End of Survey confirmation. The page explicitly
+asks the participant to keep it open during this review period.
 
 The receipt displayed inside the embedded prototype means that the parent Qualtrics
 page has acknowledged and staged the record. The response becomes a completed

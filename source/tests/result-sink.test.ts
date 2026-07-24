@@ -128,6 +128,7 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('}, advanceDelayMs);');
     expect(bridge).not.toContain('question.showNextButton();');
     expect(bridge).toContain('No further action is required.');
+    expect(bridge).toContain('Please keep this page open.');
     expect(bridge).toContain('window.clearTimeout(advanceTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
     expect(bridge).toContain(

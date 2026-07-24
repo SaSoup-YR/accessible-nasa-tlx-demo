@@ -140,7 +140,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your result is ready. No further action is required. ' +
+        'Your result is ready. No further action is required. Please keep this page open. ' +
         'This page will remain available for five minutes, then the survey will finish automatically.'
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
