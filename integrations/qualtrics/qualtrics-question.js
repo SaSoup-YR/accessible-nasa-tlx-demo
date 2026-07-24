@@ -15,9 +15,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var status = document.getElementById('accessible-nasa-tlx-collection-status');
   var acceptedSubmissionId = null;
   var advancing = false;
+  var advanceTimerId = null;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
-  var advanceDelayMs = 2500;
+  var advanceDelayMs = 5 * 60 * 1000;
 
   question.hideNextButton();
 
@@ -138,9 +139,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       storeRecord(message.record);
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
-      setStatus('Response accepted. Qualtrics is saving the study record. Continuing shortly.');
+      setStatus(
+        'Your result is ready. Review the score, then select Finish survey when ready. ' +
+        'The survey will continue automatically in five minutes.'
+      );
       sendReceipt(event.source, true, acceptedSubmissionId);
-      window.setTimeout(function advanceAfterAcceptedRecord() {
+      question.showNextButton();
+      advanceTimerId = window.setTimeout(function advanceAfterAcceptedRecord() {
+        advanceTimerId = null;
         question.clickNextButton();
       }, advanceDelayMs);
     } catch (error) {
@@ -158,6 +164,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleNasaTlxListener() {
+    if (advanceTimerId !== null) {
+      window.clearTimeout(advanceTimerId);
+      advanceTimerId = null;
+    }
     window.removeEventListener('message', receiveResult);
   });
 });
