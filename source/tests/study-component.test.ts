@@ -221,18 +221,18 @@ describe('study-conductor and participant separation', () => {
     expect(component.querySelector('.save-status')?.textContent).toContain('UCL approved test platform');
     expect(component.querySelector('.save-status')?.textContent).toContain('receipt-001');
     expect(component.querySelector('.save-status')?.textContent).toContain(
-      'Scheduled for automatic completion',
+      'Completing in the study platform',
     );
     expect(component.querySelector('.save-status')?.textContent).toContain(
       'No further action is required.',
     );
     expect(component.querySelector('.save-status')?.textContent).toContain(
-      'Please keep this page open',
+      'will display the recorded result page automatically',
     );
-    expect(component.querySelector('.save-status')?.textContent).toContain(
-      'The final page will confirm when it has been recorded.',
+    expect(component.textContent).toContain(
+      'please wait for the recorded result page to open automatically.',
     );
-    expect(component.textContent).not.toContain('Submitted to the study platform');
+    expect(component.textContent).not.toContain('Scheduled for automatic completion');
     expect(component.textContent).not.toContain('Download JSON backup');
   });
 

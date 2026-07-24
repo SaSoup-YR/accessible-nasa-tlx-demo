@@ -41,10 +41,9 @@ Use a non-participant code such as `TEST-001`.
 
 1. Open the Qualtrics preview or anonymous distribution link in a different browser or device.
 2. Complete all six ratings and fifteen comparisons.
-3. Confirm that the participant page displays the calculated result without
-   requiring another button press, remains visible for approximately five minutes
-   and then advances automatically.
-4. Confirm that the final page:
+3. Confirm that no additional completion button is required and that Qualtrics
+   advances automatically after the calculated record has been accepted.
+4. Confirm that the final recorded-result page:
    - shows the current participant's score with two decimal places and `/100`;
    - states that the response has been recorded;
    - remains visible until the participant closes the page.
@@ -63,16 +62,15 @@ Record the survey ID, activated distribution URL, frozen Git commit, configurati
 
 After the embedded prototype validates the record and calculates the score, the
 Qualtrics navigation button remains hidden. The participant has no additional
-completion action. The result stays visible for five minutes and the page then
-advances automatically to the custom End of Survey confirmation. The page explicitly
-asks the participant to keep it open during this review period.
+completion action. The bridge sets the Embedded Data, acknowledges the matching
+submission ID and submits the page automatically after an 800 ms handoff. Submitting
+that page completes the Qualtrics response.
 
 The receipt displayed inside the embedded prototype means that the parent Qualtrics
-page has acknowledged and staged the record. The response becomes a completed
-Qualtrics record when the five-minute timer advances the page. Closing the browser
-during that review period can leave the response incomplete. The custom End of Survey
-message is therefore the authoritative final confirmation: it appears after completion,
-repeats the score and remains visible until the participant closes the page.
+page has acknowledged and staged the record; it is not, by itself, a server-side
+completion marker. The custom End of Survey message is therefore used as the final
+recorded-result page. It appears after Qualtrics completes the response, repeats the
+score and remains visible until the participant closes the page.
 
 The normalized `__js_ANTLX_WEIGHTED_SCORE` field is stored to two decimal places for
 participant display and convenient export. The lossless raw JSON chunks retain the
@@ -110,6 +108,8 @@ Passing this integration test establishes that the implementation can collect co
 - [W3C: Making Content Usable for People with Cognitive and Learning Disabilities](https://www.w3.org/TR/coga-usable/)
 - [Qualtrics: Add JavaScript](https://www.qualtrics.com/support/survey-platform/survey-module/question-options/add-javascript/)
 - [Qualtrics: Embedded Data](https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/embedded-data/)
+- [Qualtrics: Responses in Progress](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/responses-in-progress/)
+- [Qualtrics: End of Survey Element](https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/end-of-survey-element/)
 - [Qualtrics: Editing the End of the Survey](https://www.qualtrics.com/support/survey-platform/survey-module/survey-options/survey-termination/)
 - [Qualtrics: Piped Text](https://www.qualtrics.com/support/survey-platform/survey-module/editing-questions/piped-text/piped-text-overview/)
 - [Qualtrics: Export response data](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/download-data/export-data-overview/)

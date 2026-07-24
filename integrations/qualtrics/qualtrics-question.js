@@ -15,10 +15,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var status = document.getElementById('accessible-nasa-tlx-collection-status');
   var acceptedSubmissionId = null;
   var advancing = false;
-  var advanceTimerId = null;
+  var completionTimerId = null;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
-  var advanceDelayMs = 5 * 60 * 1000;
+  var completionDelayMs = 800;
 
   question.hideNextButton();
 
@@ -140,14 +140,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your result is ready. No further action is required. Please keep this page open. ' +
-        'This page will remain available for five minutes, then the survey will finish automatically.'
+        'Your data have been accepted. No further action is required. ' +
+        'Qualtrics is completing your response now.'
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
-      advanceTimerId = window.setTimeout(function advanceAfterAcceptedRecord() {
-        advanceTimerId = null;
+      completionTimerId = window.setTimeout(function completeAcceptedResponse() {
+        completionTimerId = null;
         question.clickNextButton();
-      }, advanceDelayMs);
+      }, completionDelayMs);
     } catch (error) {
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';
       setStatus(detail + ' Return to the questionnaire and try again.');
@@ -163,9 +163,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleNasaTlxListener() {
-    if (advanceTimerId !== null) {
-      window.clearTimeout(advanceTimerId);
-      advanceTimerId = null;
+    if (completionTimerId !== null) {
+      window.clearTimeout(completionTimerId);
+      completionTimerId = null;
     }
     window.removeEventListener('message', receiveResult);
   });

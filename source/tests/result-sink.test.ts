@@ -124,12 +124,13 @@ describe('approved host result sink', () => {
     expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
     expect(bridge).toContain('var rawChunkLength = 900');
     expect(bridge).toContain('var maximumRawChunks = 24');
-    expect(bridge).toContain('var advanceDelayMs = 5 * 60 * 1000');
-    expect(bridge).toContain('}, advanceDelayMs);');
+    expect(bridge).toContain('var completionDelayMs = 800');
+    expect(bridge).toContain('}, completionDelayMs);');
     expect(bridge).not.toContain('question.showNextButton();');
     expect(bridge).toContain('No further action is required.');
-    expect(bridge).toContain('Please keep this page open.');
-    expect(bridge).toContain('window.clearTimeout(advanceTimerId);');
+    expect(bridge).toContain('Qualtrics is completing your response now.');
+    expect(bridge).not.toContain('five minutes');
+    expect(bridge).toContain('window.clearTimeout(completionTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
     expect(bridge).toContain(
       "setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));",
@@ -150,12 +151,13 @@ describe('approved host result sink', () => {
       resolve(process.cwd(), '../integrations/qualtrics/end-of-survey-message.txt'),
       'utf8',
     );
-    expect(endOfSurveyMessage).toContain(
-      'Thank you for completing the Accessible NASA-TLX questionnaire.',
-    );
+    expect(endOfSurveyMessage).toContain('Questionnaire complete');
     expect(endOfSurveyMessage).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
     expect(endOfSurveyMessage).toContain('It is not a measure of your ability or a clinical assessment.');
-    expect(endOfSurveyMessage).toContain('Your response has been recorded successfully.');
+    expect(endOfSurveyMessage).toContain('Your questionnaire responses have been recorded successfully.');
+    expect(endOfSurveyMessage).toContain(
+      'accessibility-support choices and input-route information have been saved separately',
+    );
     expect(endOfSurveyMessage).not.toMatch(/<[^>]+>/);
   });
 });
