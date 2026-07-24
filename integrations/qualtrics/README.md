@@ -6,5 +6,8 @@
 - `embedded-data-fields.txt` lists the fields to declare near the start of Survey Flow.
   Keep the `__js_` prefix in Survey Flow. The JavaScript API adds that prefix
   automatically, so the calls in `qualtrics-question.js` intentionally omit it.
+- `end-of-survey-message.html` is pasted into a custom Qualtrics End of Survey
+  message. It displays each participant's own weighted score and remains visible
+  until the participant closes the page.
 
 Use the complete setup and synthetic verification procedure in [`../../docs/QUALTRICS-INTEGRATION.md`](../../docs/QUALTRICS-INTEGRATION.md). Participants receive the activated Qualtrics distribution link, not the raw GitHub participant URL. Do not place an API token or password in these files.
