@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import '../src/study-conductor';
+import { buildQualtricsQuestionHtml } from '../src/study-conductor';
 import { readStudyConfigFromHash } from '../src/study';
 
 async function renderConductor() {
@@ -97,8 +99,24 @@ describe('study conductor defaults and guidance', () => {
       parentOrigin: 'https://ucl-example.eu.qualtrics.com',
     });
     expect(participantUrl).not.toContain('SV_TEST');
-    expect(component.querySelector<HTMLTextAreaElement>('.qualtrics-setup textarea')!.value)
-      .toContain('id="accessible-nasa-tlx-frame"');
+    const questionHtml = component.querySelector<HTMLTextAreaElement>('.qualtrics-setup textarea')!.value;
+    expect(questionHtml).toContain('id="accessible-nasa-tlx-frame"');
+    expect(questionHtml).toContain('id="accessible-nasa-tlx-recorded-summary"');
+    expect(questionHtml).toContain('data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"');
+    expect(questionHtml).toContain(
+      '#accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question',
+    );
+    expect(questionHtml).toContain('${e://Field/__js_ANTLX_PARTICIPANT_CODE}');
+    expect(questionHtml).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(questionHtml).toBe(buildQualtricsQuestionHtml(participantUrl));
+    expect(questionHtml).toBe(
+      readFileSync(
+        resolve(process.cwd(), '../integrations/qualtrics/question-html-template.html'),
+        'utf8',
+      )
+        .trim()
+        .replace('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE', participantUrl),
+    );
   });
 
   it('identifies a result export as the wrong file type and moves focus to the import error', async () => {
