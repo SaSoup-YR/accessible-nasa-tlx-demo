@@ -5,7 +5,7 @@
  * question that contains the iframe from question-html-template.html.
  * Keep the participant prototype on https://sasoup-yr.github.io.
  */
-Qualtrics.SurveyEngine.addOnReady(function () {
+Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var question = this;
   var childOrigin = 'https://sasoup-yr.github.io';
   var submitType = 'accessible-nasa-tlx:qualtrics-submit:v1';
@@ -15,8 +15,10 @@ Qualtrics.SurveyEngine.addOnReady(function () {
   var status = document.getElementById('accessible-nasa-tlx-collection-status');
   var acceptedSubmissionId = null;
   var advancing = false;
+  var completionTimerId = null;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
+  var completionDelayMs = 8000;
 
   question.hideNextButton();
 
@@ -35,7 +37,10 @@ Qualtrics.SurveyEngine.addOnReady(function () {
   }
 
   function setField(name, value) {
-    Qualtrics.SurveyEngine.setEmbeddedData(name, value === null || value === undefined ? '' : String(value));
+    Qualtrics.SurveyEngine.setJSEmbeddedData(
+      name,
+      value === null || value === undefined ? '' : String(value)
+    );
   }
 
   function requireRecord(record) {
@@ -44,6 +49,9 @@ Qualtrics.SurveyEngine.addOnReady(function () {
     if (!record.submissionId || typeof record.submissionId !== 'string') throw new Error('The submission ID is missing.');
     if (!record.study || !record.participantCode || !record.timing || !record.result) {
       throw new Error('The questionnaire record is incomplete.');
+    }
+    if (!Number.isFinite(record.result.weightedScore)) {
+      throw new Error('The weighted NASA-TLX score is missing or invalid.');
     }
     if (!record.responses || !record.responses.ratings || !record.responses.pairwiseChoices) {
       throw new Error('The questionnaire answers are incomplete.');
@@ -71,7 +79,7 @@ Qualtrics.SurveyEngine.addOnReady(function () {
     setField('ANTLX_COMPLETED_AT', record.timing.completedAt);
     setField('ANTLX_PROTOTYPE_VERSION', record.prototype.version);
     setField('ANTLX_COLLECTION_MODE', record.collection.mode);
-    setField('ANTLX_WEIGHTED_SCORE', record.result.weightedScore);
+    setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));
 
     dimensions.forEach(function (dimension) {
       setField('ANTLX_RATING_' + dimension.toUpperCase(), record.result.ratings[dimension]);
@@ -131,11 +139,15 @@ Qualtrics.SurveyEngine.addOnReady(function () {
       storeRecord(message.record);
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
-      setStatus('Response accepted. Qualtrics is saving the study record.');
+      setStatus(
+        'Your data have been accepted. No further action is required. ' +
+        'Qualtrics is completing your response now.'
+      );
       sendReceipt(event.source, true, acceptedSubmissionId);
-      window.setTimeout(function () {
+      completionTimerId = window.setTimeout(function completeAcceptedResponse() {
+        completionTimerId = null;
         question.clickNextButton();
-      }, 800);
+      }, completionDelayMs);
     } catch (error) {
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';
       setStatus(detail + ' Return to the questionnaire and try again.');
@@ -150,7 +162,11 @@ Qualtrics.SurveyEngine.addOnReady(function () {
 
   setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
-  Qualtrics.SurveyEngine.addOnUnload(function () {
+  Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleNasaTlxListener() {
+    if (completionTimerId !== null) {
+      window.clearTimeout(completionTimerId);
+      completionTimerId = null;
+    }
     window.removeEventListener('message', receiveResult);
   });
 });
