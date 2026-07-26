@@ -124,6 +124,57 @@ describe('approved host result sink', () => {
     expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
     expect(bridge).toContain('var rawChunkLength = 900');
     expect(bridge).toContain('var maximumRawChunks = 24');
+    expect(bridge).toContain('var completionDelayMs = 8000');
+    expect(bridge).toContain('}, completionDelayMs);');
+    expect(bridge).not.toContain('question.showNextButton();');
+    expect(bridge).toContain('No further action is required.');
+    expect(bridge).toContain('Qualtrics is completing your response now.');
+    expect(bridge).not.toContain('five minutes');
+    expect(bridge).toContain('window.clearTimeout(completionTimerId);');
+    expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
+    expect(bridge).toContain(
+      "setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));",
+    );
+    expect(bridge).not.toContain('Qualtrics.SurveyEngine.setEmbeddedData(');
     expect(bridge).not.toMatch(/postMessage\([^)]*,\s*['"]\*['"]\s*\)/);
+
+    const embeddedDataFields = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/embedded-data-fields.txt'),
+      'utf8',
+    )
+      .trim()
+      .split(/\r?\n/);
+    expect(embeddedDataFields).toHaveLength(63);
+    expect(embeddedDataFields.every((field) => field.startsWith('__js_ANTLX_'))).toBe(true);
+
+    const questionHtml = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/question-html-template.html'),
+      'utf8',
+    );
+    expect(questionHtml).toContain('id="accessible-nasa-tlx-recorded-summary"');
+    expect(questionHtml).toContain('data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"');
+    expect(questionHtml).toContain(
+      '#accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question',
+    );
+    expect(questionHtml).toContain('${e://Field/__js_ANTLX_PARTICIPANT_CODE}');
+    expect(questionHtml).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(questionHtml).not.toContain('__js_ANTLX_RAW_01');
+    const summaryFields = [...questionHtml.matchAll(/\$\{e:\/\/Field\/(__js_ANTLX_[A-Z0-9_]+)\}/g)]
+      .map((match) => match[1]);
+    expect(summaryFields.length).toBeGreaterThan(20);
+    expect(summaryFields.every((field) => embeddedDataFields.includes(field))).toBe(true);
+
+    const endOfSurveyMessage = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/end-of-survey-message.txt'),
+      'utf8',
+    );
+    expect(endOfSurveyMessage).toContain('Questionnaire complete');
+    expect(endOfSurveyMessage).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(endOfSurveyMessage).toContain('It is not a measure of your ability or a clinical assessment.');
+    expect(endOfSurveyMessage).toContain('Your questionnaire responses have been recorded successfully.');
+    expect(endOfSurveyMessage).toContain(
+      'accessibility-support choices and input-route information have been saved separately',
+    );
+    expect(endOfSurveyMessage).not.toMatch(/<[^>]+>/);
   });
 });
