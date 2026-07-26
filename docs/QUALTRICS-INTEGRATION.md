@@ -21,10 +21,20 @@ The supervisor must review the final prototype before any participant data are c
 3. Add one Text/Graphic question on its own page for the Accessible NASA-TLX.
 4. Open the study-conductor page and select **UCL Qualtrics central collection**.
 5. Paste the active or preview Qualtrics URL, complete the study settings and generate the configuration.
-6. In the Qualtrics question's HTML view, paste the generated iframe HTML. The static template is also in [`integrations/qualtrics/question-html-template.html`](../integrations/qualtrics/question-html-template.html).
-7. Add an Embedded Data element near the start of Survey Flow. Declare every field in [`integrations/qualtrics/embedded-data-fields.txt`](../integrations/qualtrics/embedded-data-fields.txt). Leave their values unset.
+6. In the Qualtrics question's HTML view, paste the complete generated question
+   HTML. It contains both the live iframe and the conditional recorded-response/PDF
+   summary. The static template is also in
+   [`integrations/qualtrics/question-html-template.html`](../integrations/qualtrics/question-html-template.html).
+7. Add an Embedded Data element near the start of Survey Flow. Declare every field in [`integrations/qualtrics/embedded-data-fields.txt`](../integrations/qualtrics/embedded-data-fields.txt), including the `__js_` prefix, and leave the values unset. The JavaScript deliberately passes names without that prefix to `setJSEmbeddedData`; Qualtrics maps those calls to the prefixed Survey Flow fields.
 8. Open the question's JavaScript editor and replace its contents with [`integrations/qualtrics/qualtrics-question.js`](../integrations/qualtrics/qualtrics-question.js).
-9. Put an End of Survey element after the prototype page. Activate the survey only after the checks below pass.
+9. At the bottom of the Survey editor, open **End of Survey**. Under **Messaging**,
+   select **Custom**, create a message and paste the ordinary text from
+   [`integrations/qualtrics/end-of-survey-message.txt`](../integrations/qualtrics/end-of-survey-message.txt)
+   into the message box. The template contains no HTML. Select that saved message
+   and do not configure a redirect.
+   If Survey Flow contains a separate End of Survey element that overrides the survey
+   options, apply the same custom message there instead.
+10. Publish the survey only after the checks below pass.
 
 The UCL Qualtrics licence must permit custom JavaScript and HTML. If either control is unavailable, ask the UCL Qualtrics administrator rather than moving a token or confidential value into client code.
 
@@ -34,19 +44,75 @@ Use a non-participant code such as `TEST-001`.
 
 1. Open the Qualtrics preview or anonymous distribution link in a different browser or device.
 2. Complete all six ratings and fifteen comparisons.
-3. Confirm that the participant page reports that UCL Qualtrics accepted the response and that Qualtrics advances to its next page.
-4. In Data & Analysis, verify one response with:
-   - `ANTLX_ACCEPTED = 1`;
-   - the same `ANTLX_SUBMISSION_ID` across the exported row;
+3. Confirm that no additional completion button is required and that Qualtrics
+   advances automatically after the calculated record has been accepted.
+4. Confirm that the final recorded-result page:
+   - shows the current participant's score with two decimal places and `/100`;
+   - states that the response has been recorded;
+   - remains visible until the participant closes the page.
+5. In Data & Analysis, verify one response with:
+   - `__js_ANTLX_ACCEPTED = 1`;
+   - the same `__js_ANTLX_SUBMISSION_ID` across the exported row;
    - six ratings and six weights;
-   - fifteen pair choices in `ANTLX_PAIR_CHOICES_JSON`;
+   - fifteen pair choices in `__js_ANTLX_PAIR_CHOICES_JSON`;
    - the expected participant code and weighted score;
    - the configured support, final support state and support-change count.
-5. Export the response and reconstruct the lossless JSON by concatenating `ANTLX_RAW_01` through the number in `ANTLX_RAW_CHUNK_COUNT`.
-6. Retry once with the network interrupted at submission. The questionnaire must remain on Review and allow retry instead of reporting a false completion.
-7. Delete the synthetic response before recruitment if the approved plan requires a clean dataset.
+6. Export the response and reconstruct the lossless JSON by concatenating `__js_ANTLX_RAW_01` through the number in `__js_ANTLX_RAW_CHUNK_COUNT`.
+7. Open **View Response** and export the same individual response to PDF. Confirm
+   that the blank interactive questionnaire is replaced by the read-only summary,
+   including the participant code, weighted score, six ratings and six weights.
+8. Retry once with the network interrupted at submission. The questionnaire must remain on Review and allow retry instead of reporting a false completion.
+9. Delete the synthetic response before recruitment if the approved plan requires a clean dataset.
 
 Record the survey ID, activated distribution URL, frozen Git commit, configuration JSON, test date, browser/device and exported synthetic row in the study log.
+
+After the embedded prototype validates the record and calculates the score, the
+Qualtrics navigation button remains hidden. The participant has no additional
+completion action. The bridge sets the Embedded Data, acknowledges the matching
+submission ID and submits the page automatically after an 8-second handoff. Submitting
+that page completes the Qualtrics response.
+
+The receipt displayed inside the embedded prototype means that the parent Qualtrics
+page has acknowledged and staged the record; it is not, by itself, a server-side
+completion marker. The custom End of Survey message is therefore used as the final
+recorded-result page. It appears after Qualtrics completes the response, repeats the
+score and remains visible until the participant closes the page.
+
+The normalized `__js_ANTLX_WEIGHTED_SCORE` field is stored to two decimal places for
+participant display and convenient export. The lossless raw JSON chunks retain the
+unrounded numeric result.
+
+## Why View Response or an individual PDF previously showed a blank questionnaire
+
+The embedded questionnaire is client-side application state, not a native Qualtrics
+answer control. Qualtrics response reports use the current survey question text. If
+they replay only the iframe, the GitHub page starts a new blank questionnaire and
+cannot reconstruct the participant's saved state. The blank participant-code field
+therefore does not mean that the recorded Embedded Data are missing.
+
+The supplied question HTML now keeps two representations in the same Text/Graphic
+question:
+
+- during a live response, the conditional summary is hidden and the participant uses
+  the iframe exactly as before;
+- when `__js_ANTLX_ACCEPTED = 1` is available in a recorded response, Qualtrics piped
+  text displays a read-only summary and the fresh iframe is hidden.
+
+This adds no participant action and sends no data to GitHub. The summary is intended
+for inspection and an individual PDF. The Qualtrics CSV export with all Embedded Data,
+plus the chunked raw JSON, remains the authoritative research record.
+
+To apply this fix to an existing survey, replace the whole HTML of the NASA-TLX
+Text/Graphic question with the latest generated HTML, save, publish, and test with a
+synthetic response. Qualtrics response reports use the current survey text, so an
+existing response whose `__js_ANTLX_*` fields were saved may also display the new
+summary; verify this in the UCL tenant before relying on it.
+
+Existing responses and old unprefixed fields are not populated retroactively. After
+changing the Survey Flow, publish it and create a new synthetic response. If an export
+must use headings without `__js_`, either rename the columns after export or add a
+second Embedded Data element after the NASA-TLX block that pipes each prefixed value
+into a separate unprefixed field.
 
 ## Participant preference policy
 
@@ -74,4 +140,10 @@ Passing this integration test establishes that the implementation can collect co
 - [W3C: Making Content Usable for People with Cognitive and Learning Disabilities](https://www.w3.org/TR/coga-usable/)
 - [Qualtrics: Add JavaScript](https://www.qualtrics.com/support/survey-platform/survey-module/question-options/add-javascript/)
 - [Qualtrics: Embedded Data](https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/embedded-data/)
+- [Qualtrics: Responses in Progress](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/responses-in-progress/)
+- [Qualtrics: End of Survey Element](https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/end-of-survey-element/)
+- [Qualtrics: Editing the End of the Survey](https://www.qualtrics.com/support/survey-platform/survey-module/survey-options/survey-termination/)
+- [Qualtrics: Piped Text](https://www.qualtrics.com/support/survey-platform/survey-module/editing-questions/piped-text/piped-text-overview/)
 - [Qualtrics: Export response data](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/download-data/export-data-overview/)
+- [Qualtrics: Recorded responses and individual PDF export](https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/recorded-responses/)
+- [Qualtrics: Response reports](https://www.qualtrics.com/support/survey-platform/actions-module/email-task/#ResponseReports)
