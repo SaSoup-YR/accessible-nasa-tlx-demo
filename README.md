@@ -39,6 +39,7 @@ The Qualtrics bridge:
 - validates the source window and message origin in both directions;
 - uses a stable submission ID and accepts only a matching receipt;
 - attempts a complete local backup before contacting Qualtrics and keeps JSON/CSV backup controls available;
+- treats the 1.5-second parent handoff as a submission interval rather than a download task, and restores native navigation if automatic advancement does not unload the page;
 - leaves answers on Review when Qualtrics fails or times out, allowing retry, answer editing or backup export;
 - makes a same-device completed backup discoverable after an accidental close, while clearly separating that evidence from a recorded Qualtrics response;
 - places no Qualtrics API token or other secret in GitHub or the participant browser;
@@ -60,6 +61,7 @@ UCL guidance allows Qualtrics for information that is not highly confidential. I
 | Collection and permission rationale | [`docs/REMOTE-COLLECTION-AND-PERMISSIONS.md`](docs/REMOTE-COLLECTION-AND-PERMISSIONS.md) | public evidence |
 | Failure and recovery verification | [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md) | public test evidence |
 | Technical risk register | [`docs/TECHNICAL-RISK-REGISTER.md`](docs/TECHNICAL-RISK-REGISTER.md) | open and remaining pre-recruitment risks |
+| Supervisor update trace | [`docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md`](docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md) | provenance and retained design decisions |
 
 The private `accessible-hci-questionnaire-library` remains the canonical dissertation/evidence repository. This public repository is the tested release snapshot and stable GitHub Pages deployment.
 

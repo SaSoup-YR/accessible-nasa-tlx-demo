@@ -26,11 +26,12 @@ Use synthetic data only. Do not recruit or collect participant data until the su
 
 1. Confirm and replace voice-proposed numeric and smiley answers; Next must work immediately and selected visuals must stay synchronized.
 2. Confirm that the proposed answer is spoken by the screen reader and that focus moves to the confirmation button whose name contains the exact proposed value or factor.
-3. In smiley mode, say `close to low`, `closer to low`, `middle`, `closer to high` and the two endpoints. Confirm proposals are 25, 25, 50, 75, 0/100 as displayed; repeat Performance with Good/Poor anchors.
+3. In smiley mode, say `close to low`, `closer to low`, `middle`, `closer to high` and the two endpoints. Confirm proposals are 25, 25, 50, 75, 0/100 as displayed; repeat Performance with Good/Poor anchors. If Low or High is unreliable, confirm that `zero` and `one hundred` provide the documented endpoint fallback.
 4. Say `not low`, `low or high`, `closer to low or high`, `closer to low 100`, `twenty three`, `73` and both names in one comparison. Confirm that no answer is proposed or selected.
 5. Trigger each validation/import/submission error and confirm focus and viewport move to the error summary.
 6. Save, close and resume with the same configuration/code; the return summary and support-change history must be preserved.
-7. Treat WebGazer target accuracy as Partial. Verify permission, positioning, calibration, proposal, separate confirmation, recalibration and camera stop without claiming accurate independent control.
+7. Enable automatic built-in audio and confirm that a Smiley question speaks its five labels and values rather than only a generic 0–100 range. Trigger a voice proposal, simpler help, a missing-answer error, a restored session and local completion; record whether each event is spoken.
+8. Treat WebGazer target accuracy as Partial. Verify permission, positioning, calibration, proposal, separate confirmation, recalibration and camera stop without claiming accurate independent control.
 
 ## 4. Qualtrics cross-device collection
 
@@ -44,8 +45,10 @@ Complete every step in [`docs/QUALTRICS-INTEGRATION.md`](docs/QUALTRICS-INTEGRAT
 6. complete `TEST-001` and confirm automatic Qualtrics advancement;
 7. verify one central Data & Analysis row, all six ratings/weights, fifteen pair choices, support metadata and raw JSON chunks;
 8. interrupt the network at submission and confirm Review/retry instead of false completion;
-9. confirm the participant link/bundle contains no token and accepts receipts only from the configured Qualtrics origin;
-10. run every case in [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md), recording expected and observed outcomes.
+9. confirm that the 1.5-second in-frame handoff says no download is required, then verify the persistent End-of-Survey page; do not treat the emergency JSON/CSV buttons as a timed participant task;
+10. in a copied synthetic survey only, test the failed-advance watchdog and restored native navigation where this can be done safely;
+11. confirm the participant link/bundle contains no token and accepts receipts only from the configured Qualtrics origin;
+12. run every case in [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md), recording expected and observed outcomes.
 
 Do not describe cross-device collection as activated until the synthetic row has been observed and exported from the actual UCL account.
 

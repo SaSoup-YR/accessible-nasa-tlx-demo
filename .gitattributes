@@ -1,0 +1,2 @@
+# Generated standalone bundles contain literal whitespace inside minified JavaScript regex strings.
+source/demo/accessible-nasa-tlx-v*.html -whitespace

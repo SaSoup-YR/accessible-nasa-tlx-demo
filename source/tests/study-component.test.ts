@@ -115,7 +115,7 @@ describe('study-conductor and participant separation', () => {
 
     expect(spoken[0]).toContain('Think about the route-planning task');
     expect(cancel).not.toHaveBeenCalled();
-    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing a spoken summary');
+    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing spoken guidance');
   });
 
   it('applies a locked configuration and requires a pseudonymous participant code', async () => {
@@ -237,6 +237,12 @@ describe('study-conductor and participant separation', () => {
     expect(component.textContent).not.toContain('Scheduled for automatic completion');
     expect(component.textContent).toContain('Download JSON backup');
     expect(component.textContent).toContain('Download CSV backup');
+    expect(component.querySelector('.submission-fallback')?.textContent).toContain(
+      'No download is required during the normal automatic transition',
+    );
+    expect(component.querySelector('.submission-fallback')?.textContent).toContain(
+      'If this page remains visible',
+    );
   });
 
   it('makes the completed backup recoverable after the accepted page is closed and reopened', async () => {
