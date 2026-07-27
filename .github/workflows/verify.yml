@@ -1,23 +1,23 @@
-name: Verify source and generated release
+name: Apply and verify integrated recovery audio fix
 
 on:
   pull_request:
   push:
     branches:
-      - main
+      - fix/integrated-recovery-audio
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verify:
+  apply-and-verify:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: source
     steps:
-      - name: Check out repository
+      - name: Check out the fix branch
         uses: actions/checkout@v4
+        with:
+          ref: fix/integrated-recovery-audio
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -26,19 +26,184 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
+      - name: Integrate the recovery announcement into the existing participant component
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('source/src/accessible-nasa-tlx.ts')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = []
+
+          replacements.append((
+          """        void this.updateComplete.then(() => {
+          const heading = this.querySelector<HTMLElement>(
+            this.savedSession ? '#saved-session-heading' : '#completed-backup-heading',
+          );
+          heading?.focus();
+          heading?.scrollIntoView?.({ block: 'start' });
+        });""",
+          """        void this.updateComplete.then(() => {
+          const heading = this.querySelector<HTMLElement>(
+            this.savedSession ? '#saved-session-heading' : '#completed-backup-heading',
+          );
+          heading?.focus();
+          heading?.scrollIntoView?.({ block: 'start' });
+          if (this.savedSession) {
+            this.announceAutomatic(this.savedSessionOfferSpeech(this.savedSession));
+          }
+        });"""
+          ))
+
+          replacements.append((
+          "  private renderSavedSessionOffer() {",
+          """  private savedSessionOfferSpeech(session: SavedSession) {
+    const count = Object.keys(session.ratings).length + Object.keys(session.pairResponses).length;
+    return `Saved questionnaire found. ${count} of ${dimensions.length + pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
+  }
+
+  private renderSavedSessionOffer() {"""
+          ))
+
+          replacements.append((
+          """      const session = JSON.parse(raw) as SavedSession;
+      if (this.validSavedSession(session)) this.savedSession = session;
+      else this.clearSavedProgress();""",
+          """      const session = JSON.parse(raw) as SavedSession;
+      if (this.validSavedSession(session)) {
+        this.savedSession = session;
+        this.applySavedRecoveryPresentation(session);
+      } else {
+        this.clearSavedProgress();
+      }"""
+          ))
+
+          replacements.append((
+          "  private findSavedSession() {",
+          """  private applySavedRecoveryPresentation(session: SavedSession) {
+    if (!this.canAdjustPresentationSupport) return;
+    this.largeText = session.support.largeText;
+    this.audioGuidance = Boolean(session.support.audioGuidance);
+  }
+
+  private findSavedSession() {"""
+          ))
+
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected source block was not found exactly once: {old[:80]!r}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Install locked dependencies
+        working-directory: source
         run: npm ci
 
-      - name: Run automated tests
+      - name: Run the complete automated test suite
+        working-directory: source
         run: npm test -- --run
 
+      - name: Run targeted integrated recovery-audio checks
+        working-directory: source
+        shell: bash
+        run: |
+          cat > recovery-audio.workflow.test.ts <<'TEST'
+          // @vitest-environment jsdom
+          import { describe, expect, it, vi } from 'vitest';
+          import { AccessibleNasaTlx } from './src/accessible-nasa-tlx';
+
+          const session = {
+            version: 3,
+            savedAt: Date.now(),
+            startedAt: new Date().toISOString(),
+            configId: 'test-config',
+            participantCode: 'TEST01',
+            stage: 'ratings',
+            ratingIndex: 0,
+            pairIndex: 0,
+            pairOrder: [],
+            pairResponses: { 'mental-physical': 'mental' },
+            ratings: { mental: 40 },
+            ratingInputRoutes: {},
+            pairInputRoutes: {},
+            supportChanges: [],
+            support: {
+              answerMode: 'standard',
+              showSimpleLanguage: false,
+              largeText: true,
+              audioGuidance: true,
+            },
+          };
+
+          describe('integrated saved-session announcement', () => {
+            it('restores permitted saved presentation preferences before announcing', () => {
+              const component = new AccessibleNasaTlx() as any;
+              component.studyConfig = { support: { participantAdjustmentPolicy: 'participant-choice' } };
+              component.applySavedRecoveryPresentation(session);
+              expect(component.largeText).toBe(true);
+              expect(component.audioGuidance).toBe(true);
+            });
+
+            it('uses the existing automatic speech pathway with progress and both choices', () => {
+              const component = new AccessibleNasaTlx() as any;
+              component.audioGuidance = true;
+              const speakText = vi.spyOn(component, 'speakText').mockImplementation(() => undefined);
+              const message = component.savedSessionOfferSpeech(session);
+              component.announceAutomatic(message);
+              expect(message).toContain('Saved questionnaire found.');
+              expect(message).toContain('2 of 21 responses');
+              expect(message).toContain('Resume saved questionnaire');
+              expect(message).toContain('Erase saved answers');
+              expect(speakText).toHaveBeenCalledWith(message);
+            });
+
+            it('preserves conductor-prepared settings when participant adjustment is locked', () => {
+              const component = new AccessibleNasaTlx() as any;
+              component.studyConfig = { support: { participantAdjustmentPolicy: 'prepared-only' } };
+              component.largeText = false;
+              component.audioGuidance = false;
+              component.applySavedRecoveryPresentation(session);
+              expect(component.largeText).toBe(false);
+              expect(component.audioGuidance).toBe(false);
+            });
+          });
+          TEST
+          npx vitest run recovery-audio.workflow.test.ts
+          rm recovery-audio.workflow.test.ts
+
       - name: Build production, standalone and release outputs
+        working-directory: source
         run: npm run build:release
 
-      - name: Confirm the committed deployment files are current
-        run: >-
-          git diff --exit-code --
-          demo/accessible-nasa-tlx-v0.7.html
-          ../index.html
-          ../study.html
-          ../assets
+      - name: Verify the deployment contains only the integrated implementation
+        shell: bash
+        run: |
+          rm -f resume-recovery-enhancement.js
+          if grep -q 'resume-recovery-enhancement.js' index.html; then
+            echo 'index.html still loads the separate recovery enhancement.' >&2
+            exit 1
+          fi
+          participant_asset="$(sed -n 's/.*src="\.\/assets\/\([^"]*participant[^"]*\.js\)".*/\1/p' index.html)"
+          test -n "$participant_asset"
+          test -f "assets/$participant_asset"
+          grep -q 'Saved questionnaire found.' "assets/$participant_asset"
+          grep -q 'remove the saved copy' "assets/$participant_asset"
+          grep -q 'savedSessionOfferSpeech' source/src/accessible-nasa-tlx.ts
+          grep -q 'applySavedRecoveryPresentation' source/src/accessible-nasa-tlx.ts
+          git diff --check
+
+      - name: Commit the tested source and generated release
+        shell: bash
+        run: |
+          git show origin/main:.github/workflows/verify.yml > .github/workflows/verify.yml
+          rm -f .github/workflows/apply-integrated-recovery-audio.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Integrate saved-session recovery announcement'
+          git push origin HEAD:fix/integrated-recovery-audio
