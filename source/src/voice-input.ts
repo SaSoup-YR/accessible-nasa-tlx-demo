@@ -74,7 +74,7 @@ const numberWords = new Set([
 ]);
 
 const unsafeMeaning =
-  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|mistake|wrong)\b/;
+  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b/;
 
 const dimensionAliases: Record<DimensionId, readonly string[]> = {
   mental: ['mental demand', 'mental'],
@@ -121,29 +121,40 @@ function numericCandidates(text: string) {
   return candidates;
 }
 
+function anchorCandidate(text: string, dimension: TlxDimension): number | null | undefined {
+  const middle = /\b(middle|midpoint|centre|center)\b/.test(text);
+  const lowWords = dimension.id === 'performance' ? '(?:good|successful)' : 'low';
+  const highWords = dimension.id === 'performance' ? '(?:poor|bad|unsuccessful)' : 'high';
+  const closerLow = new RegExp(`\\bclose(?:r)?\\s+(?:to|too)\\s+${lowWords}\\b`).test(text);
+  const closerHigh = new RegExp(`\\bclose(?:r)?\\s+(?:to|too)\\s+${highWords}\\b`).test(text);
+  const low = new RegExp(`\\b${lowWords}\\b`).test(text);
+  const high = new RegExp(`\\b${highWords}\\b`).test(text);
+
+  if (closerLow || closerHigh) {
+    if ([middle, closerLow, closerHigh].filter(Boolean).length !== 1) return null;
+    if ((closerLow && high) || (closerHigh && low)) return null;
+    return closerLow ? 25 : 75;
+  }
+
+  if (![middle, low, high].some(Boolean)) return undefined;
+  if ([middle, low, high].filter(Boolean).length !== 1) return null;
+  if (middle) return 50;
+  return low ? 0 : 100;
+}
+
 export function parseRatingTranscript(transcript: string, dimension: TlxDimension) {
   const text = normalise(transcript);
   if (!text || unsafeMeaning.test(text)) return null;
 
   const candidates = numericCandidates(text);
+  const anchor = anchorCandidate(text, dimension);
   if (candidates.length > 0) {
-    return candidates.length === 1 && candidates[0] !== null ? candidates[0] : null;
+    if (candidates.length !== 1 || candidates[0] === null || anchor === null) return null;
+    if (anchor !== undefined && anchor !== candidates[0]) return null;
+    return candidates[0];
   }
 
-  const middle = /\b(middle|midpoint|centre|center)\b/.test(text);
-  if (dimension.id === 'performance') {
-    const good = /\b(good|successful)\b/.test(text);
-    const poor = /\b(poor|bad|unsuccessful)\b/.test(text);
-    if ([middle, good, poor].filter(Boolean).length !== 1) return null;
-    if (middle) return 50;
-    return good ? 0 : 100;
-  } else {
-    const low = /\blow\b/.test(text);
-    const high = /\bhigh\b/.test(text);
-    if ([middle, low, high].filter(Boolean).length !== 1) return null;
-    if (middle) return 50;
-    return low ? 0 : 100;
-  }
+  return anchor ?? null;
 }
 
 export function parsePairTranscript(

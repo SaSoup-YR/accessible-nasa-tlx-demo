@@ -1,3 +1,8 @@
+<!--
+  REFERENCE TEMPLATE ONLY.
+  Do not paste this file into Qualtrics unchanged. Use the complete generated
+  question HTML from study.html so the iframe has the configured participant URL.
+-->
 <style>
   #accessible-nasa-tlx-recorded-summary {
     display: none;
@@ -5,7 +10,7 @@
     font-family: Arial, Helvetica, sans-serif;
     line-height: 1.5;
   }
-  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] { display: block; }
+  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] { display: block !important; }
   #accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question { display: none; }
   #accessible-nasa-tlx-recorded-summary h2,
   #accessible-nasa-tlx-recorded-summary h3 { color: #173f63; }
@@ -31,6 +36,7 @@
   id="accessible-nasa-tlx-recorded-summary"
   data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"
   aria-labelledby="accessible-nasa-tlx-recorded-summary-heading"
+  style="display:none"
 >
   <h2 id="accessible-nasa-tlx-recorded-summary-heading">Accessible NASA-TLX recorded response</h2>
   <p>This read-only summary is generated from the values saved in this Qualtrics response.</p>

@@ -25,8 +25,6 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   // allows rather than being used as a reading pause.
   var completionDelayMs = 1500;
 
-  question.hideNextButton();
-
   function setStatus(message) {
     if (status) status.textContent = message;
   }
@@ -170,9 +168,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
 
   if (!iframe || !iframe.contentWindow) {
     setStatus('The Accessible NASA-TLX iframe is missing. The study conductor must correct this Qualtrics question.');
+    // Keep the native navigation available on a misconfigured test page instead of
+    // trapping the researcher or participant. This path must fail the synthetic
+    // preflight and must never be used to collect a participant response.
+    question.showNextButton();
     return;
   }
 
+  question.hideNextButton();
   setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleNasaTlxListener() {

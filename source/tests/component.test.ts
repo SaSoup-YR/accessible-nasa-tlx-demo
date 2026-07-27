@@ -346,7 +346,7 @@ describe('speech support integration', () => {
       onend: (() => void) | null = null;
       start() {
         this.onresult?.({
-          results: { 0: { 0: { transcript: 'seventy five' }, length: 1 }, length: 1 },
+          results: { 0: { 0: { transcript: 'closer to high' }, length: 1 }, length: 1 },
         });
       }
       stop() {}
@@ -358,10 +358,19 @@ describe('speech support integration', () => {
     await component.updateComplete;
     await startRatings(component);
 
+    expect(component.querySelector('.voice-input')?.textContent).toContain(
+      'Low, Closer to Low, Middle, Closer to High, or High',
+    );
     [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')]
       .find((button) => button.textContent?.includes('Start voice input'))!
       .click();
     await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
+      'Closer to High, value 75, for Mental Demand',
+    );
+    expect(component.querySelector('.voice-confirmation')?.textContent).not.toContain(
+      'value 100',
+    );
     component.querySelector<HTMLButtonElement>('.voice-confirmation .primary-button')!.click();
     await component.updateComplete;
 
