@@ -1024,6 +1024,32 @@ button:disabled {
   resize: vertical;
 }
 
+.qualtrics-install-steps {
+  display: grid;
+  gap: 1rem;
+  padding-left: 1.75rem;
+}
+
+.qualtrics-install-steps > li {
+  padding: 1rem;
+  border: 2px solid #9fb2c3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qualtrics-install-steps h4 {
+  margin-top: 0;
+}
+
+.qualtrics-install-steps textarea {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+}
+
+.qualtrics-install-steps .secondary-button {
+  margin-top: 0.75rem;
+}
+
 .table-scroll {
   overflow-x: auto;
 }
