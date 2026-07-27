@@ -94,6 +94,38 @@ function normalise(transcript: string) {
     .trim();
 }
 
+export interface RankedSpeechAnswer<T> {
+  transcript: string;
+  value: T;
+}
+
+export function hasUnsafeSpeechMeaning(transcript: string) {
+  return unsafeMeaning.test(normalise(transcript));
+}
+
+function chooseConsistentAlternative<T>(
+  transcripts: readonly string[],
+  parser: (transcript: string) => T | null,
+): RankedSpeechAnswer<T> | null {
+  const ranked = transcripts.map((transcript) => transcript.trim()).filter(Boolean);
+  if (ranked.length === 0 || hasUnsafeSpeechMeaning(ranked[0])) return null;
+
+  const parsed = ranked
+    .map((transcript, index) => ({ transcript, value: parser(transcript), index }))
+    .filter(
+      (candidate): candidate is RankedSpeechAnswer<T> & { index: number } =>
+        candidate.value !== null,
+    );
+  if (parsed.length === 0) return null;
+  if (ranked.slice(0, parsed[0].index).some(hasUnsafeSpeechMeaning)) return null;
+
+  // A lower-ranked hypothesis may rescue a harmless primary transcription such
+  // as "hello" for "low". Conflicting valid hypotheses are never guessed
+  // because an endpoint error could change a rating from 0 to 100.
+  if (new Set(parsed.map(({ value }) => value)).size !== 1) return null;
+  return { transcript: parsed[0].transcript, value: parsed[0].value };
+}
+
 function numericCandidates(text: string) {
   const tokens = text.split(' ').filter(Boolean);
   const candidates: Array<number | null> = [];
@@ -167,4 +199,20 @@ export function parsePairTranscript(
     dimensionAliases[dimension].some((alias) => text === alias || text.includes(alias)),
   );
   return matches.length === 1 ? matches[0] : null;
+}
+
+export function parseRatingAlternatives(
+  transcripts: readonly string[],
+  dimension: TlxDimension,
+) {
+  return chooseConsistentAlternative(transcripts, (transcript) =>
+    parseRatingTranscript(transcript, dimension));
+}
+
+export function parsePairAlternatives(
+  transcripts: readonly string[],
+  availableDimensions: readonly DimensionId[],
+) {
+  return chooseConsistentAlternative(transcripts, (transcript) =>
+    parsePairTranscript(transcript, availableDimensions));
 }

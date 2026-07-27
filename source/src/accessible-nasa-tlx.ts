@@ -36,7 +36,7 @@ import {
   type SupportChangeSetting,
   type SupportMetadata,
 } from './study';
-import { parsePairTranscript, parseRatingTranscript } from './voice-input';
+import { parsePairAlternatives, parseRatingAlternatives } from './voice-input';
 import {
   DwellTracker,
   WEBGAZER_FACE_MESH_URL,
@@ -624,7 +624,7 @@ export class AccessibleNasaTlx extends LitElement {
           ?disabled=${!available}
           @click=${this.toggleReadAloud}
         >
-          ${this.readingAloud ? 'Stop summary' : 'Hear a summary of this step'}
+          ${this.readingAloud ? 'Stop speech' : 'Hear a summary of this step'}
         </button>
         ${this.audioStatusMessage
           ? html`<p class="audio-status" role="status" aria-atomic="true">${this.audioStatusMessage}</p>`
@@ -638,8 +638,11 @@ export class AccessibleNasaTlx extends LitElement {
                 @change=${this.setAudioGuidance}
               />
               <span>
-                <strong>Automatically read new questions and selected answers aloud</strong>
-                <small>Default off. Turning this on plays an immediate spoken confirmation.</small>
+                <strong>Automatically read new questions, selected answers and feedback aloud</strong>
+                <small>
+                  Default off. This includes voice proposals, simpler help, recovery summaries,
+                  errors and completion feedback while this page remains open.
+                </small>
               </span>
             </label>`
           : html`<small>Automatic spoken guidance is ${this.audioGuidance ? 'on' : 'off'} in the study configuration.</small>`}
@@ -647,6 +650,30 @@ export class AccessibleNasaTlx extends LitElement {
           ${available
             ? 'Uses the browser speech-synthesis voice; no audio is recorded.'
             : 'Built-in audio is unavailable in this browser. External screen readers can still use the semantic page.'}
+        </small>
+      </div>
+    `;
+  }
+
+  private renderCompletionReadAloudControl() {
+    const available = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+    return html`
+      <div class="quick-support audio-guidance completion-audio" aria-label="Result audio guidance">
+        <button
+          class="secondary-button large-answer-button"
+          type="button"
+          ?disabled=${!available}
+          @click=${this.toggleReadAloud}
+        >
+          ${this.readingAloud ? 'Stop speech' : 'Hear the result summary'}
+        </button>
+        ${this.audioStatusMessage
+          ? html`<p class="audio-status" role="status" aria-atomic="true">${this.audioStatusMessage}</p>`
+          : nothing}
+        <small>
+          ${available
+            ? 'Uses the browser speech-synthesis voice; no audio is recorded.'
+            : 'Built-in audio is unavailable in this browser. External screen readers can still read the result.'}
         </small>
       </div>
     `;
@@ -817,7 +844,11 @@ export class AccessibleNasaTlx extends LitElement {
               <p>${dimension.simpleExplanation}</p>
               <p class="support-boundary">Use the official scale when choosing your response.</p>
             </aside>`
-          : html`<details class="optional-explanation">
+          : html`<details
+              class="optional-explanation"
+              @toggle=${(event: Event) =>
+                this.speakOpenedHelp(event, `Simpler explanation for ${dimension.name}. ${dimension.simpleExplanation}`)}
+            >
               <summary>Show a simpler explanation</summary>
               <div class="explanation-block">
                 <p>${dimension.simpleExplanation}</p>
@@ -971,7 +1002,14 @@ export class AccessibleNasaTlx extends LitElement {
       return html`<p class="simple-pair-prompt">In simpler words: which one added more to the work you had to do?</p>`;
     }
     return html`
-      <details class="optional-explanation pair-help">
+      <details
+        class="optional-explanation pair-help"
+        @toggle=${(event: Event) =>
+          this.speakOpenedHelp(
+            event,
+            `Simpler explanations. ${left.name}: ${left.simpleExplanation} ${right.name}: ${right.simpleExplanation}`,
+          )}
+      >
         <summary>Need help with these factor names?</summary>
         <div class="explanation-grid">
           ${[left, right].map(
@@ -1203,23 +1241,43 @@ export class AccessibleNasaTlx extends LitElement {
               </div>`
           : html`<p>No response, audio or webcam video has been uploaded. Demonstration results are not retained after this page is closed.</p>`}
         <p>Support and input-route metadata remain separate from the NASA-TLX score.</p>
+        ${!this.studyConfig || !this.completionSavedByHost
+          ? this.renderCompletionReadAloudControl()
+          : nothing}
         ${!this.studyConfig
           ? html`<details>
               <summary>Show the complete result record</summary>
               <pre>${JSON.stringify(this.submittedRecord, null, 2)}</pre>
             </details>`
           : nothing}
-        <div class="button-row compact">
-          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
-            Download JSON backup
-          </button>
-          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
-            Download CSV backup
-          </button>
-          ${!this.studyConfig
-            ? html`<button class="secondary-button large-answer-button" type="button" @click=${this.restart}>Start again</button>`
-            : nothing}
-        </div>
+        ${this.studyConfig && this.completionSavedByHost
+          ? html`<aside class="submission-fallback" aria-labelledby="submission-fallback-heading">
+              <h3 id="submission-fallback-heading">Emergency backup if this page does not advance</h3>
+              <p>
+                No download is required during the normal automatic transition. If this page remains visible
+                instead of opening the recorded result page, or an error appears, use one backup button and
+                contact the study conductor.
+              </p>
+              <div class="button-row compact">
+                <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
+                  Download JSON backup
+                </button>
+                <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
+                  Download CSV backup
+                </button>
+              </div>
+            </aside>`
+          : html`<div class="button-row compact">
+              <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
+                Download JSON backup
+              </button>
+              <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
+                Download CSV backup
+              </button>
+              ${!this.studyConfig
+                ? html`<button class="secondary-button large-answer-button" type="button" @click=${this.restart}>Start again</button>`
+                : nothing}
+            </div>`}
         ${this.studyConfig
           ? html`<p>
               <strong>Participant:</strong>
@@ -1312,6 +1370,11 @@ export class AccessibleNasaTlx extends LitElement {
     this.showSimpleLanguage = value;
     this.invalidatePendingSubmission();
     this.persistProgress();
+    this.announceAutomatic(
+      value
+        ? this.currentSimpleExplanationSpeech()
+        : 'Simpler explanations are off. The official questionnaire wording remains available.',
+    );
   }
 
   private recordSupportChange(
@@ -1351,6 +1414,11 @@ export class AccessibleNasaTlx extends LitElement {
     this.answerMode = mode;
     this.invalidatePendingSubmission();
     this.persistProgress();
+    this.announceAutomatic(
+      mode === 'smiley'
+        ? 'Smiley landmark answer format selected. Each rating offers five labelled values, with the full precise scale available on request.'
+        : 'Standard 21-point answer format selected. Each rating uses values from 0 to 100 in steps of 5.',
+    );
   }
 
   private setLargeText(value: boolean) {
@@ -1358,6 +1426,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.largeText = value;
     this.invalidatePendingSubmission();
     this.persistProgress();
+    this.announceAutomatic(`${value ? 'Large' : 'Standard'} text selected.`);
   }
 
   private setRecovery(event: Event) {
@@ -1367,6 +1436,11 @@ export class AccessibleNasaTlx extends LitElement {
     this.invalidatePendingSubmission();
     if (this.recoveryEnabled) this.persistProgress();
     else this.clearSavedProgress();
+    this.announceAutomatic(
+      value
+        ? 'Interruption recovery is on. Incomplete answers will be stored in this browser.'
+        : 'Interruption recovery is off. The saved in-progress copy has been removed.',
+    );
   }
 
   private setAudioGuidance = (event: Event) => {
@@ -1374,7 +1448,11 @@ export class AccessibleNasaTlx extends LitElement {
     this.recordSupportChange('automatic-audio', this.audioGuidance, value);
     this.audioGuidance = value;
     this.invalidatePendingSubmission();
-    if (this.audioGuidance) this.speakText('Built-in audio guidance is on. New questions and selected answers will be spoken.');
+    if (this.audioGuidance) {
+      this.speakText(
+        'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.',
+      );
+    }
     else this.stopReading();
     this.persistProgress();
   };
@@ -1392,7 +1470,7 @@ export class AccessibleNasaTlx extends LitElement {
       return 'Say a number from 0 to 100 in steps of 5, such as 25 or 70.';
     }
     const labels = smileyLandmarks.map(({ value }) => this.landmarkLabel(dimension, value));
-    return `Say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}. You may instead say 0, 25, 50, 75, or 100.`;
+    return `Say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}. You may instead say 0, 25, 50, 75, or 100. If ${labels[0]} or ${labels.at(-1)} is not recognised, say zero or one hundred.`;
   }
 
   private ratingVoiceAnswerLabel(dimension: TlxDimension, value: number) {
@@ -1424,8 +1502,14 @@ export class AccessibleNasaTlx extends LitElement {
     this.ratings = { ...this.ratings, [dimension]: value };
     this.ratingInputRoutes = { ...this.ratingInputRoutes, [dimension]: effectiveRoute };
     this.clearError();
-    this.statusMessage = `${dimensionById.get(dimension)!.name}, ${value}, selected.`;
-    if (this.audioGuidance) this.speakText(this.statusMessage);
+    const currentDimension = dimensionById.get(dimension)!;
+    const visibleAsLandmark =
+      this.answerMode === 'smiley' &&
+      smileyLandmarks.some((landmark) => landmark.value === value);
+    this.statusMessage = visibleAsLandmark
+      ? `${currentDimension.name}, ${this.landmarkLabel(currentDimension, value)}, value ${value}, selected.`
+      : `${currentDimension.name}, ${value}, selected.`;
+    this.announceAutomatic(this.statusMessage);
     this.persistProgress();
   }
 
@@ -1437,7 +1521,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.pairInputRoutes = { ...this.pairInputRoutes, [pairId]: effectiveRoute };
     this.clearError();
     this.statusMessage = `${dimensionById.get(dimension)!.name} selected.`;
-    if (this.audioGuidance) this.speakText(this.statusMessage);
+    this.announceAutomatic(this.statusMessage);
     this.persistProgress();
   }
 
@@ -1592,6 +1676,7 @@ export class AccessibleNasaTlx extends LitElement {
       if (sink) {
         this.submittingResult = true;
         this.statusMessage = `Submitting responses to ${sink.name}.`;
+        this.announceAutomatic(this.statusMessage);
         try {
           this.hostReceipt = await submitToApprovedResultSink(this.submittedRecord, sink);
           this.completionSavedByHost = true;
@@ -1717,6 +1802,16 @@ export class AccessibleNasaTlx extends LitElement {
     this.speakText(this.currentStepSpeech());
   };
 
+  private announceAutomatic(text: string) {
+    if (this.audioGuidance && text.trim()) this.speakText(text);
+  }
+
+  private speakOpenedHelp(event: Event, text: string) {
+    if ((event.currentTarget as HTMLDetailsElement).open) {
+      this.announceAutomatic(text);
+    }
+  }
+
   private speakText(text: string) {
     if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
       this.audioStatusMessage = 'Built-in audio is unavailable in this browser. External screen readers can still read the page.';
@@ -1735,7 +1830,7 @@ export class AccessibleNasaTlx extends LitElement {
     utterance.onend = () => {
       if (requestId !== this.speechRequestId) return;
       this.readingAloud = false;
-      this.audioStatusMessage = 'Spoken summary finished.';
+      this.audioStatusMessage = 'Spoken guidance finished.';
     };
     utterance.onerror = (event) => {
       if (requestId !== this.speechRequestId) return;
@@ -1750,7 +1845,7 @@ export class AccessibleNasaTlx extends LitElement {
         synthesis.speak(utterance);
         this.readingAloud = true;
         this.readAloudUsed = true;
-        this.audioStatusMessage = 'Playing a spoken summary of the current step.';
+        this.audioStatusMessage = 'Playing spoken guidance.';
       } catch {
         this.readingAloud = false;
         this.audioStatusMessage = 'Built-in audio could not start in this browser. Check the device volume and try the button again.';
@@ -1771,7 +1866,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.speechRequestId += 1;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     this.readingAloud = false;
-    if (announce) this.audioStatusMessage = 'Spoken summary stopped.';
+    if (announce) this.audioStatusMessage = 'Spoken guidance stopped.';
   }
 
   private currentStepSpeech() {
@@ -1779,27 +1874,64 @@ export class AccessibleNasaTlx extends LitElement {
       const task = this.studyConfig
         ? `Think about ${this.studyConfig.taskLabel}.`
         : 'Think about one task that you have just completed.';
-      return `Before you begin. ${task} First rate six aspects of workload. Then make fifteen comparisons. Finally review and submit.`;
+      const answerFormat = this.answerMode === 'smiley'
+        ? 'The rating format uses five labelled smiley landmarks. A precise scale is available on request.'
+        : 'The rating format uses a 21-point scale from 0 to 100.';
+      return `Before you begin. ${task} First rate six aspects of workload. ${answerFormat} Then make fifteen comparisons. Finally review and submit.`;
     }
     if (this.stage === 'ratings') {
       const dimension = dimensions[this.ratingIndex];
       const support = this.showSimpleLanguage ? ` Simpler explanation: ${dimension.simpleExplanation}` : '';
-      return `Rating ${this.ratingIndex + 1} of 6. ${dimension.name}. Official definition: ${dimension.officialDefinition}.${support} Rate from 0, ${dimension.lowAnchor}, to 100, ${dimension.highAnchor}.`;
+      const answerPrompt = this.answerMode === 'smiley'
+        ? `Choose a smiley landmark: ${smileyLandmarks
+            .map(({ value }) => `${this.landmarkLabel(dimension, value)}, value ${value}`)
+            .join('; ')}. A more precise value is available on the full scale.`
+        : `Rate from 0, ${dimension.lowAnchor}, to 100, ${dimension.highAnchor}, in steps of 5.`;
+      return `Rating ${this.ratingIndex + 1} of 6. ${dimension.name}. Official definition: ${dimension.officialDefinition}.${support} ${answerPrompt}`;
     }
     if (this.stage === 'pairs') {
       const pair = this.pairOrder[this.pairIndex];
       const left = dimensionById.get(pair.left)!;
       const right = dimensionById.get(pair.right)!;
-      return `Comparison ${this.pairIndex + 1} of 15. Which factor contributed more to workload? This is not a low to high rating. Choose ${left.name} or ${right.name}.`;
+      const support = this.showSimpleLanguage
+        ? ` In simpler words, choose which one added more to the work you had to do. ${left.name}: ${left.shortMeaning}. ${right.name}: ${right.shortMeaning}.`
+        : '';
+      return `Comparison ${this.pairIndex + 1} of 15. Which factor contributed more to workload? This is not a low to high rating. Choose ${left.name} or ${right.name}.${support}`;
     }
     if (this.stage === 'review') return 'Review your six ratings and fifteen source of workload comparisons before submitting.';
-    return 'Responses calculated.';
+    if (this.studyConfig && this.completionSavedByHost) {
+      return 'Answers accepted. Keep this page open while the study platform saves the response.';
+    }
+    if (!this.result) return 'Responses calculated.';
+    const score = !this.studyConfig || this.studyConfig.showScoreToParticipant
+      ? ` Weighted workload score: ${this.result.weightedScore.toFixed(2)} out of 100.`
+      : '';
+    return `Responses calculated.${score} JSON and CSV backup buttons are available on this page.`;
+  }
+
+  private currentSimpleExplanationSpeech() {
+    if (this.stage === 'ratings') {
+      const dimension = dimensions[this.ratingIndex];
+      return `Simpler explanation for ${dimension.name}. ${dimension.simpleExplanation} Use the official scale when choosing your response.`;
+    }
+    if (this.stage === 'pairs') {
+      const pair = this.pairOrder[this.pairIndex];
+      const left = dimensionById.get(pair.left)!;
+      const right = dimensionById.get(pair.right)!;
+      return `In simpler words, choose which one added more to the work you had to do. ${left.name}: ${left.shortMeaning}. ${right.name}: ${right.shortMeaning}.`;
+    }
+    return 'Simpler explanations are on. Official questionnaire wording remains visible.';
+  }
+
+  private resumeSummarySpeech() {
+    return `Welcome back. ${this.completedCount()} of ${dimensions.length + pairs.length} responses completed. Last saved response: ${this.lastSavedDescription()}. Current position: ${this.currentPositionDescription()}. Next action: ${this.nextActionDescription()}`;
   }
 
   private startGazeInput = async () => {
     if (!isSecureGazeContext(window.location)) {
       this.gazeState = 'error';
       this.gazeMessage = 'Gaze input requires an HTTPS-hosted page or localhost.';
+      this.announceAutomatic(this.gazeMessage);
       return;
     }
     this.gazeState = 'loading';
@@ -1827,6 +1959,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.gazeMessage = error instanceof Error
         ? `Gaze setup did not start: ${error.message}`
         : 'Gaze setup did not start. Use another answer route.';
+      this.announceAutomatic(this.gazeMessage);
       this.releaseGazeResources();
     }
   };
@@ -1847,6 +1980,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.webgazer.showFaceFeedbackBox(true);
     this.gazeState = 'positioning';
     this.gazeMessage = message;
+    this.announceAutomatic(this.gazeMessage);
     await this.updateComplete;
     this.mountWebGazerPreview();
     this.querySelector<HTMLElement>('#gaze-positioning-heading')?.focus();
@@ -1876,6 +2010,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.gazeCalibrationRepetition = 0;
     this.gazeState = 'calibrating';
     this.gazeMessage = 'Camera preview hidden. Complete all 27 calibration samples.';
+    this.announceAutomatic(this.gazeMessage);
     void this.updateComplete.then(() => this.querySelector<HTMLButtonElement>('.calibration-point')?.focus());
   };
 
@@ -1901,6 +2036,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.webgazer.showFaceFeedbackBox(false);
     this.webgazer.showPredictionPoints(true);
     this.statusMessage = 'Gaze-assisted answering is ready.';
+    this.announceAutomatic(this.statusMessage);
   };
 
   private handleGazePoint(point: GazePoint | null) {
@@ -1944,6 +2080,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.gazeDwellProgress = 0;
       this.resetGazeHover();
       this.statusMessage = `${this.gazePendingLabel} proposed by gaze. Confirm or cancel.`;
+      this.announceAutomatic(this.statusMessage);
     }
   }
 
@@ -2007,6 +2144,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.releaseGazeResources();
     this.gazeState = 'off';
     this.gazeMessage = 'Gaze input and camera stopped.';
+    this.announceAutomatic(this.gazeMessage);
   };
 
   private releaseGazeResources() {
@@ -2034,34 +2172,52 @@ export class AccessibleNasaTlx extends LitElement {
     recognition.lang = 'en-GB';
     recognition.continuous = false;
     recognition.interimResults = false;
-    // A lower-ranked recognition alternative can silently omit a negation. Only the
-    // browser's primary transcript is considered, and every proposed answer still
-    // requires explicit confirmation.
-    recognition.maxAlternatives = 1;
+    // Ask for ranked alternatives so a harmless primary transcription such as
+    // "hello" can be recovered from a lower-ranked "low". The parser rejects a
+    // negated primary result and any set of alternatives that maps to conflicting
+    // answers. Every accepted proposal still requires explicit confirmation.
+    recognition.maxAlternatives = 5;
     recognition.onresult = (event) => {
       if (this.recognition !== recognition) return;
-      const transcript = event.results[0]?.[0]?.transcript ?? '';
+      const result = event.results[0];
+      const transcripts: string[] = [];
+      for (let index = 0; result && index < result.length; index += 1) {
+        const transcript = result[index]?.transcript?.trim();
+        if (transcript) transcripts.push(transcript);
+      }
       if (context === 'rating') {
-        const value = parseRatingTranscript(transcript, first);
-        if (value !== null) {
+        const proposal = parseRatingAlternatives(transcripts, first);
+        if (proposal) {
           this.releaseRecognition(recognition);
-          const label = this.ratingVoiceAnswerLabel(first, value);
-          this.pendingVoiceAnswer = { context, transcript, value, label };
+          const label = this.ratingVoiceAnswerLabel(first, proposal.value);
+          this.pendingVoiceAnswer = {
+            context,
+            transcript: proposal.transcript,
+            value: proposal.value,
+            label,
+          };
           this.voiceState = 'pending';
           this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
+          this.announceAutomatic(this.voiceMessage);
           void this.updateComplete.then(() =>
             this.querySelector<HTMLButtonElement>('[data-voice-confirm]')?.focus(),
           );
           return;
         }
       } else {
-        const value = parsePairTranscript(transcript, [first.id, second!.id]);
-        if (value) {
+        const proposal = parsePairAlternatives(transcripts, [first.id, second!.id]);
+        if (proposal) {
           this.releaseRecognition(recognition);
-          const label = dimensionById.get(value)!.name;
-          this.pendingVoiceAnswer = { context, transcript, value, label };
+          const label = dimensionById.get(proposal.value)!.name;
+          this.pendingVoiceAnswer = {
+            context,
+            transcript: proposal.transcript,
+            value: proposal.value,
+            label,
+          };
           this.voiceState = 'pending';
           this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
+          this.announceAutomatic(this.voiceMessage);
           void this.updateComplete.then(() =>
             this.querySelector<HTMLButtonElement>('[data-voice-confirm]')?.focus(),
           );
@@ -2071,6 +2227,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.releaseRecognition(recognition);
       this.voiceState = 'error';
       this.voiceMessage = `The answer was not recognised. ${context === 'rating' ? this.ratingVoicePrompt(first) : `Say ${first.name} or ${second!.name}.`}`;
+      this.announceAutomatic(this.voiceMessage);
     };
     recognition.onerror = (event) => {
       if (this.recognition !== recognition) return;
@@ -2079,6 +2236,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.voiceMessage = event.error === 'not-allowed'
         ? 'Microphone permission was not granted. Use the visible answer buttons or system voice control.'
         : 'Voice recognition did not complete. Use the visible answer buttons or try again.';
+      this.announceAutomatic(this.voiceMessage);
     };
     recognition.onend = () => {
       if (this.recognition !== recognition) return;
@@ -2086,6 +2244,7 @@ export class AccessibleNasaTlx extends LitElement {
       if (this.voiceState === 'listening') {
         this.voiceState = 'error';
         this.voiceMessage = 'No answer was recognised. Try again or use the visible answer buttons.';
+        this.announceAutomatic(this.voiceMessage);
       }
     };
     try {
@@ -2094,6 +2253,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.releaseRecognition(recognition);
       this.voiceState = 'error';
       this.voiceMessage = 'Voice recognition could not start in this browser context.';
+      this.announceAutomatic(this.voiceMessage);
     }
   }
 
@@ -2150,7 +2310,10 @@ export class AccessibleNasaTlx extends LitElement {
       this.resumeSummaryVisible = true;
       this.interruptionSummaryShown = true;
       this.statusMessage = 'Welcome back. A summary of your saved position is available.';
-      void this.updateComplete.then(() => this.querySelector<HTMLElement>('#resume-heading')?.focus());
+      void this.updateComplete.then(() => {
+        this.querySelector<HTMLElement>('#resume-heading')?.focus();
+        this.announceAutomatic(this.resumeSummarySpeech());
+      });
     }
     this.hiddenAt = null;
   };
@@ -2197,6 +2360,7 @@ export class AccessibleNasaTlx extends LitElement {
       localStorage.setItem(storageKey, JSON.stringify(session));
     } catch {
       this.statusMessage = 'Progress could not be saved by this browser.';
+      this.announceAutomatic(this.statusMessage);
     }
   }
 
@@ -2268,7 +2432,10 @@ export class AccessibleNasaTlx extends LitElement {
     this.savedSession = null;
     this.resumeSummaryVisible = true;
     this.interruptionSummaryShown = true;
-    void this.updateComplete.then(() => this.querySelector<HTMLElement>('#resume-heading')?.focus());
+    void this.updateComplete.then(() => {
+      this.querySelector<HTMLElement>('#resume-heading')?.focus();
+      this.announceAutomatic(this.resumeSummarySpeech());
+    });
   };
 
   private eraseSavedSession = () => {
@@ -2326,6 +2493,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private showError(message: string) {
     this.errorMessage = message;
+    this.announceAutomatic(`There is a problem. ${message}`);
     void this.updateComplete.then(() => {
       const summary = this.querySelector<HTMLElement>('#error-summary');
       if (!summary) return;
