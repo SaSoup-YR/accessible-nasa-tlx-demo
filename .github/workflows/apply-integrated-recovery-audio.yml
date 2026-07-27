@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/integrated-recovery-audio
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
