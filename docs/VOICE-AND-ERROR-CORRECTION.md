@@ -70,6 +70,52 @@ The smiley-mode prompt now reads the visible label choices and their five values
 Saying `smiley landmarks` is not a rating answer and is deliberately not interpreted
 as one; answer-presentation choice is configured before the rating task.
 
+## Version 0.7 ranked-alternative and audio-feedback correction
+
+Further microphone testing on 27 July 2026 found that the browser sometimes returned
+a harmless near-homophone such as `hello` as its first hypothesis even when `low` was
+available as a lower-ranked hypothesis. Requesting only one hypothesis made the user
+repeat an endpoint unnecessarily. Unrestricted fuzzy matching was rejected because a
+Low/High error changes a rating between 0 and 100.
+
+The recogniser now requests up to five ranked alternatives. The application:
+
+1. rejects the entire result if the primary transcript contains a negation or
+   uncertainty;
+2. accepts a lower-ranked valid hypothesis only when all valid hypotheses resolve to
+   the same answer;
+3. rejects conflicting valid hypotheses;
+4. presents the chosen transcript, label, numeric value and factor as a proposal;
+5. requires explicit confirmation before changing an answer.
+
+The Smiley prompt also tells the participant to say `zero` or `one hundred` if the
+short endpoint words are not recognised. This is a reliable fallback route, not a
+claim that the browser speech service has become accurate for every speaker or
+device. The Web Speech API exposes ranked hypotheses and `maxAlternatives`, but the
+underlying recognition implementation remains browser or platform dependent:
+[Web Speech API specification](https://webaudio.github.io/web-speech-api/).
+
+Built-in automatic audio now covers:
+
+- each new rating, comparison and review step;
+- the five Smiley labels and values when that presentation is active;
+- selected ratings and pair choices;
+- a voice or gaze proposal before confirmation;
+- opened simpler help and a simpler-language mode change;
+- a saved-position return summary and next action;
+- validation, voice, storage and submission errors;
+- result calculation, or a short keep-the-page-open message during a successful
+  Qualtrics handoff.
+
+This audio is an optional page-level speech-synthesis route, not a screen reader.
+It deliberately does not narrate every changing gaze coordinate, calibration count or
+background technical state because that would create continuous auditory load and
+could interfere with the task. The interface continues to expose semantic headings,
+native controls, focus movement and live regions to NVDA and VoiceOver independently.
+When Qualtrics replaces the iframe after a successful handoff, browser speech that
+belongs to the iframe may be interrupted; persistent completion wording therefore
+belongs on the Qualtrics End-of-Survey page.
+
 ## Role and file boundary
 
 Version 0.5 is one workflow with two role-specific pages, not one mixed page:

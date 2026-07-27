@@ -129,8 +129,11 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('question.showNextButton();');
     expect(bridge).not.toContain('No further action is required.');
     expect(bridge).toContain('Please keep this page open until the next page appears by itself.');
+    expect(bridge).toContain('No backup download is required during this automatic transition.');
+    expect(bridge).toContain('Qualtrics did not open the recorded result page.');
     expect(bridge).not.toContain('five minutes');
     expect(bridge).toContain('window.clearTimeout(completionTimerId);');
+    expect(bridge).toContain('window.clearTimeout(advanceWatchdogTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
     expect(bridge).toContain(
       "setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));",
@@ -294,6 +297,10 @@ describe('approved host result sink', () => {
     expect(completionDelay).toBe(1500);
     completionCallback!();
     expect(clickNextButton).toHaveBeenCalledOnce();
+    expect(completionDelay).toBe(6000);
+    completionCallback!();
+    expect(showNextButton).toHaveBeenCalledOnce();
+    expect(status.textContent).toContain('did not open the recorded result page');
   });
 
   it('restores Qualtrics navigation when an invalid record cannot be staged', () => {

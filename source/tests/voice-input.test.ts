@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { dimensions } from '../src/nasa-tlx';
-import { parsePairTranscript, parseRatingTranscript } from '../src/voice-input';
+import {
+  parsePairAlternatives,
+  parsePairTranscript,
+  parseRatingAlternatives,
+  parseRatingTranscript,
+} from '../src/voice-input';
 
 describe('voice-answer parsing', () => {
   it('accepts only valid NASA-TLX rating increments', () => {
@@ -49,5 +54,24 @@ describe('voice-answer parsing', () => {
     expect(parsePairTranscript('mental or physical', ['mental', 'physical'])).toBeNull();
     expect(parsePairTranscript('not physical demand', ['mental', 'physical'])).toBeNull();
     expect(parsePairTranscript('frustration', ['mental', 'physical'])).toBeNull();
+  });
+
+  it('uses a consistent lower-ranked hypothesis without guessing across conflicts or negation', () => {
+    expect(parseRatingAlternatives(['hello', 'low'], dimensions[0])).toEqual({
+      transcript: 'low',
+      value: 0,
+    });
+    expect(parseRatingAlternatives(['high', 'high rating'], dimensions[0])).toEqual({
+      transcript: 'high',
+      value: 100,
+    });
+    expect(parseRatingAlternatives(['low', 'high'], dimensions[0])).toBeNull();
+    expect(parseRatingAlternatives(['not low', 'low'], dimensions[0])).toBeNull();
+    expect(parseRatingAlternatives(['hello', 'not high', 'high'], dimensions[0])).toBeNull();
+    expect(parsePairAlternatives(['fiscal demand', 'physical demand'], ['mental', 'physical'])).toEqual({
+      transcript: 'physical demand',
+      value: 'physical',
+    });
+    expect(parsePairAlternatives(['mental demand', 'physical demand'], ['mental', 'physical'])).toBeNull();
   });
 });

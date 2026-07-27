@@ -6,15 +6,15 @@ Run the automated suite with:
 npm test
 ```
 
-Current checkpoint: **75 tests pass across twelve files.**
+Current checkpoint: **77 tests pass across twelve files.**
 
 - **content.test.ts** — six dimensions, fifteen unique pairs, 0–100 increments, Performance direction and valid smiley mappings.
 - **scoring.test.ts** — weight invariants, deterministic score calculation and rejection of incomplete or invalid responses.
-- **voice-input.test.ts** — valid rating and digit-sequence parsing, five-value smiley labels, Performance anchors, conflicting label/value rejection, pair-factor matching and rejection of negated, ambiguous or invalid answers.
+- **voice-input.test.ts** — valid rating and digit-sequence parsing, five-value smiley labels, Performance anchors, consistent ranked-alternative recovery, conflicting label/value rejection, pair-factor matching and rejection of negated, ambiguous or invalid answers.
 - **webgazer-adapter.test.ts** — secure-context boundary and uninterrupted/reset dwell behaviour.
 - **standalone.test.ts** — Version 0.7 single-document structure, no Vite asset dependency, executable inline JavaScript syntax and compiled-component boot rendering.
-- **result-sink.test.ts** — explicit host installation, same-submission receipt validation, exact-origin Qualtrics messaging, complete 63-field staging and bounded automatic advance, direct-opening rejection, false-success rejection and restored parent navigation after staging failure or a missing iframe.
-- **component.test.ts** — ratings-before-pairs flow, pair-task clarity, definition non-duplication, adjustable text, one primary Smiley presentation, precision refinement, interruption recovery, audible guidance, exact voice-proposal announcement/focus, conservative alternative handling, fallback synchronisation, error focus, non-duplicated review numbering and confirmed gaze entry.
+- **result-sink.test.ts** — explicit host installation, same-submission receipt validation, exact-origin Qualtrics messaging, complete 63-field staging, bounded automatic advance and failed-advance watchdog, direct-opening rejection, false-success rejection and restored parent navigation after staging failure or a missing iframe.
+- **component.test.ts** — ratings-before-pairs flow, pair-task clarity, definition non-duplication, adjustable text, one primary Smiley presentation, precision refinement, interruption recovery, Smiley-aware audio, proposal/error/recovery/completion speech, exact voice-proposal announcement/focus, conservative alternative handling, fallback synchronisation, error focus, non-duplicated review numbering and confirmed gaze entry.
 - **conductor-component.test.ts** — researcher/participant separation, participant-choice default, local and origin-bound Qualtrics configuration, the four-part installation package, placeholder rejection, configuration/result file distinction and conductor error focus.
 - **study.test.ts** — validated UTF-8 configuration links, identifier rejection, complete pseudonymous record storage, duplicate/stale-backup control, full-storage failure handling and stable CSV/support-change fields.
 - **study-component.test.ts** — configured participant-code gate, adjustment policies, support provenance, configured-task spoken summary, pre-host local backup, same-device post-close discovery, storage-full and network-failure paths, recovery controls, score-display policy and host-event emission.
