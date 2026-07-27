@@ -60,6 +60,7 @@ UCL guidance allows Qualtrics for information that is not highly confidential. I
 | Study workflow decision | [`docs/STUDY-WORKFLOW.md`](docs/STUDY-WORKFLOW.md) | public evidence |
 | Collection and permission rationale | [`docs/REMOTE-COLLECTION-AND-PERMISSIONS.md`](docs/REMOTE-COLLECTION-AND-PERMISSIONS.md) | public evidence |
 | Failure and recovery verification | [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md) | public test evidence |
+| Non-text contrast and use-of-colour audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md) | calculated state/indicator evidence and manual limits |
 | Technical risk register | [`docs/TECHNICAL-RISK-REGISTER.md`](docs/TECHNICAL-RISK-REGISTER.md) | open and remaining pre-recruitment risks |
 | Supervisor update trace | [`docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md`](docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md) | provenance and retained design decisions |
 
@@ -74,4 +75,4 @@ npm test
 npm run build:release
 ```
 
-The automated suite covers scoring, schema validation, role separation, participant-policy boundaries, support-change provenance, Qualtrics origin/receipt behaviour, adverse submission paths, conservative voice parsing, visible-focus contrast, recovery, voice/gaze state, standalone packaging and four axe-core structural scans. Passing automation does not establish accessibility for a disability group, psychometric equivalence, WebGazer accuracy or a participant benefit. Those claims require the approved evaluation.
+The automated suite covers scoring, schema validation, role separation, participant-policy boundaries, support-change provenance, Qualtrics origin/receipt behaviour, adverse submission paths, conservative voice parsing, persistent non-colour selection, calculated control/focus/gaze contrast, same-tab recovery, voice/gaze state, standalone packaging and four axe-core structural scans. Passing automation does not establish accessibility for a disability group, complete WCAG conformance, psychometric equivalence, WebGazer accuracy or a participant benefit. Those claims require manual checks and the approved evaluation.

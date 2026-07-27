@@ -26,10 +26,10 @@ Use synthetic data only. Do not recruit or collect participant data until the su
 
 1. Confirm and replace voice-proposed numeric and smiley answers; Next must work immediately and selected visuals must stay synchronized.
 2. Confirm that the proposed answer is spoken by the screen reader and that focus moves to the confirmation button whose name contains the exact proposed value or factor.
-3. In smiley mode, say `close to low`, `closer to low`, `middle`, `closer to high` and the two endpoints. Confirm proposals are 25, 25, 50, 75, 0/100 as displayed; repeat Performance with Good/Poor anchors. If Low or High is unreliable, confirm that `zero` and `one hundred` provide the documented endpoint fallback.
-4. Say `not low`, `low or high`, `closer to low or high`, `closer to low 100`, `twenty three`, `73` and both names in one comparison. Confirm that no answer is proposed or selected.
+3. In smiley mode, first say the displayed numeric values `zero`, `twenty five`, `fifty`, `seventy five` and `one hundred`. Then say `close to low`, `closer to low`, `middle`, `closer to high` and the two endpoints. Confirm proposals are 25, 25, 50, 75, 0/100 as displayed; repeat Performance with Good/Poor anchors. Record whether the recogniser returns the exact homophones `lo`, `hi` or `pour`, which the bounded parser accepts only as a proposal.
+4. Say `not low`, `anything but low`, `other than high`, `low or high`, `closer to low or high`, `closer to low 100`, `twenty three`, `73`, `closer to pool` and both names in one comparison. Confirm that no answer is proposed or selected.
 5. Trigger each validation/import/submission error and confirm focus and viewport move to the error summary.
-6. Save, close and resume with the same configuration/code; the return summary and support-change history must be preserved.
+6. Save and reload the same tab. Confirm that the pseudonymous code is restored for that tab, focus moves to the saved-session offer and the participant still chooses Resume or Erase. Close the tab, then separately test the approved shared-device procedure.
 7. Enable automatic built-in audio and confirm that a Smiley question speaks its five labels and values rather than only a generic 0–100 range. Trigger a voice proposal, simpler help, a missing-answer error, a restored session and local completion; record whether each event is spoken.
 8. Treat WebGazer target accuracy as Partial. Verify permission, positioning, calibration, proposal, separate confirmation, recalibration and camera stop without claiming accurate independent control.
 
@@ -57,6 +57,7 @@ Do not describe cross-device collection as activated until the synthetic row has
 Record Pass, Partial, Fail or Not supported for:
 
 - keyboard-only navigation, native radios and visible focus;
+- persistent selected states after focus moves away, including visible check/`Selected` markers;
 - NVDA with Chrome/Edge and VoiceOver with Safari;
 - standard/large text, 200% zoom and 320 CSS-pixel reflow;
 - standard ratings, experimental smiley landmarks and precise-scale fallback;
@@ -68,3 +69,7 @@ Record Pass, Partial, Fail or Not supported for:
 - Chrome, Edge, Firefox and Safari export/collection routes.
 
 Automated structural scans, jsdom interaction tests and a mocked WebGazer engine do not establish accessibility, disability-group benefit, gaze accuracy or psychometric equivalence.
+
+Use [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md)
+for the authored 1.4.11 ratios, the 1.4.1 non-colour indicators and the remaining
+forced-colours/mobile/Qualtrics manual checks.

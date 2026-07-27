@@ -29,7 +29,7 @@ confirmation belong on the persistent End-of-Survey page.
 | --- | --- | --- | --- | --- |
 | Close after acknowledgement | Close the result page immediately, reopen the same configured link on the same device and enter the same code | A completed backup is discoverable and downloadable; wording states that it does not prove remote recording | Component test verifies backup creation before host submission and post-close discovery | Check separately whether a Qualtrics row exists |
 | Network interruption | Disconnect immediately before Calculate and submit | Focus moves to the error summary; Review, retry, answer editing and JSON/CSV remain available | Rejected-host component test | Real UCL Qualtrics/browser run |
-| Mid-questionnaire reload | Enable recovery, answer at least one item and reload | Saved-session offer reports the exact completed count and next step | Component reload/recreation test | Screen-reader announcement and browser-specific storage behaviour |
+| Mid-questionnaire reload | Enable recovery, answer at least one item and reload the same tab | The pseudonymous code is restored for that tab, focus moves to the saved-session offer, and the exact completed count and next step are available | Component reload/recreation and tab-session tests | Screen-reader announcement and browser-specific storage behaviour |
 | Storage blocked or full | Block site storage or simulate quota exhaustion before submission | No crash or false local-save claim; in-memory JSON/CSV remain available; any existing progress copy is not deliberately cleared | Storage unit and component tests | Browser privacy mode and quota test |
 | Parent staging failure | Send an invalid or oversized synthetic record | Qualtrics navigation is restored and an error receipt is returned | Executed bridge test | Qualtrics editor and survey-theme interaction |
 | Native advance does not unload | In a copied synthetic survey, block or intercept the automatic native advance | After the bounded watchdog, a visible status explains that the recorded-result page did not open; native Next and in-frame JSON/CSV remain available | Executed bridge watchdog test | Safe fault injection in a non-recruitment UCL survey |
@@ -41,6 +41,70 @@ confirmation belong on the persistent End-of-Survey page.
 | Ranked speech alternatives | Supply a harmless invalid primary hypothesis followed by one consistent valid hypothesis; then repeat with conflicting endpoint hypotheses | The consistent lower-ranked answer becomes a proposal; conflicting or negated results are rejected | Parser and component tests | Whether each target browser actually returns useful alternatives |
 | Valid speech | Say `seventy`, `seven zero` or a valid factor name | Exact proposed answer is announced; the named confirmation control receives focus; nothing is selected before confirmation | Parser and component tests | NVDA/VoiceOver run |
 | Automatic built-in audio feedback | Enable automatic audio, use Smiley mode and trigger simpler help, a voice proposal, a missing answer, recovery and completion | Labels and values, proposal, error, saved position, next action and completion state are spoken while the page remains open | Component speech-synthesis tests | Real device volume, voice availability and interruption on Qualtrics navigation |
+
+## Reproducible manual fault injection
+
+Use only synthetic codes in an unpublished duplicate survey. Restore the production
+bridge after each test and rerun the synthetic preflight before publishing.
+
+### A. Local completed-backup test
+
+1. Generate a configuration with local collection and interruption recovery enabled.
+2. Open the generated link, enter `TEST-BACKUP-01`, complete and submit.
+3. Confirm that JSON and CSV controls remain available and that the page reports a
+   local completed record.
+4. Reload the same tab. Confirm that the code is filled automatically, the completed
+   backup offer receives focus and the recovered JSON can be downloaded.
+5. Compare its `submissionId`, 21 answers and score with the first export.
+
+This proves only same-browser backup behaviour. It does not prove remote collection.
+
+### B. Blocked or full browser-storage test
+
+In a browser developer console attached to the participant iframe, temporarily run:
+
+```javascript
+window.__originalStorageSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function blockedSetItem() {
+  throw new DOMException('Synthetic quota failure', 'QuotaExceededError');
+};
+```
+
+Complete a synthetic questionnaire. The page must not claim that a local copy was
+saved, must retain in-memory JSON/CSV controls and must not crash. Restore the browser
+before any other test:
+
+```javascript
+Storage.prototype.setItem = window.__originalStorageSetItem;
+delete window.__originalStorageSetItem;
+```
+
+Reloading while storage is deliberately blocked may lose local recovery. That is the
+failure being tested, not a route for participant use.
+
+### C. Qualtrics staging-failure and restored-navigation test
+
+1. Duplicate the unpublished Qualtrics survey.
+2. In only that duplicate's question JavaScript, temporarily set
+   `maximumRawChunks` to `0`.
+3. Complete `TEST-STAGE-FAIL-01`.
+4. The parent bridge must reject the record, return an error receipt, keep the
+   questionnaire on Review, display retry and backup routes, and call
+   `showNextButton()` so the native Qualtrics route is not a dead end.
+5. Restore `maximumRawChunks` to the repository value before the next test.
+
+### D. Native-advance watchdog test
+
+1. In an unpublished duplicate survey only, temporarily replace
+   `question.clickNextButton()` with a no-op comment.
+2. Complete `TEST-ADVANCE-FAIL-01`.
+3. After the watchdog interval, confirm that the parent status states that the
+   recorded-result page did not open and that native Next is visible.
+4. Confirm that the in-frame JSON and CSV backup routes remain available.
+5. Restore the exact repository bridge and pass the synthetic preflight again.
+
+These deliberate failures are unsuitable for a live recruitment survey. Record the
+bridge hash, browser, expected result, observed result and screenshot for each run.
 
 ## Why these behaviours were selected
 
@@ -58,6 +122,10 @@ confirmation belong on the persistent End-of-Survey page.
   yellow outer halo for salience.
 - Local storage is a recovery aid, not the research database. Its failure is reported
   honestly and does not remove the in-memory export route.
+- When recovery is enabled, the valid pseudonymous code is also held in
+  `sessionStorage` for the current tab's page session. This removes unnecessary code
+  re-entry after a reload while avoiding a long-term cross-tab identifier. The
+  participant still chooses whether to resume or erase the saved answers.
 
 ## Evidence record for the dissertation
 

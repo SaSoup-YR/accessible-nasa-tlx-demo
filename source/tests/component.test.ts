@@ -56,11 +56,13 @@ function checkboxByLabel(component: AccessibleNasaTlx, labelText: string) {
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
+  sessionStorage.clear();
   delete window.webkitSpeechRecognition;
   delete window.SpeechRecognition;
   delete window.webgazer;
@@ -143,6 +145,26 @@ describe('reading and answer presentation', () => {
     expect(precision!.open).toBe(false);
     expect(precision!.querySelectorAll('.rating-option')).toHaveLength(21);
     expect(component.querySelectorAll(':scope > .rating-fieldset')).toHaveLength(0);
+  });
+
+  it('keeps a non-colour selected marker visible after keyboard focus leaves a smiley answer', async () => {
+    const component = await renderComponent();
+    inputByValue(component, 'smiley')!.click();
+    await component.updateComplete;
+    await startRatings(component);
+
+    const selected = component.querySelector<HTMLInputElement>('.smiley-option input[value="25"]')!;
+    selected.click();
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .focus();
+
+    expect(selected.checked).toBe(true);
+    expect(selected.nextElementSibling?.querySelector('.selected-marker')?.textContent).toContain(
+      'Selected',
+    );
+    expect(document.activeElement?.textContent).toContain('Next question');
   });
 
   it('lets a precise value replace a smiley landmark without a second response field', async () => {
