@@ -19,11 +19,15 @@ describe('voice-answer parsing', () => {
 
   it('rejects negated or ambiguous anchors instead of guessing', () => {
     expect(parseRatingTranscript('not low', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('anything but low', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('other than high', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript("don't choose low", dimensions[0])).toBeNull();
     expect(parseRatingTranscript('low or high', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('fifty or sixty', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('maybe high', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('closer to low or high', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('closer to low 100', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('twenty-three percent', dimensions[0])).toBeNull();
   });
 
   it('maps the five visible smiley labels to their displayed values', () => {
@@ -34,8 +38,13 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('closer to high', dimensions[0])).toBe(75);
     expect(parseRatingTranscript('close to high', dimensions[0])).toBe(75);
     expect(parseRatingTranscript('high', dimensions[0])).toBe(100);
+    expect(parseRatingTranscript('lo', dimensions[0])).toBe(0);
+    expect(parseRatingTranscript('hi', dimensions[0])).toBe(100);
+    expect(parseRatingTranscript('I choose hi', dimensions[0])).toBe(100);
     expect(parseRatingTranscript('closer too high', dimensions[0])).toBe(75);
+    expect(parseRatingTranscript('closer to hi', dimensions[0])).toBe(75);
     expect(parseRatingTranscript('closer to high 75', dimensions[0])).toBe(75);
+    expect(parseRatingTranscript('hello', dimensions[0])).toBeNull();
   });
 
   it('respects the reversed Performance anchors without accepting a negation', () => {
@@ -44,7 +53,10 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('closer to good', performance)).toBe(25);
     expect(parseRatingTranscript('middle', performance)).toBe(50);
     expect(parseRatingTranscript('closer to poor', performance)).toBe(75);
+    expect(parseRatingTranscript('closer to pour', performance)).toBe(75);
     expect(parseRatingTranscript('poor', performance)).toBe(100);
+    expect(parseRatingTranscript('pour', performance)).toBe(100);
+    expect(parseRatingTranscript('closer to pool', performance)).toBeNull();
     expect(parseRatingTranscript('not good', performance)).toBeNull();
     expect(parseRatingTranscript('closer to good or poor', performance)).toBeNull();
   });

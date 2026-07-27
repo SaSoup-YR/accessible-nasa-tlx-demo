@@ -48,3 +48,27 @@ The commit and automated tests establish intended client-side behaviour. They do
 prove that the UCL Qualtrics tenant recorded a response. That requires a synthetic
 preview/distribution run followed by inspection and export of the corresponding
 Data & Analysis row.
+
+## Subsequent compatibility and recovery hardening
+
+The 27 July device-test follow-up remains based on the supervisor's merged commit. It
+does not remove the 1.5-second Qualtrics handoff, pre-host local backup, persistent
+JSON/CSV emergency controls, staging-failure navigation restoration or native-advance
+watchdog.
+
+Later source changes:
+
+- replace temporary blue-only selected styling with a persistent high-contrast
+  selected boundary, background and non-colour check/`Selected` marker;
+- give gaze hover and dwell progress an independently compliant dark indicator;
+- stop forcing the first English synthesis voice returned by a device;
+- keep the successful handoff speech short while retaining truthful visible
+  technical status and the persistent Qualtrics completion page;
+- add exact homophone handling and numeric-first prompts without introducing fuzzy
+  answer guessing;
+- restore a valid pseudonymous code from tab-scoped session storage after a
+  same-tab reload, then focus the saved-session offer.
+
+These are extensions of the supervisor's safety model. They do not weaken the
+distinction between a value staged in the browser survey session and a response row
+recorded by Qualtrics.

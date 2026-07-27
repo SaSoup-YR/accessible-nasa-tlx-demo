@@ -3,6 +3,10 @@
   background: #eef2f6;
   --focus-outline: #0b0c0c;
   --focus-halo: #ffdd00;
+  --control-border: #6f8092;
+  --selected-border: #6b5200;
+  --selected-background: #fff3b0;
+  --gaze-indicator: #725b00;
   font-family: Arial, Helvetica, sans-serif;
   font-synthesis: none;
   line-height: 1.55;
@@ -167,7 +171,7 @@ progress {
 .voice-input,
 .gaze-setup {
   margin: 1.25rem 0;
-  border: 1px solid #aebccc;
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   background: #f6f8fa;
 }
@@ -213,7 +217,7 @@ progress {
 .precision-scale[open] > summary,
 .voice-input[open] > summary,
 .gaze-setup[open] > summary {
-  border-bottom: 1px solid #aebccc;
+  border-bottom: 1px solid var(--control-border);
 }
 
 .reference-item {
@@ -232,7 +236,7 @@ progress {
   gap: 1rem;
   align-items: flex-start;
   padding: 1rem;
-  border: 2px solid #6f8092;
+  border: 2px solid var(--control-border);
   border-radius: 10px;
   background: #fff;
   cursor: pointer;
@@ -289,7 +293,7 @@ figcaption {
   gap: 0.75rem;
   margin: 0.75rem 0 0;
   padding: 0.75rem;
-  border: 1px solid #6f8092;
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   background: #fff;
 }
@@ -304,18 +308,25 @@ figcaption {
   align-items: flex-start;
   min-height: 3.5rem;
   padding: 0.75rem;
+  border: 2px solid transparent;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .answer-mode-control label:has(input:checked) {
-  background: #e8f3fb;
-  outline: 2px solid #005ea5;
+  border-color: var(--selected-border);
+  background: var(--selected-background);
+  box-shadow: 0 0 0 2px var(--selected-border);
 }
 
 .answer-mode-control label span {
   display: grid;
   gap: 0.2rem;
+}
+
+.answer-mode-control label > .selected-marker {
+  display: inline-flex;
+  margin-left: auto;
 }
 
 .answer-mode-control input {
@@ -330,7 +341,16 @@ figcaption {
   align-items: center;
   min-height: 2.75rem;
   padding: 0.25rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
   cursor: pointer;
+}
+
+.text-size-control label:has(input:checked),
+.toggle-card:has(input:checked) {
+  border-color: var(--selected-border);
+  background: var(--selected-background);
+  box-shadow: 0 0 0 2px var(--selected-border);
 }
 
 .text-size-control input {
@@ -381,10 +401,16 @@ figcaption {
   align-items: flex-start;
   min-height: 3.5rem;
   padding: 0.75rem;
-  border: 1px solid #6f8092;
+  border: 2px solid var(--control-border);
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
+}
+
+.audio-guidance-toggle:has(input:checked) {
+  border-color: var(--selected-border);
+  background: var(--selected-background);
+  box-shadow: 0 0 0 2px var(--selected-border);
 }
 
 .audio-guidance-toggle input {
@@ -442,8 +468,9 @@ figcaption {
 }
 
 .gaze-hover {
-  outline: 5px solid #ffbf47;
-  outline-offset: 4px;
+  outline: 3px solid var(--focus-outline);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 7px var(--focus-halo);
 }
 
 .gaze-hover::after,
@@ -456,7 +483,7 @@ figcaption {
   left: 0;
   width: var(--gaze-progress, 0%);
   height: 0.55rem;
-  background: #ffbf47;
+  background: var(--gaze-indicator);
   pointer-events: none;
 }
 
@@ -628,9 +655,9 @@ figcaption {
 
 .choice-card:has(input:checked),
 .rating-option:has(input:checked) {
-  border-color: #005ea5;
-  background: #e8f3fb;
-  box-shadow: 0 0 0 2px #005ea5;
+  border-color: var(--selected-border);
+  background: var(--selected-background);
+  box-shadow: 0 0 0 2px var(--selected-border);
 }
 
 .optional-explanation summary {
@@ -640,7 +667,7 @@ figcaption {
 }
 
 .optional-explanation[open] summary {
-  border-bottom: 1px solid #aebccc;
+  border-bottom: 1px solid var(--control-border);
 }
 
 .explanation-grid,
@@ -707,16 +734,16 @@ figcaption {
   place-items: center;
   gap: 0.15rem;
   padding: 0.75rem 0.5rem;
-  border: 2px solid #6f8092;
+  border: 2px solid var(--control-border);
   border-radius: 10px;
   background: #fff;
   color: #1d2733;
 }
 
 .smiley-option input:checked + .smiley-option-content {
-  border-color: #005ea5;
-  background: #e8f3fb;
-  box-shadow: 0 0 0 2px #005ea5;
+  border-color: var(--selected-border);
+  background: var(--selected-background);
+  box-shadow: 0 0 0 2px var(--selected-border);
 }
 
 .smiley-option input:focus-visible {
@@ -754,13 +781,50 @@ figcaption {
 }
 
 .rating-option {
+  position: relative;
   min-height: 4rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #6f8092;
+  border: 2px solid var(--control-border);
   border-radius: 8px;
   cursor: pointer;
+}
+
+.selected-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-left: auto;
+  padding: 0.1rem 0.45rem;
+  border: 2px solid var(--selected-border);
+  border-radius: 999px;
+  background: #fff;
+  color: #1d2733;
+  font-size: 0.82em;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.smiley-option-content .selected-marker {
+  margin: 0.25rem auto 0;
+}
+
+.selected-check {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.choice-card > .selected-marker {
+  display: inline-flex;
+  margin-left: auto;
 }
 
 .voice-input-content {
@@ -1199,10 +1263,17 @@ pre {
 }
 
 @media (forced-colors: active) {
+  .answer-mode-control label:has(input:checked),
+  .text-size-control label:has(input:checked),
+  .toggle-card:has(input:checked),
   .choice-card:has(input:checked),
   .rating-option:has(input:checked),
   .smiley-option input:checked + .smiley-option-content {
     outline: 3px solid Highlight;
+  }
+
+  .selected-marker {
+    border-color: CanvasText;
   }
 
   .smiley-face {

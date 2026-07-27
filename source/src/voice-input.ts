@@ -74,7 +74,7 @@ const numberWords = new Set([
 ]);
 
 const unsafeMeaning =
-  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b/;
+  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b|\b(?:anything\s+but|other\s+than|don\s+t)\b/;
 
 const dimensionAliases: Record<DimensionId, readonly string[]> = {
   mental: ['mental demand', 'mental'],
@@ -155,8 +155,15 @@ function numericCandidates(text: string) {
 
 function anchorCandidate(text: string, dimension: TlxDimension): number | null | undefined {
   const middle = /\b(middle|midpoint|centre|center)\b/.test(text);
-  const lowWords = dimension.id === 'performance' ? '(?:good|successful)' : 'low';
-  const highWords = dimension.id === 'performance' ? '(?:poor|bad|unsuccessful)' : 'high';
+  // The short endpoints are often returned as true homophones by a browser
+  // recogniser. Accept only a small, explicit alias set and still require the
+  // participant to confirm the labelled value before it becomes an answer.
+  const lowWords = dimension.id === 'performance'
+    ? '(?:good|successful)'
+    : '(?:low|lo)';
+  const highWords = dimension.id === 'performance'
+    ? '(?:poor|pour|bad|unsuccessful)'
+    : '(?:high|hi)';
   const closerLow = new RegExp(`\\bclose(?:r)?\\s+(?:to|too)\\s+${lowWords}\\b`).test(text);
   const closerHigh = new RegExp(`\\bclose(?:r)?\\s+(?:to|too)\\s+${highWords}\\b`).test(text);
   const low = new RegExp(`\\b${lowWords}\\b`).test(text);

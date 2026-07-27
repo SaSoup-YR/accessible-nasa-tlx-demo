@@ -24,11 +24,31 @@ describe('visible keyboard focus', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toContain('--focus-outline: #0b0c0c');
     expect(css).toContain('--focus-halo: #ffdd00');
-    expect(css.match(/outline: 3px solid var\(--focus-outline\)/g)).toHaveLength(3);
+    expect(css.match(/outline: 3px solid var\(--focus-outline\)/g)).toHaveLength(4);
     expect(css.match(/box-shadow: 0 0 0 6px var\(--focus-halo\)/g)).toHaveLength(3);
+    expect(css).toContain('box-shadow: 0 0 0 7px var(--focus-halo)');
 
     for (const surface of ['#ffffff', '#eef2f6', '#e8f3fb', '#fff9dc']) {
       expect(contrastRatio('#0b0c0c', surface)).toBeGreaterThanOrEqual(3);
     }
+  });
+
+  it('keeps selected controls distinguishable without relying on blue or colour alone', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    const component = readFileSync(resolve(process.cwd(), 'src/accessible-nasa-tlx.ts'), 'utf8');
+
+    expect(css).toContain('--selected-border: #6b5200');
+    expect(css).toContain('--selected-background: #fff3b0');
+    expect(css).toContain('--gaze-indicator: #725b00');
+    expect(css).toContain('border-color: var(--selected-border)');
+    expect(css).toContain('background: var(--selected-background)');
+    expect(css).toContain('.selected-marker');
+    expect(component.match(/class="selected-marker/g)?.length).toBeGreaterThanOrEqual(4);
+
+    expect(contrastRatio('#6b5200', '#fff3b0')).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio('#6b5200', '#ffffff')).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio('#0b0c0c', '#fff3b0')).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio('#725b00', '#ffffff')).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio('#725b00', '#f6f8fa')).toBeGreaterThanOrEqual(3);
   });
 });

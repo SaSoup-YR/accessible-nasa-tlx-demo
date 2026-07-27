@@ -69,11 +69,13 @@ async function completeQuestionnaire(component: AccessibleNasaTlx) {
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
+  sessionStorage.clear();
   window.history.replaceState({}, '', '/');
   delete (window as any).speechSynthesis;
   delete window.accessibleNasaTlxResultSink;
@@ -83,7 +85,7 @@ afterEach(() => {
 
 describe('study-conductor and participant separation', () => {
   it('speaks the configured task on the first participant-page request without pre-cancelling speech', async () => {
-    const spoken: string[] = [];
+    const spoken: FakeUtterance[] = [];
     const cancel = vi.fn();
     class FakeUtterance {
       lang = '';
@@ -100,8 +102,10 @@ describe('study-conductor and participant separation', () => {
         pending: false,
         paused: false,
         cancel,
-        speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
-        getVoices: () => [],
+        speak: (utterance: FakeUtterance) => spoken.push(utterance),
+        getVoices: () => [
+          { lang: 'en-GB', name: 'Compact voice', default: false } as SpeechSynthesisVoice,
+        ],
       },
     });
     (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
@@ -113,9 +117,41 @@ describe('study-conductor and participant separation', () => {
     summary.click();
     await component.updateComplete;
 
-    expect(spoken[0]).toContain('Think about the route-planning task');
+    expect(spoken[0].text).toContain('Think about the route-planning task');
+    expect(spoken[0].voice).toBeNull();
+    expect(spoken[0].rate).toBe(1);
     expect(cancel).not.toHaveBeenCalled();
     expect(component.querySelector('.audio-status')?.textContent).toContain('Playing spoken guidance');
+  });
+
+  it('restores the pseudonymous code in the same tab before offering interrupted answers', async () => {
+    const component = await renderConfiguredComponent();
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-007';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    await component.updateComplete;
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+    component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    component.remove();
+
+    const restored = await renderConfiguredComponent();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await restored.updateComplete;
+
+    expect(restored.querySelector<HTMLInputElement>('#participant-code')?.value).toBe('P-007');
+    expect(restored.querySelector('.restored-code-note')?.textContent).toContain(
+      'restored for this tab',
+    );
+    expect(restored.querySelector('.saved-session')?.textContent).toContain('1 of 21');
+    expect(document.activeElement).toBe(restored.querySelector('#saved-session-heading'));
   });
 
   it('applies a locked configuration and requires a pseudonymous participant code', async () => {
@@ -242,6 +278,9 @@ describe('study-conductor and participant separation', () => {
     );
     expect(component.querySelector('.submission-fallback')?.textContent).toContain(
       'If this page remains visible',
+    );
+    expect((component as any).currentStepSpeech()).toBe(
+      'Answers accepted. The study platform is finishing automatically.',
     );
   });
 
