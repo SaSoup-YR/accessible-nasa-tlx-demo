@@ -152,6 +152,9 @@ describe('approved host result sink', () => {
       'utf8',
     );
     expect(questionHtml).toContain('id="accessible-nasa-tlx-recorded-summary"');
+    expect(questionHtml).toContain('REFERENCE TEMPLATE ONLY');
+    expect(questionHtml).toContain('style="display:none"');
+    expect(questionHtml).toContain('display: block !important');
     expect(questionHtml).toContain('data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"');
     expect(questionHtml).toContain(
       '#accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question',
@@ -176,6 +179,121 @@ describe('approved host result sink', () => {
       'accessibility-support choices and input-route information have been saved separately',
     );
     expect(endOfSurveyMessage).not.toMatch(/<[^>]+>/);
+  });
+
+  it('stages a complete record, acknowledges it, and advances Qualtrics after the bounded hand-off', () => {
+    const bridge = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+      'utf8',
+    );
+    const dimensions = ['mental', 'physical', 'temporal', 'performance', 'effort', 'frustration'];
+    const ratings = Object.fromEntries(dimensions.map((dimension) => [dimension, 50]));
+    const weights = Object.fromEntries(dimensions.map((dimension) => [dimension, 2]));
+    const completeRecord = {
+      schemaVersion: 3,
+      submissionId: 'submission-complete',
+      study: { studyId: 'TLX-TEST', configId: 'config-test' },
+      participantCode: 'TEST-001',
+      timing: {
+        startedAt: '2026-07-27T10:00:00.000Z',
+        completedAt: '2026-07-27T10:05:00.000Z',
+      },
+      prototype: { version: '0.7' },
+      collection: { mode: 'qualtrics' },
+      configuration: { answerMode: 'smiley' },
+      responses: {
+        ratings,
+        pairwiseChoices: { 'mental-physical': 'mental' },
+        pairPresentationOrder: ['mental-physical'],
+      },
+      result: { ratings, weights, weightedScore: 50 },
+      supportMetadata: {
+        ratingInputRoutes: { mental: 'voice' },
+        pairInputRoutes: { 'mental-physical': 'standard-choice' },
+        supportChanges: [],
+        simplerExplanationsShownAtSubmission: false,
+        answerModeAtSubmission: 'smiley',
+        largeTextUsedAtSubmission: false,
+        automaticAudioGuidanceEnabledAtSubmission: false,
+        recoveryEnabledAtSubmission: true,
+        readAloudUsed: false,
+        interruptionSummaryShown: false,
+        gazeUsed: false,
+        gazeActionCount: 0,
+      },
+    };
+    let onReady: (() => void) | undefined;
+    let receiveMessage: ((event: MessageEvent) => void) | undefined;
+    let completionCallback: (() => void) | undefined;
+    let completionDelay: number | undefined;
+    const setJSEmbeddedData = vi.fn();
+    const hideNextButton = vi.fn();
+    const showNextButton = vi.fn();
+    const clickNextButton = vi.fn();
+    const frameWindow = { postMessage: vi.fn() };
+    const iframe = { contentWindow: frameWindow, style: { height: '' } };
+    const status = { textContent: '' };
+    const fakeQualtrics = {
+      SurveyEngine: {
+        addOnReady(callback: () => void) {
+          onReady = callback;
+        },
+        addOnUnload: vi.fn(),
+        setJSEmbeddedData,
+      },
+    };
+    const fakeDocument = {
+      getElementById(id: string) {
+        if (id === 'accessible-nasa-tlx-frame') return iframe;
+        if (id === 'accessible-nasa-tlx-collection-status') return status;
+        return null;
+      },
+    };
+    const fakeWindow = {
+      setTimeout(callback: () => void, delay: number) {
+        completionCallback = callback;
+        completionDelay = delay;
+        return 1;
+      },
+      clearTimeout: vi.fn(),
+      addEventListener(type: string, listener: EventListener) {
+        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+      },
+      removeEventListener: vi.fn(),
+    };
+
+    new Function('Qualtrics', 'document', 'window', bridge)(
+      fakeQualtrics,
+      fakeDocument,
+      fakeWindow,
+    );
+    onReady!.call({ hideNextButton, showNextButton, clickNextButton });
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: {
+        type: QUALTRICS_SUBMIT_MESSAGE,
+        record: completeRecord,
+      },
+    } as unknown as MessageEvent);
+
+    expect(hideNextButton).toHaveBeenCalledOnce();
+    expect(showNextButton).not.toHaveBeenCalled();
+    expect(setJSEmbeddedData).toHaveBeenCalledTimes(63);
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('ANTLX_ACCEPTED', '1');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('ANTLX_WEIGHTED_SCORE', '50.00');
+    expect(frameWindow.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accepted: true,
+        submissionId: 'submission-complete',
+        receiptId: 'qualtrics-accepted-submission-complete',
+      }),
+      'https://sasoup-yr.github.io',
+    );
+    expect(status.textContent).toContain('Please keep this page open');
+    expect(completionDelay).toBe(1500);
+    completionCallback!();
+    expect(clickNextButton).toHaveBeenCalledOnce();
   });
 
   it('restores Qualtrics navigation when an invalid record cannot be staged', () => {
@@ -239,5 +357,52 @@ describe('approved host result sink', () => {
       expect.objectContaining({ accepted: false, submissionId: 'incomplete' }),
       'https://sasoup-yr.github.io',
     );
+  });
+
+  it('keeps native navigation available when the Qualtrics iframe is missing', () => {
+    const bridge = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+      'utf8',
+    );
+    let onReady: (() => void) | undefined;
+    const showNextButton = vi.fn();
+    const hideNextButton = vi.fn();
+    const status = { textContent: '' };
+    const fakeQualtrics = {
+      SurveyEngine: {
+        addOnReady(callback: () => void) {
+          onReady = callback;
+        },
+        addOnUnload: vi.fn(),
+        setJSEmbeddedData: vi.fn(),
+      },
+    };
+    const fakeDocument = {
+      getElementById(id: string) {
+        if (id === 'accessible-nasa-tlx-collection-status') return status;
+        return null;
+      },
+    };
+    const fakeWindow = {
+      setTimeout,
+      clearTimeout,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+
+    new Function('Qualtrics', 'document', 'window', bridge)(
+      fakeQualtrics,
+      fakeDocument,
+      fakeWindow,
+    );
+    onReady!.call({
+      hideNextButton,
+      showNextButton,
+      clickNextButton: vi.fn(),
+    });
+
+    expect(hideNextButton).not.toHaveBeenCalled();
+    expect(showNextButton).toHaveBeenCalledOnce();
+    expect(status.textContent).toContain('iframe is missing');
   });
 });

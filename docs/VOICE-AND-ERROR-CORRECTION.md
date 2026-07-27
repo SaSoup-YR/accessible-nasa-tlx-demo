@@ -1,4 +1,4 @@
-# Version 0.5 voice-state and error-location correction
+# Voice-state, semantic-parsing and error-location corrections
 
 Decision date: 21 July 2026
 
@@ -43,6 +43,33 @@ Automated component tests now cover:
 
 These tests establish internal state, navigation and focus behaviour in the tested code. They do not establish speech-recognition accuracy across browsers, screen-reader usability or participant benefit. Those remain manual and, if approved, participant-evaluation questions.
 
+## Version 0.7 landmark-phrase correction
+
+Testing on 27 July 2026 exposed a separate semantic parsing defect. The recogniser
+transcribed `Close to Low` and `Closer to High` correctly, but the parser searched only
+for the words `low` and `high`. It therefore proposed the endpoint values 0 and 100
+instead of the visible landmark values 25 and 75.
+
+The parser now treats the five visible labels as a five-value set:
+
+| Spoken label | Ordinary dimensions | Performance |
+| --- | ---: | ---: |
+| Low or Good | 0 | 0 |
+| Closer to Low or Closer to Good | 25 | 25 |
+| Middle | 50 | 50 |
+| Closer to High or Closer to Poor | 75 | 75 |
+| High or Poor | 100 | 100 |
+
+`Close to` and the common recognition variant `Closer too` are accepted for the
+intermediate landmarks. A phrase containing a negation, uncertainty, two anchors or a
+numeric value that conflicts with its spoken label is rejected. Every accepted
+transcript remains a proposal: it is announced with its label, value and factor and
+must be explicitly confirmed.
+
+The smiley-mode prompt now reads the visible label choices and their five values.
+Saying `smiley landmarks` is not a rating answer and is deliberately not interpreted
+as one; answer-presentation choice is configured before the rating task.
+
 ## Role and file boundary
 
 Version 0.5 is one workflow with two role-specific pages, not one mixed page:
@@ -50,4 +77,6 @@ Version 0.5 is one workflow with two role-specific pages, not one mixed page:
 - `study.html` is used by the study conductor to prepare and normally lock support, generate a participant link and export same-device results;
 - `index.html#study=...` is used by the participant to enter a pseudonymous code and answer the prepared questionnaire.
 
-The readable implementations are `source/src/study-conductor.ts` and `source/src/accessible-nasa-tlx.ts`. The single-file `source/demo/accessible-nasa-tlx-v0.5.html` is deliberately participant-only and is not the study workflow.
+The current readable implementations are `source/src/study-conductor.ts` and
+`source/src/accessible-nasa-tlx.ts`. Versioned single-file demonstrations under
+`source/demo/` are deliberately participant-only and are not the conductor workflow.

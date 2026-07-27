@@ -993,7 +993,7 @@ export class AccessibleNasaTlx extends LitElement {
     const activeForContext = this.pendingVoiceAnswer?.context === context;
     const prompt =
       context === 'rating'
-        ? `Say a number from 0 to 100 in steps of 5, such as 25 or 70.`
+        ? this.ratingVoicePrompt(first)
         : `Say “${first.name}” or “${second!.name}”.`;
     return html`
       <details class="voice-input" .open=${this.voiceState !== 'idle'}>
@@ -1385,6 +1385,23 @@ export class AccessibleNasaTlx extends LitElement {
     if (value === 50) return 'Middle';
     if (value === 75) return `Closer to ${dimension.highAnchor}`;
     return dimension.highAnchor;
+  }
+
+  private ratingVoicePrompt(dimension: TlxDimension) {
+    if (this.answerMode !== 'smiley') {
+      return 'Say a number from 0 to 100 in steps of 5, such as 25 or 70.';
+    }
+    const labels = smileyLandmarks.map(({ value }) => this.landmarkLabel(dimension, value));
+    return `Say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}. You may instead say 0, 25, 50, 75, or 100.`;
+  }
+
+  private ratingVoiceAnswerLabel(dimension: TlxDimension, value: number) {
+    const visibleAsLandmark =
+      this.answerMode === 'smiley' &&
+      smileyLandmarks.some((landmark) => landmark.value === value);
+    return visibleAsLandmark
+      ? `${this.landmarkLabel(dimension, value)}, value ${value}, for ${dimension.name}`
+      : `${value} for ${dimension.name}`;
   }
 
   private ratingRouteLabel(dimension: DimensionId) {
@@ -2028,7 +2045,7 @@ export class AccessibleNasaTlx extends LitElement {
         const value = parseRatingTranscript(transcript, first);
         if (value !== null) {
           this.releaseRecognition(recognition);
-          const label = `${value} for ${first.name}`;
+          const label = this.ratingVoiceAnswerLabel(first, value);
           this.pendingVoiceAnswer = { context, transcript, value, label };
           this.voiceState = 'pending';
           this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
@@ -2053,7 +2070,7 @@ export class AccessibleNasaTlx extends LitElement {
       }
       this.releaseRecognition(recognition);
       this.voiceState = 'error';
-      this.voiceMessage = `The answer was not recognised. ${context === 'rating' ? 'Say a multiple of five from 0 to 100.' : `Say ${first.name} or ${second!.name}.`}`;
+      this.voiceMessage = `The answer was not recognised. ${context === 'rating' ? this.ratingVoicePrompt(first) : `Say ${first.name} or ${second!.name}.`}`;
     };
     recognition.onerror = (event) => {
       if (this.recognition !== recognition) return;
