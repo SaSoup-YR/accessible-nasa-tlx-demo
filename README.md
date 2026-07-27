@@ -38,7 +38,9 @@ The Qualtrics bridge:
 - sends results only to the exact HTTPS parent origin stored in the signed-off configuration;
 - validates the source window and message origin in both directions;
 - uses a stable submission ID and accepts only a matching receipt;
-- leaves answers on Review when Qualtrics fails or times out, allowing retry with the same ID;
+- attempts a complete local backup before contacting Qualtrics and keeps JSON/CSV backup controls available;
+- leaves answers on Review when Qualtrics fails or times out, allowing retry, answer editing or backup export;
+- makes a same-device completed backup discoverable after an accidental close, while clearly separating that evidence from a recorded Qualtrics response;
 - places no Qualtrics API token or other secret in GitHub or the participant browser;
 - stores analysis fields plus a lossless JSON record split into bounded Embedded Data chunks.
 
@@ -56,6 +58,7 @@ UCL guidance allows Qualtrics for information that is not highly confidential. I
 | Standalone technical file | [`source/demo/accessible-nasa-tlx-v0.7.html`](source/demo/accessible-nasa-tlx-v0.7.html) | participant-only; no central collection from `file://` |
 | Study workflow decision | [`docs/STUDY-WORKFLOW.md`](docs/STUDY-WORKFLOW.md) | public evidence |
 | Collection and permission rationale | [`docs/REMOTE-COLLECTION-AND-PERMISSIONS.md`](docs/REMOTE-COLLECTION-AND-PERMISSIONS.md) | public evidence |
+| Failure and recovery verification | [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md) | public test evidence |
 
 The private `accessible-hci-questionnaire-library` remains the canonical dissertation/evidence repository. This public repository is the tested release snapshot and stable GitHub Pages deployment.
 
@@ -65,7 +68,7 @@ The private `accessible-hci-questionnaire-library` remains the canonical dissert
 cd source
 npm ci
 npm test
-npm run build:standalone
+npm run build:release
 ```
 
-The automated suite covers scoring, schema validation, role separation, participant-policy boundaries, support-change provenance, Qualtrics origin/receipt behaviour, voice/gaze state, recovery, standalone packaging and four axe-core structural scans. Passing automation does not establish accessibility for a disability group, psychometric equivalence, WebGazer accuracy or a participant benefit. Those claims require the approved evaluation.
+The automated suite covers scoring, schema validation, role separation, participant-policy boundaries, support-change provenance, Qualtrics origin/receipt behaviour, adverse submission paths, conservative voice parsing, visible-focus contrast, recovery, voice/gaze state, standalone packaging and four axe-core structural scans. Passing automation does not establish accessibility for a disability group, psychometric equivalence, WebGazer accuracy or a participant benefit. Those claims require the approved evaluation.
