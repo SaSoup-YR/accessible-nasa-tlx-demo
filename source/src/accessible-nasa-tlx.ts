@@ -21,8 +21,10 @@ import {
   PROTOTYPE_VERSION,
   createStudyResultRecord,
   downloadTextFile,
+  loadCompletedResults,
   progressStorageKey,
   readStudyConfigFromHash,
+  removeCompletedResult,
   resultFileBase,
   resultsToCsv,
   saveCompletedResult,
@@ -157,6 +159,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private recoveryEnabled = false;
   @state() private resumeSummaryVisible = false;
   @state() private savedSession: SavedSession | null = null;
+  @state() private recoveredCompletedRecord: StudyResultRecord | null = null;
   @state() private readingAloud = false;
   @state() private readAloudUsed = false;
   @state() private audioGuidance = false;
@@ -184,6 +187,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
   @state() private completionSavedByHost = false;
+  @state() private hostSubmissionFailed = false;
   @state() private hostSinkName = '';
   @state() private hostReceipt: ResultSinkReceipt | null = null;
   @state() private submittingResult = false;
@@ -367,6 +371,7 @@ export class AccessibleNasaTlx extends LitElement {
           : nothing}
         ${this.renderStudyContext()}
         ${this.savedSession ? this.renderSavedSessionOffer() : nothing}
+        ${this.recoveredCompletedRecord ? this.renderCompletedBackupOffer() : nothing}
         <p>
           Think about ${this.studyConfig ? html`the task: <strong>${this.studyConfig.taskLabel}</strong>` : 'one task that you have just completed'}.
         </p>
@@ -1013,14 +1018,21 @@ export class AccessibleNasaTlx extends LitElement {
                 the visible buttons by name.
               </p>`
             : nothing}
-          ${this.voiceMessage ? html`<p role="status">${this.voiceMessage}</p>` : nothing}
+          ${this.voiceMessage
+            ? html`<p role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>`
+            : nothing}
           ${activeForContext && this.pendingVoiceAnswer
             ? html`
                 <div class="voice-confirmation">
                   <p>I heard: <strong>${this.pendingVoiceAnswer.transcript}</strong></p>
                   <p>Proposed answer: <strong>${this.pendingVoiceAnswer.label}</strong></p>
                   <div class="button-row compact">
-                    <button class="primary-button large-answer-button" type="button" @click=${this.confirmVoiceAnswer}>
+                    <button
+                      class="primary-button large-answer-button"
+                      type="button"
+                      data-voice-confirm
+                      @click=${this.confirmVoiceAnswer}
+                    >
                       Confirm ${this.pendingVoiceAnswer.label}
                     </button>
                     <button class="secondary-button" type="button" @click=${this.clearVoiceAnswer}>Try again</button>
@@ -1066,6 +1078,31 @@ export class AccessibleNasaTlx extends LitElement {
       <section class="panel" id="question-panel" aria-labelledby="review-heading">
         <h2 id="review-heading">Review your responses</h2>
         <p>Check every response before calculating the weighted workload score.</p>
+
+        ${this.hostSubmissionFailed && this.submittedRecord
+          ? html`
+              <section class="submission-recovery" aria-labelledby="submission-recovery-heading">
+                <h3 id="submission-recovery-heading">The study platform has not confirmed this response</h3>
+                <p>
+                  Your answers remain available on this page. You can retry submission, return to an answer,
+                  or save a backup now.
+                </p>
+                ${this.completionSavedLocally
+                  ? html`<p>A complete backup is also stored in this browser on this device.</p>`
+                  : html`<p>
+                      This browser could not store a backup. Download JSON or CSV before leaving this page.
+                    </p>`}
+                <div class="button-row compact">
+                  <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
+                    Download JSON backup
+                  </button>
+                  <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
+                    Download CSV backup
+                  </button>
+                </div>
+              </section>
+            `
+          : nothing}
 
         <h3>Magnitude ratings</h3>
         <dl class="review-ratings">
@@ -1131,19 +1168,26 @@ export class AccessibleNasaTlx extends LitElement {
     const showScore = !this.studyConfig || this.studyConfig.showScoreToParticipant;
     return html`
       <section class="panel confirmation" id="question-panel" aria-labelledby="complete-heading">
-        <h2 id="complete-heading">${this.studyConfig ? 'Questionnaire complete' : 'Responses calculated'}</h2>
+        <h2 id="complete-heading">${this.studyConfig ? 'Result prepared' : 'Responses calculated'}</h2>
         ${showScore
           ? html`<p class="score">Weighted workload score: <strong>${this.result.weightedScore.toFixed(2)}</strong></p>`
           : html`<p>Your responses have been recorded. The study configuration does not display the calculated score on the participant page.</p>`}
         ${this.studyConfig
           ? this.completionSavedByHost
             ? html`<div class="save-status" role="status">
-                <h3>Submitted to the study platform</h3>
+                <h3>Completing in the study platform — keep this page open</h3>
                 <p>
-                  ${this.hostSinkName} confirmed receipt of submission
-                  <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>.
-                  The researcher should retrieve it from that approved platform.
+                  ${this.hostSinkName} acknowledged submission
+                  <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>
+                  and is completing the response now. Please keep this page open until the recorded
+                  result page opens by itself. You do not need to press anything.
                 </p>
+                ${this.completionSavedLocally
+                  ? nothing
+                  : html`<p>
+                      This browser could not keep a backup copy. If the recorded result page does not
+                      appear, use the JSON or CSV backup button below before closing the page.
+                    </p>`}
               </div>`
             : this.completionSavedLocally
             ? html`<div class="save-status" role="status">
@@ -1166,14 +1210,12 @@ export class AccessibleNasaTlx extends LitElement {
             </details>`
           : nothing}
         <div class="button-row compact">
-          ${this.completionSavedByHost
-            ? nothing
-            : html`<button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
-                Download JSON backup
-              </button>
-              <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
-                Download CSV backup
-              </button>`}
+          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
+            Download JSON backup
+          </button>
+          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
+            Download CSV backup
+          </button>
           ${!this.studyConfig
             ? html`<button class="secondary-button large-answer-button" type="button" @click=${this.restart}>Start again</button>`
             : nothing}
@@ -1182,7 +1224,7 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<p>
               <strong>Participant:</strong>
               ${this.completionSavedByHost
-                ? 'you may now follow the study platform instructions.'
+                ? 'please keep this page open and wait for the recorded result page to open automatically.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
@@ -1202,6 +1244,40 @@ export class AccessibleNasaTlx extends LitElement {
             Resume saved questionnaire
           </button>
           <button class="secondary-button" type="button" @click=${this.eraseSavedSession}>Erase saved answers</button>
+        </div>
+      </aside>
+    `;
+  }
+
+  private renderCompletedBackupOffer() {
+    const record = this.recoveredCompletedRecord;
+    if (!record) return nothing;
+    return html`
+      <aside class="saved-session completed-backup" aria-labelledby="completed-backup-heading">
+        <h3 id="completed-backup-heading">A completed backup was found on this device</h3>
+        <p>
+          Submission <strong>${record.submissionId}</strong> was prepared for this participant code.
+          This local copy does not prove that Qualtrics recorded the response.
+        </p>
+        <p>
+          Do not repeat the questionnaire unless the study conductor asks you to. Keep or download
+          this backup so the response can be checked safely.
+        </p>
+        <div class="button-row compact">
+          <button
+            class="primary-button large-answer-button"
+            type="button"
+            @click=${() => this.downloadRecordJson(record)}
+          >
+            Download recovered JSON
+          </button>
+          <button
+            class="secondary-button large-answer-button"
+            type="button"
+            @click=${() => this.downloadRecordCsv(record)}
+          >
+            Download recovered CSV
+          </button>
         </div>
       </aside>
     `;
@@ -1263,7 +1339,11 @@ export class AccessibleNasaTlx extends LitElement {
         ? 'Use 1–32 letters, numbers, hyphens or underscores, starting with a letter or number.'
         : '';
     this.savedSession = null;
-    if (validParticipantCode(this.participantCode)) this.findSavedSession();
+    this.recoveredCompletedRecord = null;
+    if (validParticipantCode(this.participantCode)) {
+      this.findSavedSession();
+      this.findCompletedBackup();
+    }
   };
 
   private setAnswerMode(mode: AnswerMode) {
@@ -1318,6 +1398,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private selectRating(dimension: DimensionId, value: number, route: RatingInputRoute) {
     if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
+    this.invalidatePendingSubmission();
     const effectiveRoute = this.gazeActivationInProgress
       ? route === 'smiley-landmark'
         ? 'gaze-smiley-landmark'
@@ -1333,6 +1414,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private selectPair(pairId: string, dimension: DimensionId, route: PairInputRoute) {
     if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
+    this.invalidatePendingSubmission();
     const effectiveRoute = this.gazeActivationInProgress ? 'gaze' : route;
     this.pairResponses = { ...this.pairResponses, [pairId]: dimension };
     this.pairInputRoutes = { ...this.pairInputRoutes, [pairId]: effectiveRoute };
@@ -1408,7 +1490,6 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private returnToRatings = () => {
-    this.invalidatePendingSubmission();
     this.stage = 'ratings';
     this.ratingIndex = dimensions.length - 1;
     this.persistProgress();
@@ -1416,7 +1497,6 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private returnToPairs = () => {
-    this.invalidatePendingSubmission();
     this.stage = 'pairs';
     this.pairIndex = this.pairOrder.length - 1;
     this.persistProgress();
@@ -1482,8 +1562,14 @@ export class AccessibleNasaTlx extends LitElement {
         });
       }
       const sink = this.studyConfig ? configuredResultSink() : null;
-      this.completionSavedLocally = false;
+      // Create the recoverable copy before contacting the host. A Qualtrics receipt
+      // confirms only that the parent page staged the values; the response is not
+      // durable until that page is submitted.
+      this.completionSavedLocally = this.studyConfig
+        ? saveCompletedResult(this.submittedRecord)
+        : false;
       this.completionSavedByHost = false;
+      this.hostSubmissionFailed = false;
       this.hostSinkName = '';
       this.hostReceipt = null;
       if (sink) {
@@ -1494,18 +1580,15 @@ export class AccessibleNasaTlx extends LitElement {
           this.completionSavedByHost = true;
           this.hostSinkName = sink.name;
         } catch (error) {
+          this.hostSubmissionFailed = true;
           const detail = error instanceof Error ? error.message : 'The study platform did not accept the response.';
           this.showError(
-            `${detail} Your answers remain on this page. Try submitting again or ask the study conductor for help.`,
+            `${detail} Your answers remain on this page. Retry submission, return to an answer, or use a backup button below.`,
           );
           return;
         } finally {
           this.submittingResult = false;
         }
-      } else {
-        this.completionSavedLocally = this.studyConfig
-          ? saveCompletedResult(this.submittedRecord)
-          : false;
       }
       this.dispatchEvent(new CustomEvent<StudyResultRecord>('nasa-tlx-complete', {
         detail: this.submittedRecord,
@@ -1513,7 +1596,10 @@ export class AccessibleNasaTlx extends LitElement {
         composed: true,
       }));
       this.stage = 'complete';
-      this.clearSavedProgress();
+      // Only discard the in-progress recovery copy once the completed record exists
+      // somewhere else. A blocked or full localStorage makes saveCompletedResult return
+      // false, and erasing the recovery copy then would leave no way back after a reload.
+      if (!this.studyConfig || this.completionSavedLocally) this.clearSavedProgress();
       this.stopGazeInput();
       this.clearError();
       this.focusHeading();
@@ -1525,21 +1611,29 @@ export class AccessibleNasaTlx extends LitElement {
 
   private downloadResultJson = () => {
     if (!this.submittedRecord) return;
+    this.downloadRecordJson(this.submittedRecord);
+  };
+
+  private downloadRecordJson(record: StudyResultRecord) {
     downloadTextFile(
-      `${resultFileBase(this.submittedRecord)}.json`,
-      JSON.stringify(this.submittedRecord, null, 2),
+      `${resultFileBase(record)}.json`,
+      JSON.stringify(record, null, 2),
       'application/json',
     );
-  };
+  }
 
   private downloadResultCsv = () => {
     if (!this.submittedRecord) return;
+    this.downloadRecordCsv(this.submittedRecord);
+  };
+
+  private downloadRecordCsv(record: StudyResultRecord) {
     downloadTextFile(
-      `${resultFileBase(this.submittedRecord)}.csv`,
-      `\uFEFF${resultsToCsv([this.submittedRecord])}`,
+      `${resultFileBase(record)}.csv`,
+      `\uFEFF${resultsToCsv([record])}`,
       'text/csv',
     );
-  };
+  }
 
   private restart = () => {
     this.stopReading(false);
@@ -1557,10 +1651,12 @@ export class AccessibleNasaTlx extends LitElement {
     this.supportChanges = [];
     this.resumeSummaryVisible = false;
     this.savedSession = null;
+    this.recoveredCompletedRecord = null;
     this.result = null;
     this.submittedRecord = null;
     this.completionSavedLocally = false;
     this.completionSavedByHost = false;
+    this.hostSubmissionFailed = false;
     this.hostSinkName = '';
     this.hostReceipt = null;
     this.submittingResult = false;
@@ -1580,10 +1676,18 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private invalidatePendingSubmission() {
+    if (
+      this.submittedRecord &&
+      this.completionSavedLocally &&
+      !this.completionSavedByHost
+    ) {
+      removeCompletedResult(this.submittedRecord.submissionId);
+    }
     this.result = null;
     this.submittedRecord = null;
     this.completionSavedLocally = false;
     this.completionSavedByHost = false;
+    this.hostSubmissionFailed = false;
     this.hostSinkName = '';
     this.hostReceipt = null;
   }
@@ -1913,29 +2017,38 @@ export class AccessibleNasaTlx extends LitElement {
     recognition.lang = 'en-GB';
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.maxAlternatives = 5;
+    // A lower-ranked recognition alternative can silently omit a negation. Only the
+    // browser's primary transcript is considered, and every proposed answer still
+    // requires explicit confirmation.
+    recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
       if (this.recognition !== recognition) return;
-      const alternatives = Array.from({ length: event.results[0].length }, (_, index) => event.results[0][index].transcript);
-      for (const transcript of alternatives) {
-        if (context === 'rating') {
-          const value = parseRatingTranscript(transcript, first);
-          if (value !== null) {
-            this.releaseRecognition(recognition);
-            this.pendingVoiceAnswer = { context, transcript, value, label: `${value} for ${first.name}` };
-            this.voiceState = 'pending';
-            this.voiceMessage = 'Check the proposed answer, then confirm it.';
-            return;
-          }
-        } else {
-          const value = parsePairTranscript(transcript, [first.id, second!.id]);
-          if (value) {
-            this.releaseRecognition(recognition);
-            this.pendingVoiceAnswer = { context, transcript, value, label: dimensionById.get(value)!.name };
-            this.voiceState = 'pending';
-            this.voiceMessage = 'Check the proposed answer, then confirm it.';
-            return;
-          }
+      const transcript = event.results[0]?.[0]?.transcript ?? '';
+      if (context === 'rating') {
+        const value = parseRatingTranscript(transcript, first);
+        if (value !== null) {
+          this.releaseRecognition(recognition);
+          const label = `${value} for ${first.name}`;
+          this.pendingVoiceAnswer = { context, transcript, value, label };
+          this.voiceState = 'pending';
+          this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
+          void this.updateComplete.then(() =>
+            this.querySelector<HTMLButtonElement>('[data-voice-confirm]')?.focus(),
+          );
+          return;
+        }
+      } else {
+        const value = parsePairTranscript(transcript, [first.id, second!.id]);
+        if (value) {
+          this.releaseRecognition(recognition);
+          const label = dimensionById.get(value)!.name;
+          this.pendingVoiceAnswer = { context, transcript, value, label };
+          this.voiceState = 'pending';
+          this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
+          void this.updateComplete.then(() =>
+            this.querySelector<HTMLButtonElement>('[data-voice-confirm]')?.focus(),
+          );
+          return;
         }
       }
       this.releaseRecognition(recognition);
@@ -2082,6 +2195,16 @@ export class AccessibleNasaTlx extends LitElement {
     } catch {
       this.clearSavedProgress();
     }
+  }
+
+  private findCompletedBackup() {
+    if (!this.studyConfig || !validParticipantCode(this.participantCode)) return;
+    const matching = loadCompletedResults().filter(
+      (record) =>
+        record.study.configId === this.studyConfig!.configId &&
+        record.participantCode === this.participantCode,
+    );
+    this.recoveredCompletedRecord = matching.at(-1) ?? null;
   }
 
   private validSavedSession(session: SavedSession) {

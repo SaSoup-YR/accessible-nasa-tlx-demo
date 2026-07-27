@@ -25,9 +25,11 @@ Use synthetic data only. Do not recruit or collect participant data until the su
 ## 3. Voice, errors, recovery and gaze
 
 1. Confirm and replace voice-proposed numeric and smiley answers; Next must work immediately and selected visuals must stay synchronized.
-2. Trigger each validation/import/submission error and confirm focus and viewport move to the error summary.
-3. Save, close and resume with the same configuration/code; the return summary and support-change history must be preserved.
-4. Treat WebGazer target accuracy as Partial. Verify permission, positioning, calibration, proposal, separate confirmation, recalibration and camera stop without claiming accurate independent control.
+2. Confirm that the proposed answer is spoken by the screen reader and that focus moves to the confirmation button whose name contains the exact proposed value or factor.
+3. Say `not low`, `low or high`, `twenty three`, `73` and both names in one comparison. Confirm that no answer is proposed or selected.
+4. Trigger each validation/import/submission error and confirm focus and viewport move to the error summary.
+5. Save, close and resume with the same configuration/code; the return summary and support-change history must be preserved.
+6. Treat WebGazer target accuracy as Partial. Verify permission, positioning, calibration, proposal, separate confirmation, recalibration and camera stop without claiming accurate independent control.
 
 ## 4. Qualtrics cross-device collection
 
@@ -41,6 +43,7 @@ Complete every step in [`docs/QUALTRICS-INTEGRATION.md`](docs/QUALTRICS-INTEGRAT
 6. verify one central Data & Analysis row, all six ratings/weights, fifteen pair choices, support metadata and raw JSON chunks;
 7. interrupt the network at submission and confirm Review/retry instead of false completion;
 8. confirm the participant link/bundle contains no token and accepts receipts only from the configured Qualtrics origin.
+9. run every case in [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md), recording expected and observed outcomes.
 
 Do not describe cross-device collection as activated until the synthetic row has been observed and exported from the actual UCL account.
 

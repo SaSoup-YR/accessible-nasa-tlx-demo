@@ -18,7 +18,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var completionTimerId = null;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
-  var completionDelayMs = 8000;
+  // setJSEmbeddedData only writes into the in-browser survey session; the values reach
+  // the Qualtrics response when this page is submitted by clickNextButton() below.
+  // Everything between the receipt and that submission is a window in which closing the
+  // tab loses the response, so this hand-off is kept as short as the receipt round-trip
+  // allows rather than being used as a reading pause.
+  var completionDelayMs = 1500;
 
   question.hideNextButton();
 
@@ -140,8 +145,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your data have been accepted. No further action is required. ' +
-        'Qualtrics is completing your response now.'
+        'Your answers have been accepted and Qualtrics is saving your response now. ' +
+        'Please keep this page open until the next page appears by itself.'
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
       completionTimerId = window.setTimeout(function completeAcceptedResponse() {
@@ -150,8 +155,16 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       }, completionDelayMs);
     } catch (error) {
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';
-      setStatus(detail + ' Return to the questionnaire and try again.');
+      setStatus(
+        detail +
+        ' Return to the questionnaire and try again. If it keeps failing, use the download' +
+        ' button on the questionnaire and tell the study conductor.'
+      );
       sendReceipt(event.source, false, submissionId || '', detail);
+      // Staging can fail deterministically — an oversized record fails identically on every
+      // retry — so the navigation control is restored. Without it the participant is left on
+      // a page with no way to submit and no way to advance.
+      question.showNextButton();
     }
   }
 
