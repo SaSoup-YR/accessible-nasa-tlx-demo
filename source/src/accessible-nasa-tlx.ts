@@ -1138,13 +1138,19 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.studyConfig
           ? this.completionSavedByHost
             ? html`<div class="save-status" role="status">
-                <h3>Completing in the study platform</h3>
+                <h3>Completing in the study platform — keep this page open</h3>
                 <p>
                   ${this.hostSinkName} acknowledged submission
-                  <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>.
-                  No further action is required. The study platform is completing the response now
-                  and will display the recorded result page automatically.
+                  <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>
+                  and is completing the response now. Please keep this page open until the recorded
+                  result page opens by itself. You do not need to press anything.
                 </p>
+                ${this.completionSavedLocally
+                  ? nothing
+                  : html`<p>
+                      This browser could not keep a backup copy. If the recorded result page does not
+                      appear, use the JSON or CSV backup button below before closing the page.
+                    </p>`}
               </div>`
             : this.completionSavedLocally
             ? html`<div class="save-status" role="status">
@@ -1167,14 +1173,12 @@ export class AccessibleNasaTlx extends LitElement {
             </details>`
           : nothing}
         <div class="button-row compact">
-          ${this.completionSavedByHost
-            ? nothing
-            : html`<button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
-                Download JSON backup
-              </button>
-              <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
-                Download CSV backup
-              </button>`}
+          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
+            Download JSON backup
+          </button>
+          <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultCsv}>
+            Download CSV backup
+          </button>
           ${!this.studyConfig
             ? html`<button class="secondary-button large-answer-button" type="button" @click=${this.restart}>Start again</button>`
             : nothing}
@@ -1183,7 +1187,7 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<p>
               <strong>Participant:</strong>
               ${this.completionSavedByHost
-                ? 'please wait for the recorded result page to open automatically.'
+                ? 'please keep this page open and wait for the recorded result page to open automatically.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
@@ -1503,18 +1507,24 @@ export class AccessibleNasaTlx extends LitElement {
         } finally {
           this.submittingResult = false;
         }
-      } else {
-        this.completionSavedLocally = this.studyConfig
-          ? saveCompletedResult(this.submittedRecord)
-          : false;
       }
+      // A local copy is written on every configured route, including the Qualtrics
+      // hand-off. A host receipt confirms that the parent staged the record, not that
+      // the response has been submitted, so the record must stay recoverable on this
+      // device until the study platform has actually completed the response.
+      this.completionSavedLocally = this.studyConfig
+        ? saveCompletedResult(this.submittedRecord)
+        : false;
       this.dispatchEvent(new CustomEvent<StudyResultRecord>('nasa-tlx-complete', {
         detail: this.submittedRecord,
         bubbles: true,
         composed: true,
       }));
       this.stage = 'complete';
-      this.clearSavedProgress();
+      // Only discard the in-progress recovery copy once the completed record exists
+      // somewhere else. A blocked or full localStorage makes saveCompletedResult return
+      // false, and erasing the recovery copy then would leave no way back after a reload.
+      if (!this.studyConfig || this.completionSavedLocally) this.clearSavedProgress();
       this.stopGazeInput();
       this.clearError();
       this.focusHeading();
