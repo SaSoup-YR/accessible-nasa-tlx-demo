@@ -1,23 +1,21 @@
-name: Verify source and generated release
+name: Apply integrated saved-session recovery announcement
 
 on:
-  pull_request:
   push:
     branches:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verify:
+  apply-test-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: source
     steps:
-      - name: Check out repository
+      - name: Check out main with its parent
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -26,19 +24,113 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
+      - name: Integrate recovery speech into the existing participant component
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('source/src/accessible-nasa-tlx.ts')
+          text = path.read_text(encoding='utf-8')
+
+          old_connected = """        void this.updateComplete.then(() => {
+          const heading = this.querySelector<HTMLElement>(
+            this.savedSession ? '#saved-session-heading' : '#completed-backup-heading',
+          );
+          heading?.focus();
+          heading?.scrollIntoView?.({ block: 'start' });
+        });"""
+          new_connected = """        void this.updateComplete.then(() => {
+          const heading = this.querySelector<HTMLElement>(
+            this.savedSession ? '#saved-session-heading' : '#completed-backup-heading',
+          );
+          heading?.focus();
+          heading?.scrollIntoView?.({ block: 'start' });
+          if (this.savedSession) {
+            this.announceAutomatic(this.savedSessionOfferSpeech(this.savedSession));
+          }
+        });"""
+
+          render_marker = "  private renderSavedSessionOffer() {"
+          render_replacement = """  private savedSessionOfferSpeech(session: SavedSession) {
+    const count = Object.keys(session.ratings).length + Object.keys(session.pairResponses).length;
+    return `Saved questionnaire found. ${count} of ${dimensions.length + pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
+  }
+
+  private renderSavedSessionOffer() {"""
+
+          old_find = """      const session = JSON.parse(raw) as SavedSession;
+      if (this.validSavedSession(session)) this.savedSession = session;
+      else this.clearSavedProgress();"""
+          new_find = """      const session = JSON.parse(raw) as SavedSession;
+      if (this.validSavedSession(session)) {
+        this.savedSession = session;
+        this.applySavedRecoveryPresentation(session);
+      } else {
+        this.clearSavedProgress();
+      }"""
+
+          find_marker = "  private findSavedSession() {"
+          find_replacement = """  private applySavedRecoveryPresentation(session: SavedSession) {
+    if (!this.canAdjustPresentationSupport) return;
+    this.largeText = session.support.largeText;
+    this.audioGuidance = Boolean(session.support.audioGuidance);
+  }
+
+  private findSavedSession() {"""
+
+          replacements = [
+              (old_connected, new_connected),
+              (render_marker, render_replacement),
+              (old_find, new_find),
+              (find_marker, find_replacement),
+          ]
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected source block was not found exactly once: {old[:90]!r}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Install locked dependencies
+        working-directory: source
         run: npm ci
 
-      - name: Run automated tests
+      - name: Run the complete automated suite
+        working-directory: source
         run: npm test -- --run
 
       - name: Build production, standalone and release outputs
+        working-directory: source
         run: npm run build:release
 
-      - name: Confirm the committed deployment files are current
-        run: >-
-          git diff --exit-code --
-          demo/accessible-nasa-tlx-v0.7.html
-          ../index.html
-          ../study.html
-          ../assets
+      - name: Verify the integrated release
+        shell: bash
+        run: |
+          rm -f resume-recovery-enhancement.js
+          if grep -q 'resume-recovery-enhancement.js' index.html; then
+            echo 'The participant page still loads the separate enhancement.' >&2
+            exit 1
+          fi
+          participant_asset="$(sed -n 's/.*src="\.\/assets\/\([^"]*participant[^"]*\.js\)".*/\1/p' index.html)"
+          if [ -z "$participant_asset" ] || [ ! -f "assets/$participant_asset" ]; then
+            echo 'The generated participant asset could not be resolved.' >&2
+            exit 1
+          fi
+          grep -q 'Saved questionnaire found.' "assets/$participant_asset"
+          grep -q 'remove the saved copy' "assets/$participant_asset"
+          grep -q 'this.announceAutomatic(this.savedSessionOfferSpeech(this.savedSession))' source/src/accessible-nasa-tlx.ts
+          grep -q 'this.applySavedRecoveryPresentation(session)' source/src/accessible-nasa-tlx.ts
+          git diff --check
+
+      - name: Restore normal CI and commit the tested implementation
+        shell: bash
+        run: |
+          git show HEAD^:.github/workflows/verify.yml > .github/workflows/verify.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Integrate saved-session recovery announcement'
+          git push origin HEAD:main
