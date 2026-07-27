@@ -183,6 +183,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private configurationError = '';
   @state() private participantCode = '';
   @state() private participantCodeError = '';
+  @state() private participantCodeRestoredForTab = false;
   @state() private startedAt = '';
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
@@ -207,7 +208,20 @@ export class AccessibleNasaTlx extends LitElement {
     super.connectedCallback();
     this.loadStudyConfiguration();
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
-    queueMicrotask(() => this.findSavedSession());
+    queueMicrotask(() => {
+      this.restoreParticipantCodeForTab();
+      this.findSavedSession();
+      this.findCompletedBackup();
+      if (this.participantCodeRestoredForTab && (this.savedSession || this.recoveredCompletedRecord)) {
+        void this.updateComplete.then(() => {
+          const heading = this.querySelector<HTMLElement>(
+            this.savedSession ? '#saved-session-heading' : '#completed-backup-heading',
+          );
+          heading?.focus();
+          heading?.scrollIntoView?.({ block: 'start' });
+        });
+      }
+    });
   }
 
   disconnectedCallback() {
@@ -483,8 +497,16 @@ export class AccessibleNasaTlx extends LitElement {
           />
         </label>
         <p id="participant-code-help" class=${this.participantCodeError ? 'field-error' : 'support-boundary'}>
-          ${this.participantCodeError || 'Letters, numbers, hyphens and underscores only; maximum 32 characters.'}
+          ${this.participantCodeError ||
+          (this.recoveryEnabled
+            ? 'Letters, numbers, hyphens and underscores only; maximum 32 characters. If this page reloads in the same tab, this code is restored for that tab so interrupted answers can be found.'
+            : 'Letters, numbers, hyphens and underscores only; maximum 32 characters.')}
         </p>
+        ${this.participantCodeRestoredForTab
+          ? html`<p class="restored-code-note" role="status">
+              Participant code restored for this tab. It will be forgotten when this tab is closed.
+            </p>`
+          : nothing}
       </aside>
     `;
   }
@@ -547,6 +569,9 @@ export class AccessibleNasaTlx extends LitElement {
                 @change=${() => this.setAnswerMode('standard')}
               />
               <span><strong>Standard 21-point scale</strong><small>Default NASA-TLX presentation.</small></span>
+              ${this.answerMode === 'standard'
+                ? html`<span class="selected-marker" aria-hidden="true">✓ Selected</span>`
+                : nothing}
             </label>
             <label for=${`${prefix}-smiley-answer`}>
               <input
@@ -561,6 +586,9 @@ export class AccessibleNasaTlx extends LitElement {
                 <strong>Smiley landmarks</strong>
                 <small>Experimental five-value view; the precise scale is available only on request.</small>
               </span>
+              ${this.answerMode === 'smiley'
+                ? html`<span class="selected-marker" aria-hidden="true">✓ Selected</span>`
+                : nothing}
             </label>
           </fieldset>`
           : nothing}
@@ -898,6 +926,9 @@ export class AccessibleNasaTlx extends LitElement {
                   @change=${() => this.selectRating(dimension.id, value, 'standard-scale')}
                 />
                 <span>${value}</span>
+                ${selected === value
+                  ? html`<span class="selected-marker selected-check" aria-hidden="true">✓</span>`
+                  : nothing}
               </label>
             `;
           })}
@@ -937,6 +968,9 @@ export class AccessibleNasaTlx extends LitElement {
                   <span class="smiley-face" aria-hidden="true">${cue}</span>
                   <strong>${value}</strong>
                   <small>${this.landmarkLabel(dimension, value)}</small>
+                  ${selected === value
+                    ? html`<span class="selected-marker" aria-hidden="true">✓ Selected</span>`
+                    : nothing}
                 </span>
               </label>
             `;
@@ -993,6 +1027,9 @@ export class AccessibleNasaTlx extends LitElement {
           <strong>${dimension.name}</strong>
           ${this.showSimpleLanguage ? html`<small>${dimension.shortMeaning}</small>` : nothing}
         </span>
+        ${checked
+          ? html`<span class="selected-marker" aria-hidden="true">✓ Selected</span>`
+          : nothing}
       </label>
     `;
   }
@@ -1295,7 +1332,7 @@ export class AccessibleNasaTlx extends LitElement {
     const count = Object.keys(this.savedSession.ratings).length + Object.keys(this.savedSession.pairResponses).length;
     return html`
       <aside class="saved-session" aria-labelledby="saved-session-heading">
-        <h3 id="saved-session-heading">Saved questionnaire found</h3>
+        <h3 id="saved-session-heading" tabindex="-1">Saved questionnaire found</h3>
         <p>${count} of ${dimensions.length + pairs.length} responses are saved in this browser.</p>
         <div class="button-row compact">
           <button class="primary-button large-answer-button" type="button" @click=${this.restoreSavedSession}>
@@ -1312,7 +1349,7 @@ export class AccessibleNasaTlx extends LitElement {
     if (!record) return nothing;
     return html`
       <aside class="saved-session completed-backup" aria-labelledby="completed-backup-heading">
-        <h3 id="completed-backup-heading">A completed backup was found on this device</h3>
+        <h3 id="completed-backup-heading" tabindex="-1">A completed backup was found on this device</h3>
         <p>
           Submission <strong>${record.submissionId}</strong> was prepared for this participant code.
           This local copy does not prove that Qualtrics recorded the response.
@@ -1397,6 +1434,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private setParticipantCode = (event: Event) => {
     this.participantCode = (event.currentTarget as HTMLInputElement).value.trim();
+    this.participantCodeRestoredForTab = false;
     this.participantCodeError =
       this.participantCode && !validParticipantCode(this.participantCode)
         ? 'Use 1–32 letters, numbers, hyphens or underscores, starting with a letter or number.'
@@ -1404,8 +1442,11 @@ export class AccessibleNasaTlx extends LitElement {
     this.savedSession = null;
     this.recoveredCompletedRecord = null;
     if (validParticipantCode(this.participantCode)) {
+      this.rememberParticipantCodeForTab();
       this.findSavedSession();
       this.findCompletedBackup();
+    } else {
+      this.forgetParticipantCodeForTab();
     }
   };
 
@@ -1434,8 +1475,13 @@ export class AccessibleNasaTlx extends LitElement {
     this.recordSupportChange('interruption-recovery', this.recoveryEnabled, value);
     this.recoveryEnabled = value;
     this.invalidatePendingSubmission();
-    if (this.recoveryEnabled) this.persistProgress();
-    else this.clearSavedProgress();
+    if (this.recoveryEnabled) {
+      this.rememberParticipantCodeForTab();
+      this.persistProgress();
+    } else {
+      this.forgetParticipantCodeForTab();
+      this.clearSavedProgress();
+    }
     this.announceAutomatic(
       value
         ? 'Interruption recovery is on. Incomplete answers will be stored in this browser.'
@@ -1470,7 +1516,7 @@ export class AccessibleNasaTlx extends LitElement {
       return 'Say a number from 0 to 100 in steps of 5, such as 25 or 70.';
     }
     const labels = smileyLandmarks.map(({ value }) => this.landmarkLabel(dimension, value));
-    return `Say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}. You may instead say 0, 25, 50, 75, or 100. If ${labels[0]} or ${labels.at(-1)} is not recognised, say zero or one hundred.`;
+    return `For the most reliable voice input, say one shown value: 0, 25, 50, 75, or 100. You may instead say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}.`;
   }
 
   private ratingVoiceAnswerLabel(dimension: TlxDimension, value: number) {
@@ -1742,6 +1788,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.stopGazeInput();
     this.releaseRecognition();
     this.clearSavedProgress();
+    this.forgetParticipantCodeForTab();
     this.stage = 'intro';
     this.ratingIndex = 0;
     this.pairIndex = 0;
@@ -1764,6 +1811,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.submittingResult = false;
     this.startedAt = '';
     this.participantCodeError = '';
+    this.participantCodeRestoredForTab = false;
     if (this.studyConfig) this.participantCode = '';
     this.errorMessage = '';
     this.voiceState = 'idle';
@@ -1822,11 +1870,13 @@ export class AccessibleNasaTlx extends LitElement {
     const requestId = ++this.speechRequestId;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-GB';
-    utterance.rate = 0.9;
-    const voices = window.speechSynthesis.getVoices?.() ?? [];
-    const preferredVoice = voices.find((voice) => voice.lang.toLowerCase() === 'en-gb')
-      ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('en'));
-    if (preferredVoice) utterance.voice = preferredVoice;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    // Do not select the first English voice returned by getVoices(). Voice order,
+    // quality and gender vary by browser and operating system, and the first match
+    // can be a compact or low-quality mobile voice. Leaving voice unset lets the
+    // device use its configured English system voice for the requested language.
     utterance.onend = () => {
       if (requestId !== this.speechRequestId) return;
       this.readingAloud = false;
@@ -1900,7 +1950,7 @@ export class AccessibleNasaTlx extends LitElement {
     }
     if (this.stage === 'review') return 'Review your six ratings and fifteen source of workload comparisons before submitting.';
     if (this.studyConfig && this.completionSavedByHost) {
-      return 'Answers accepted. Keep this page open while the study platform saves the response.';
+      return 'Answers accepted. The study platform is finishing automatically.';
     }
     if (!this.result) return 'Responses calculated.';
     const score = !this.studyConfig || this.studyConfig.showScoreToParticipant
@@ -2328,6 +2378,46 @@ export class AccessibleNasaTlx extends LitElement {
     const code = this.studyConfig ? this.participantCode : 'DEMO';
     if (!validParticipantCode(code)) return null;
     return progressStorageKey(this.studyConfig?.configId ?? 'demo-config', code);
+  }
+
+  private currentTabParticipantCodeKey() {
+    if (!this.studyConfig) return null;
+    return `accessible-nasa-tlx-v0.7-tab-participant:${this.studyConfig.configId}`;
+  }
+
+  private rememberParticipantCodeForTab() {
+    const storageKey = this.currentTabParticipantCodeKey();
+    if (!storageKey || !this.recoveryEnabled || !validParticipantCode(this.participantCode)) return;
+    try {
+      sessionStorage.setItem(storageKey, this.participantCode);
+    } catch {
+      // Tab-scoped storage is an optional convenience. Local progress recovery and
+      // the participant-code field remain available if the browser blocks it.
+    }
+  }
+
+  private forgetParticipantCodeForTab() {
+    const storageKey = this.currentTabParticipantCodeKey();
+    if (!storageKey) return;
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      // The browser may block tab-scoped storage.
+    }
+  }
+
+  private restoreParticipantCodeForTab() {
+    const storageKey = this.currentTabParticipantCodeKey();
+    if (!storageKey || !this.recoveryEnabled || validParticipantCode(this.participantCode)) return;
+    try {
+      const savedCode = sessionStorage.getItem(storageKey);
+      if (!savedCode || !validParticipantCode(savedCode)) return;
+      this.participantCode = savedCode;
+      this.participantCodeRestoredForTab = true;
+      this.statusMessage = 'Participant code restored for this tab. Checking for interrupted answers.';
+    } catch {
+      // Re-entering the pseudonymous code remains the safe fallback.
+    }
   }
 
   private persistProgress() {

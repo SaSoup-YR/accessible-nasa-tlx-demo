@@ -95,6 +95,26 @@ device. The Web Speech API exposes ranked hypotheses and `maxAlternatives`, but 
 underlying recognition implementation remains browser or platform dependent:
 [Web Speech API specification](https://webaudio.github.io/web-speech-api/).
 
+The final prompt puts the five numeric values first because they are less ambiguous
+than the short words `Low`, `High` and `Poor`. The bounded parser also accepts the
+recogniser's exact homophones `lo`, `hi` and `pour`. It does not use edit-distance
+fuzzy matching. `pool`, arbitrary similar words, illegal values and conflicting
+hypotheses remain rejected. The explicit proposal and confirmation step is therefore
+the semantic boundary: recognition can help propose an answer but cannot silently
+change the measurement.
+
+The parser rejects `not low`, `anything but low`, `other than high`, uncertainty,
+multiple anchors and non-scale numbers such as `twenty three`. `Twenty three` is not
+rounded to 20. Test cases cover number words, digit-by-digit speech, true homophones,
+negation, illegal increments and conflicting ranked alternatives.
+
+Contextual phrase biasing was considered but is not required in this release.
+`SpeechRecognition.phrases` and `SpeechRecognitionPhrase` remain experimental, and a
+recognition model may return `phrases-not-supported`. Introducing that route into the
+required participant path would add a new browser-dependent failure. The current
+release instead uses visible numeric fallback, ranked alternatives, a small explicit
+alias set and mandatory confirmation.
+
 Built-in automatic audio now covers:
 
 - each new rating, comparison and review step;
@@ -104,7 +124,7 @@ Built-in automatic audio now covers:
 - opened simpler help and a simpler-language mode change;
 - a saved-position return summary and next action;
 - validation, voice, storage and submission errors;
-- result calculation, or a short keep-the-page-open message during a successful
+- result calculation, or a short automatic-finish message during a successful
   Qualtrics handoff.
 
 This audio is an optional page-level speech-synthesis route, not a screen reader.
@@ -115,6 +135,20 @@ native controls, focus movement and live regions to NVDA and VoiceOver independe
 When Qualtrics replaces the iframe after a successful handoff, browser speech that
 belongs to the iframe may be interrupted; persistent completion wording therefore
 belongs on the Qualtrics End-of-Survey page.
+
+Speech-synthesis voice quality and gender are supplied by the browser and operating
+system. Earlier code selected the first English voice returned by `getVoices()`;
+voice ordering is not stable across devices and could select a compact, low-quality
+tablet voice. The release now leaves the voice unset, requests English and uses the
+device's configured system voice at a neutral rate, pitch and volume. A female voice
+on one computer and a male voice on an iPhone is therefore not evidence of different
+questionnaire content. Device voice availability, volume and quality must be recorded
+as an interoperability observation rather than claimed as application-controlled.
+
+During an accepted Qualtrics handoff, built-in audio now says only that answers were
+accepted and the study platform is finishing automatically. The visible technical
+status remains available until Qualtrics advances, and the persistent End-of-Survey
+page carries the durable completion message.
 
 ## Role and file boundary
 
