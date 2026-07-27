@@ -1,6 +1,7 @@
 name: Apply integrated saved-session recovery announcement
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -15,6 +16,7 @@ jobs:
       - name: Check out main with its parent
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 2
 
       - name: Use Node.js
