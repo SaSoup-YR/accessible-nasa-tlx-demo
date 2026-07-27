@@ -223,7 +223,7 @@ describe('speech support integration', () => {
     await component.updateComplete;
     expect(spoken.at(-1)).toContain('Before you begin');
     expect(cancel).not.toHaveBeenCalled();
-    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing a spoken summary');
+    expect(component.querySelector('.audio-status')?.textContent).toContain('Playing spoken guidance');
 
     summaryButton.click();
     await component.updateComplete;
@@ -236,17 +236,72 @@ describe('speech support integration', () => {
     await component.updateComplete;
     expect(spoken.at(-1)).toContain('Built-in audio guidance is on');
 
+    inputByValue(component, 'smiley')!.click();
+    await component.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spoken.at(-1)).toContain('Smiley landmark answer format selected');
+
+    checkboxByLabel(component, 'Show simpler explanations')!.click();
+    await component.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spoken.at(-1)).toContain('Simpler explanations are on');
+
     await startRatings(component);
     await new Promise((resolve) => setTimeout(resolve, 0));
     await component.updateComplete;
     expect(spoken.at(-1)).toContain('Rating 1 of 6. Mental Demand');
+    expect(spoken.at(-1)).toContain('Choose a smiley landmark');
+    expect(spoken.at(-1)).toContain('Low, value 0');
+    expect(spoken.at(-1)).toContain('Simpler explanation');
 
-    component.querySelector<HTMLInputElement>('.rating-option input[value="70"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    expect(spoken.at(-1)).toContain('There is a problem');
+
+    component.querySelector<HTMLInputElement>('.smiley-option input[value="75"]')!.click();
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(spoken.at(-1)).toContain('Mental Demand, 70, selected');
+    expect(spoken.at(-1)).toContain('Mental Demand, Closer to High, value 75, selected');
+
+    await completeRatings(component);
+    await completeComparisons(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spoken.at(-1)).toContain('Responses calculated');
+    expect(spoken.at(-1)).toContain('Weighted workload score');
+    expect(component.querySelector('.completion-audio button')?.textContent).toMatch(
+      /Hear the result summary|Stop speech/,
+    );
   });
 
   it('requires confirmation before a recognised voice rating becomes an answer', async () => {
+    const spoken: string[] = [];
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speaking: false,
+        pending: false,
+        paused: false,
+        cancel: vi.fn(),
+        speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
+        getVoices: () => [],
+      },
+    });
+    (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
+
     class FakeRecognition {
       lang = '';
       continuous = false;
@@ -256,6 +311,7 @@ describe('speech support integration', () => {
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
+        expect(this.maxAlternatives).toBe(5);
         this.onresult?.({
           results: { 0: { 0: { transcript: 'fifty five' }, length: 1 }, length: 1 },
         });
@@ -267,6 +323,11 @@ describe('speech support integration', () => {
     window.webkitSpeechRecognition = FakeRecognition as any;
 
     const component = await renderComponent();
+    const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
+      label.textContent?.includes('Automatically read new questions'),
+    )!.querySelector<HTMLInputElement>('input')!;
+    audio.click();
+    await component.updateComplete;
     await startRatings(component);
     const startVoice = [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')].find(
       (button) => button.textContent?.includes('Start voice input'),
@@ -276,13 +337,15 @@ describe('speech support integration', () => {
     await Promise.resolve();
 
     expect(component.querySelector('.voice-confirmation')?.textContent).toContain('55 for Mental Demand');
-    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+    expect(component.querySelector('.voice-input [role="status"]')?.textContent).toContain(
       'Proposed answer: 55 for Mental Demand',
     );
     expect(document.activeElement).toBe(
       component.querySelector<HTMLButtonElement>('[data-voice-confirm]'),
     );
     expect(component.querySelector<HTMLInputElement>('input[value="55"]')?.checked).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spoken.at(-1)).toContain('Proposed answer: 55 for Mental Demand');
 
     component.querySelector<HTMLButtonElement>('.voice-confirmation .primary-button')!.click();
     await component.updateComplete;
@@ -294,6 +357,55 @@ describe('speech support integration', () => {
     await component.updateComplete;
     expect(component.querySelector('.step-label')?.textContent).toContain('Rating 2 of 6');
     expect(component.querySelector('#rating-heading')?.textContent).toBe('Physical Demand');
+  });
+
+  it('speaks the saved position and next action after an audio-guided session is restored', async () => {
+    const spoken: string[] = [];
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speaking: false,
+        pending: false,
+        paused: false,
+        cancel: vi.fn(),
+        speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
+        getVoices: () => [],
+      },
+    });
+    (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
+
+    const component = await renderComponent();
+    checkboxByLabel(component, 'Save progress and show a return summary')!.click();
+    const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
+      label.textContent?.includes('Automatically read new questions'),
+    )!.querySelector<HTMLInputElement>('input')!;
+    audio.click();
+    await startRatings(component);
+    component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    component.remove();
+
+    const restored = await renderComponent();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await restored.updateComplete;
+    restored.querySelector<HTMLButtonElement>('.saved-session .primary-button')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await restored.updateComplete;
+
+    expect(spoken.at(-1)).toContain('Welcome back');
+    expect(spoken.at(-1)).toContain('Current position: Rating 2 of 6: Physical Demand');
+    expect(spoken.at(-1)).toContain('Next action');
   });
 
   it('does not select an answer when the primary voice transcript is negated or invalid', async () => {
@@ -346,7 +458,14 @@ describe('speech support integration', () => {
       onend: (() => void) | null = null;
       start() {
         this.onresult?.({
-          results: { 0: { 0: { transcript: 'closer to high' }, length: 1 }, length: 1 },
+          results: {
+            0: {
+              0: { transcript: 'closer two hi' },
+              1: { transcript: 'closer to high' },
+              length: 2,
+            },
+            length: 1,
+          },
         });
       }
       stop() {}
@@ -367,6 +486,9 @@ describe('speech support integration', () => {
     await component.updateComplete;
     expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
       'Closer to High, value 75, for Mental Demand',
+    );
+    expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
+      'I heard: closer to high',
     );
     expect(component.querySelector('.voice-confirmation')?.textContent).not.toContain(
       'value 100',

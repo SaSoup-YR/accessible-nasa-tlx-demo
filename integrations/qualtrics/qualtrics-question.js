@@ -16,6 +16,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   var acceptedSubmissionId = null;
   var advancing = false;
   var completionTimerId = null;
+  var advanceWatchdogTimerId = null;
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
   // setJSEmbeddedData only writes into the in-browser survey session; the values reach
@@ -144,12 +145,25 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       advancing = true;
       setStatus(
         'Your answers have been accepted and Qualtrics is saving your response now. ' +
-        'Please keep this page open until the next page appears by itself.'
+        'Please keep this page open until the next page appears by itself. ' +
+        'No backup download is required during this automatic transition.'
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
       completionTimerId = window.setTimeout(function completeAcceptedResponse() {
         completionTimerId = null;
         question.clickNextButton();
+        // If Qualtrics does not unload this question after the native advance, keep
+        // the participant out of a dead end. The questionnaire iframe still holds
+        // its in-memory JSON/CSV routes, and the native navigation is restored.
+        advanceWatchdogTimerId = window.setTimeout(function recoverFailedAdvance() {
+          advanceWatchdogTimerId = null;
+          advancing = false;
+          setStatus(
+            'Qualtrics did not open the recorded result page. Use one backup button ' +
+            'in the questionnaire and tell the study conductor, or use the restored Next button.'
+          );
+          question.showNextButton();
+        }, 6000);
       }, completionDelayMs);
     } catch (error) {
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';
@@ -182,6 +196,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
     if (completionTimerId !== null) {
       window.clearTimeout(completionTimerId);
       completionTimerId = null;
+    }
+    if (advanceWatchdogTimerId !== null) {
+      window.clearTimeout(advanceWatchdogTimerId);
+      advanceWatchdogTimerId = null;
     }
     window.removeEventListener('message', receiveResult);
   });

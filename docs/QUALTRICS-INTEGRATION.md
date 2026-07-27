@@ -101,8 +101,12 @@ Use a non-participant code such as `TEST-001`.
 10. Reload midway through a recovery-enabled questionnaire. Confirm that the saved-session offer restores the exact next step.
 11. Test with site storage blocked or full. Confirm that submission does not crash, the in-memory JSON/CSV buttons remain available and the page does not claim that a local backup exists.
 12. Cause a staging failure with synthetic data and confirm that the Qualtrics navigation control is restored instead of leaving a dead end.
-13. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two factor names. None may create a proposed or selected answer.
-14. Delete the synthetic response and local test backups before recruitment if the approved plan requires a clean dataset.
+13. If the native Qualtrics advance can be safely blocked in a copied synthetic
+    survey, confirm that the six-second watchdog reports that the recorded-result page
+    did not open and restores the native Next button. Do not perform this fault
+    injection in a recruitment survey.
+14. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two factor names. None may create a proposed or selected answer. Also test a harmless incorrect primary transcript followed by one consistent valid alternative.
+15. Delete the synthetic response and local test backups before recruitment if the approved plan requires a clean dataset.
 
 Record the survey ID, activated distribution URL, frozen Git commit, configuration JSON, test date, browser/device and exported synthetic row in the study log.
 
@@ -114,6 +118,15 @@ Submitting that page completes the Qualtrics response.
 The handoff is not reading time. Participant-facing completion information belongs on
 the End-of-Survey page, which remains visible after Qualtrics has submitted the
 response.
+
+JSON and CSV controls remain in the iframe as emergency recovery routes. They are not
+normal completion choices and the participant is not expected to use them during the
+1.5-second transition. If automatic advancement succeeds, Qualtrics replaces the
+iframe before meaningful interaction with those controls is possible. If advancement
+does not unload the page, a six-second watchdog reports the problem and restores the
+native Qualtrics Next button; the iframe and its backup controls remain available.
+Extending the handoff to create download time would enlarge the interval in which
+closing the tab can lose the unstored Qualtrics session and is therefore rejected.
 
 The receipt displayed inside the embedded prototype means that the parent Qualtrics
 page has acknowledged and staged the record; it is not, by itself, a server-side

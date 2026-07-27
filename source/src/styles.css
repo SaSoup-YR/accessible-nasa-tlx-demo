@@ -909,6 +909,7 @@ button:disabled {
 .study-context,
 .configured-support,
 .save-status,
+.submission-fallback,
 .generated-link {
   margin: 1.25rem 0;
   padding: 1rem 1.25rem;
@@ -920,6 +921,7 @@ button:disabled {
 .study-context h3,
 .configured-support h3,
 .save-status h3,
+.submission-fallback h3,
 .generated-link h3 {
   margin-top: 0;
 }
