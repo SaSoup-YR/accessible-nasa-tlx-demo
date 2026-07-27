@@ -219,6 +219,9 @@ export class AccessibleNasaTlx extends LitElement {
           );
           heading?.focus();
           heading?.scrollIntoView?.({ block: 'start' });
+          if (this.savedSession) {
+            this.announceAutomatic(this.savedSessionOfferSpeech(this.savedSession));
+          }
         });
       }
     });
@@ -1325,6 +1328,11 @@ export class AccessibleNasaTlx extends LitElement {
           : nothing}
       </section>
     `;
+  }
+
+  private savedSessionOfferSpeech(session: SavedSession) {
+    const count = Object.keys(session.ratings).length + Object.keys(session.pairResponses).length;
+    return `Saved questionnaire found. ${count} of ${dimensions.length + pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
   }
 
   private renderSavedSessionOffer() {
@@ -2454,6 +2462,12 @@ export class AccessibleNasaTlx extends LitElement {
     }
   }
 
+  private applySavedRecoveryPresentation(session: SavedSession) {
+    if (!this.canAdjustPresentationSupport) return;
+    this.largeText = session.support.largeText;
+    this.audioGuidance = Boolean(session.support.audioGuidance);
+  }
+
   private findSavedSession() {
     const storageKey = this.currentProgressStorageKey();
     if (!storageKey) return;
@@ -2461,8 +2475,12 @@ export class AccessibleNasaTlx extends LitElement {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return;
       const session = JSON.parse(raw) as SavedSession;
-      if (this.validSavedSession(session)) this.savedSession = session;
-      else this.clearSavedProgress();
+      if (this.validSavedSession(session)) {
+        this.savedSession = session;
+        this.applySavedRecoveryPresentation(session);
+      } else {
+        this.clearSavedProgress();
+      }
     } catch {
       this.clearSavedProgress();
     }
