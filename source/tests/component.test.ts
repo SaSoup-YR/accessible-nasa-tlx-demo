@@ -273,8 +273,15 @@ describe('speech support integration', () => {
     )!;
     startVoice.click();
     await component.updateComplete;
+    await Promise.resolve();
 
     expect(component.querySelector('.voice-confirmation')?.textContent).toContain('55 for Mental Demand');
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+      'Proposed answer: 55 for Mental Demand',
+    );
+    expect(document.activeElement).toBe(
+      component.querySelector<HTMLButtonElement>('[data-voice-confirm]'),
+    );
     expect(component.querySelector<HTMLInputElement>('input[value="55"]')?.checked).toBe(false);
 
     component.querySelector<HTMLButtonElement>('.voice-confirmation .primary-button')!.click();
@@ -287,6 +294,45 @@ describe('speech support integration', () => {
     await component.updateComplete;
     expect(component.querySelector('.step-label')?.textContent).toContain('Rating 2 of 6');
     expect(component.querySelector('#rating-heading')?.textContent).toBe('Physical Demand');
+  });
+
+  it('does not select an answer when the primary voice transcript is negated or invalid', async () => {
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        this.onresult?.({
+          results: {
+            0: {
+              0: { transcript: 'not low' },
+              1: { transcript: 'low' },
+              length: 2,
+            },
+            length: 1,
+          },
+        });
+      }
+      stop() {}
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = await renderComponent();
+    await startRatings(component);
+    [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')]
+      .find((button) => button.textContent?.includes('Start voice input'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+      'The answer was not recognised',
+    );
   });
 
   it('synchronises a confirmed voice landmark with the visible smiley radio group', async () => {

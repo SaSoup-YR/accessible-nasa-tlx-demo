@@ -11,6 +11,7 @@ import {
   decodeStudyConfig,
   encodeStudyConfig,
   loadCompletedResults,
+  removeCompletedResult,
   resultsToCsv,
   saveCompletedResult,
   type SupportMetadata,
@@ -120,6 +121,28 @@ describe('completed result records', () => {
     expect(stored[0].result.weightedScore).toBe(50);
     clearCompletedResults();
     expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('removes only the identified stale backup when an answer is edited before retry', () => {
+    const first = record();
+    const second = { ...record(), submissionId: 'submission-second' };
+    expect(saveCompletedResult(first)).toBe(true);
+    expect(saveCompletedResult(second)).toBe(true);
+    expect(removeCompletedResult(first.submissionId)).toBe(true);
+    expect(loadCompletedResults().map(({ submissionId }) => submissionId)).toEqual([
+      'submission-second',
+    ]);
+  });
+
+  it('reports a blocked or full browser store without throwing', () => {
+    const unavailableStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      },
+      removeItem: () => undefined,
+    };
+    expect(saveCompletedResult(record(), unavailableStorage)).toBe(false);
   });
 
   it('rejects a structurally plausible record when its calculated result was altered', () => {

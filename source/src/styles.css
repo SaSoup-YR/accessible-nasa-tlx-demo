@@ -1,6 +1,8 @@
 :root {
   color: #1d2733;
   background: #eef2f6;
+  --focus-outline: #0b0c0c;
+  --focus-halo: #ffdd00;
   font-family: Arial, Helvetica, sans-serif;
   font-synthesis: none;
   line-height: 1.55;
@@ -54,8 +56,9 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-  outline: 4px solid #ffbf47;
+  outline: 3px solid var(--focus-outline);
   outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
 }
 
 .app-shell {
@@ -137,6 +140,19 @@ progress {
 }
 
 .error-summary h2 {
+  margin-top: 0;
+  color: #8f0b18;
+}
+
+.submission-recovery {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border: 3px solid #b10e1e;
+  border-radius: 10px;
+  background: #fff7f7;
+}
+
+.submission-recovery h3 {
   margin-top: 0;
   color: #8f0b18;
 }
@@ -708,8 +724,9 @@ figcaption {
 }
 
 .smiley-option:focus-within {
-  outline: 4px solid #ffbf47;
+  outline: 3px solid var(--focus-outline);
   outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
   border-radius: 10px;
 }
 
@@ -806,8 +823,9 @@ figcaption {
 }
 
 .rating-option:focus-within {
-  outline: 4px solid #ffbf47;
+  outline: 3px solid var(--focus-outline);
   outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
 }
 
 .button-row {

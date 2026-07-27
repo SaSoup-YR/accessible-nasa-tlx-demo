@@ -194,12 +194,14 @@ describe('study-conductor and participant separation', () => {
     expect(component.textContent).toContain('Download CSV backup');
   });
 
-  it('uses an approved host sink for cross-device collection and does not duplicate the record locally', async () => {
+  it('creates a local backup before asking the approved host to collect the response', async () => {
     const component = await renderConfiguredComponent();
     const submitted: StudyResultRecord[] = [];
     window.accessibleNasaTlxResultSink = {
       name: 'UCL approved test platform',
       async submit(record) {
+        const [backup] = loadCompletedResults();
+        expect(backup?.submissionId).toBe(record.submissionId);
         submitted.push(record);
         return {
           accepted: true,
@@ -217,26 +219,63 @@ describe('study-conductor and participant separation', () => {
     await component.updateComplete;
 
     expect(submitted).toHaveLength(1);
-    expect(loadCompletedResults()).toEqual([]);
+    expect(loadCompletedResults()).toHaveLength(1);
     expect(component.querySelector('.save-status')?.textContent).toContain('UCL approved test platform');
     expect(component.querySelector('.save-status')?.textContent).toContain('receipt-001');
     expect(component.querySelector('.save-status')?.textContent).toContain(
       'Completing in the study platform',
     );
     expect(component.querySelector('.save-status')?.textContent).toContain(
-      'No further action is required.',
+      'Please keep this page open',
     );
-    expect(component.querySelector('.save-status')?.textContent).toContain(
-      'will display the recorded result page automatically',
+    expect(component.querySelector('.save-status')?.textContent).toMatch(
+      /recorded\s+result page opens by itself/,
     );
     expect(component.textContent).toContain(
-      'please wait for the recorded result page to open automatically.',
+      'please keep this page open and wait for the recorded result page to open automatically.',
     );
     expect(component.textContent).not.toContain('Scheduled for automatic completion');
-    expect(component.textContent).not.toContain('Download JSON backup');
+    expect(component.textContent).toContain('Download JSON backup');
+    expect(component.textContent).toContain('Download CSV backup');
   });
 
-  it('keeps answers on the review page when the approved host sink does not confirm receipt', async () => {
+  it('makes the completed backup recoverable after the accepted page is closed and reopened', async () => {
+    const component = await renderConfiguredComponent();
+    window.accessibleNasaTlxResultSink = {
+      name: 'UCL approved test platform',
+      async submit(record) {
+        return {
+          accepted: true,
+          submissionId: record.submissionId,
+          receiptId: 'receipt-before-close',
+        };
+      },
+    };
+    await completeQuestionnaire(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+    const submissionId = loadCompletedResults()[0].submissionId;
+
+    component.remove();
+    const reopened = await renderConfiguredComponent();
+    const code = reopened.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-007';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    await reopened.updateComplete;
+
+    expect(reopened.querySelector('.completed-backup')?.textContent).toContain(submissionId);
+    expect(reopened.querySelector('.completed-backup')?.textContent).toContain(
+      'does not prove that Qualtrics recorded',
+    );
+    expect(reopened.querySelector('.completed-backup')?.textContent).toContain(
+      'Download recovered JSON',
+    );
+  });
+
+  it('keeps answers, navigation and backup routes available when the network or host fails', async () => {
     const component = await renderConfiguredComponent();
     window.accessibleNasaTlxResultSink = {
       name: 'Unavailable platform',
@@ -255,6 +294,81 @@ describe('study-conductor and participant separation', () => {
     expect(component.querySelector('#review-heading')).not.toBeNull();
     expect(component.querySelector('#error-summary')?.textContent).toContain('answers remain on this page');
     expect(document.activeElement).toBe(component.querySelector('#error-summary'));
+    expect(loadCompletedResults()).toHaveLength(1);
+    expect(component.querySelector('.submission-recovery')?.textContent).toContain(
+      'not confirmed this response',
+    );
+    expect(component.querySelector('.submission-recovery')?.textContent).toContain(
+      'Download JSON backup',
+    );
+    expect(component.querySelector('.submission-recovery')?.textContent).toContain(
+      'Download CSV backup',
+    );
+    expect(
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .some((button) => button.textContent?.includes('Return to ratings')),
+    ).toBe(true);
+    expect(
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .some((button) => button.textContent?.includes('Calculate and submit')),
+    ).toBe(true);
+  });
+
+  it('keeps the in-progress recovery copy and download buttons if localStorage is full', async () => {
+    const component = await renderConfiguredComponent();
+    window.accessibleNasaTlxResultSink = {
+      name: 'UCL approved test platform',
+      async submit(record) {
+        return {
+          accepted: true,
+          submissionId: record.submissionId,
+          receiptId: 'receipt-storage-full',
+        };
+      },
+    };
+    await completeQuestionnaire(component);
+    const progressKey = Object.keys(localStorage).find((key) => key.includes('-progress:'));
+    expect(progressKey).toBeTruthy();
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+
+    expect(setItem).toHaveBeenCalled();
     expect(loadCompletedResults()).toEqual([]);
+    expect(component.querySelector('.save-status')?.textContent).toContain(
+      'could not keep a backup copy',
+    );
+    expect(component.textContent).toContain('Download JSON backup');
+    expect(component.textContent).toContain('Download CSV backup');
+    expect(localStorage.getItem(progressKey!)).not.toBeNull();
+  });
+
+  it('removes a stale failed-attempt backup when an answer is edited before retry', async () => {
+    const component = await renderConfiguredComponent();
+    window.accessibleNasaTlxResultSink = {
+      name: 'Unavailable platform',
+      async submit() {
+        throw new Error('Network unavailable.');
+      },
+    };
+    await completeQuestionnaire(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+
+    const staleSubmissionId = loadCompletedResults()[0].submissionId;
+    (component as any).selectRating('mental', 75, 'standard-scale');
+    await component.updateComplete;
+
+    expect(loadCompletedResults().some(({ submissionId }) => submissionId === staleSubmissionId)).toBe(false);
+    expect(component.querySelector('.submission-recovery')).toBeNull();
   });
 });
