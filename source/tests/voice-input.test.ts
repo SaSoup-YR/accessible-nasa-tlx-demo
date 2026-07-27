@@ -16,13 +16,32 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('not low', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('low or high', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('fifty or sixty', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('maybe high', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('closer to low or high', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('closer to low 100', dimensions[0])).toBeNull();
+  });
+
+  it('maps the five visible smiley labels to their displayed values', () => {
+    expect(parseRatingTranscript('low', dimensions[0])).toBe(0);
+    expect(parseRatingTranscript('close to low', dimensions[0])).toBe(25);
+    expect(parseRatingTranscript('closer to low', dimensions[0])).toBe(25);
+    expect(parseRatingTranscript('middle', dimensions[0])).toBe(50);
+    expect(parseRatingTranscript('closer to high', dimensions[0])).toBe(75);
+    expect(parseRatingTranscript('close to high', dimensions[0])).toBe(75);
+    expect(parseRatingTranscript('high', dimensions[0])).toBe(100);
+    expect(parseRatingTranscript('closer too high', dimensions[0])).toBe(75);
+    expect(parseRatingTranscript('closer to high 75', dimensions[0])).toBe(75);
   });
 
   it('respects the reversed Performance anchors without accepting a negation', () => {
     const performance = dimensions.find((dimension) => dimension.id === 'performance')!;
     expect(parseRatingTranscript('good', performance)).toBe(0);
+    expect(parseRatingTranscript('closer to good', performance)).toBe(25);
+    expect(parseRatingTranscript('middle', performance)).toBe(50);
+    expect(parseRatingTranscript('closer to poor', performance)).toBe(75);
     expect(parseRatingTranscript('poor', performance)).toBe(100);
     expect(parseRatingTranscript('not good', performance)).toBeNull();
+    expect(parseRatingTranscript('closer to good or poor', performance)).toBeNull();
   });
 
   it('accepts one visible factor name and rejects ambiguous comparison speech', () => {

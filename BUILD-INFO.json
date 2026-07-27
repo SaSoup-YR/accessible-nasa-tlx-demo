@@ -1,19 +1,22 @@
 {
   "prototype": "Accessible NASA-TLX",
   "version": "0.7.0",
-  "releaseStatus": "release candidate; supervisor changes integrated; UCL Qualtrics synthetic re-test pending",
-  "canonicalRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
-  "canonicalCommit": "0076e04ef3a58c33dcfb06c737ae37f12fcc49a5",
-  "builtAt": "2026-07-27T15:21:58Z",
+  "releaseStatus": "release candidate; supervisor changes and voice/Qualtrics setup corrections integrated; UCL Qualtrics synthetic re-test pending",
+  "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
+  "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
+  "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
+  "builtAt": "2026-07-27T17:07:49Z",
   "verification": {
     "testFilesPassed": 12,
-    "testsPassed": 71,
+    "testsPassed": 75,
     "axeStructuralScansPassed": 4,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
     "standaloneBuild": "passed",
     "qualtricsBridgeTests": "passed",
+    "qualtricsSetupPackageTests": "passed",
     "qualtricsResponsePdfSummary": "passed",
+    "smileyVoiceLandmarkParsing": "passed",
     "highLevelDependencyAudit": "0 vulnerabilities"
   },
   "entryPoints": {

@@ -1,5 +1,9 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import embeddedDataFields from '../../integrations/qualtrics/embedded-data-fields.txt?raw';
+import endOfSurveyMessage from '../../integrations/qualtrics/end-of-survey-message.txt?raw';
+import qualtricsQuestionJavaScript from '../../integrations/qualtrics/qualtrics-question.js?raw';
+import qualtricsQuestionTemplate from '../../integrations/qualtrics/question-html-template.html?raw';
 import {
   buildParticipantUrl,
   clearCompletedResults,
@@ -27,97 +31,12 @@ function looksLikeCompletedResult(value: unknown) {
 }
 
 export function buildQualtricsQuestionHtml(participantUrl: string) {
+  const placeholder = 'PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE';
+  if (!participantUrl || participantUrl.includes(placeholder)) {
+    throw new Error('A generated participant URL is required for the Qualtrics question HTML.');
+  }
   const escapedUrl = participantUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  return [
-    '<style>',
-    '  #accessible-nasa-tlx-recorded-summary {',
-    '    display: none;',
-    '    color: #172235;',
-    '    font-family: Arial, Helvetica, sans-serif;',
-    '    line-height: 1.5;',
-    '  }',
-    '  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] { display: block; }',
-    '  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question { display: none; }',
-    '  #accessible-nasa-tlx-recorded-summary h2,',
-    '  #accessible-nasa-tlx-recorded-summary h3 { color: #173f63; }',
-    '  #accessible-nasa-tlx-recorded-summary table {',
-    '    width: 100%;',
-    '    border-collapse: collapse;',
-    '    margin: 0 0 1.25rem;',
-    '  }',
-    '  #accessible-nasa-tlx-recorded-summary th,',
-    '  #accessible-nasa-tlx-recorded-summary td {',
-    '    border: 1px solid #9fb2c3;',
-    '    padding: 0.5rem;',
-    '    text-align: left;',
-    '    vertical-align: top;',
-    '  }',
-    '  #accessible-nasa-tlx-recorded-summary th { background: #edf4f8; }',
-    '  #accessible-nasa-tlx-recorded-summary .antlx-long-value {',
-    '    overflow-wrap: anywhere;',
-    '    white-space: pre-wrap;',
-    '  }',
-    '</style>',
-    '<section',
-    '  id="accessible-nasa-tlx-recorded-summary"',
-    '  data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"',
-    '  aria-labelledby="accessible-nasa-tlx-recorded-summary-heading"',
-    '>',
-    '  <h2 id="accessible-nasa-tlx-recorded-summary-heading">Accessible NASA-TLX recorded response</h2>',
-    '  <p>This read-only summary is generated from the values saved in this Qualtrics response.</p>',
-    '  <table>',
-    '    <caption>Submission details</caption>',
-    '    <tbody>',
-    '      <tr><th scope="row">Participant code</th><td>${e://Field/__js_ANTLX_PARTICIPANT_CODE}</td></tr>',
-    '      <tr><th scope="row">Study ID</th><td>${e://Field/__js_ANTLX_STUDY_ID}</td></tr>',
-    '      <tr><th scope="row">Submission ID</th><td class="antlx-long-value">${e://Field/__js_ANTLX_SUBMISSION_ID}</td></tr>',
-    '      <tr><th scope="row">Started</th><td>${e://Field/__js_ANTLX_STARTED_AT}</td></tr>',
-    '      <tr><th scope="row">Completed</th><td>${e://Field/__js_ANTLX_COMPLETED_AT}</td></tr>',
-    '      <tr><th scope="row">Weighted workload score</th><td>${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100</td></tr>',
-    '    </tbody>',
-    '  </table>',
-    '  <h3>Ratings and weights</h3>',
-    '  <table>',
-    '    <thead><tr><th scope="col">Dimension</th><th scope="col">Rating (0–100)</th><th scope="col">Weight (0–5)</th></tr></thead>',
-    '    <tbody>',
-    '      <tr><th scope="row">Mental Demand</th><td>${e://Field/__js_ANTLX_RATING_MENTAL}</td><td>${e://Field/__js_ANTLX_WEIGHT_MENTAL}</td></tr>',
-    '      <tr><th scope="row">Physical Demand</th><td>${e://Field/__js_ANTLX_RATING_PHYSICAL}</td><td>${e://Field/__js_ANTLX_WEIGHT_PHYSICAL}</td></tr>',
-    '      <tr><th scope="row">Temporal Demand</th><td>${e://Field/__js_ANTLX_RATING_TEMPORAL}</td><td>${e://Field/__js_ANTLX_WEIGHT_TEMPORAL}</td></tr>',
-    '      <tr><th scope="row">Performance</th><td>${e://Field/__js_ANTLX_RATING_PERFORMANCE}</td><td>${e://Field/__js_ANTLX_WEIGHT_PERFORMANCE}</td></tr>',
-    '      <tr><th scope="row">Effort</th><td>${e://Field/__js_ANTLX_RATING_EFFORT}</td><td>${e://Field/__js_ANTLX_WEIGHT_EFFORT}</td></tr>',
-    '      <tr><th scope="row">Frustration</th><td>${e://Field/__js_ANTLX_RATING_FRUSTRATION}</td><td>${e://Field/__js_ANTLX_WEIGHT_FRUSTRATION}</td></tr>',
-    '    </tbody>',
-    '  </table>',
-    '  <h3>Pairwise comparisons</h3>',
-    '  <p class="antlx-long-value">${e://Field/__js_ANTLX_PAIR_CHOICES_JSON}</p>',
-    '  <h3>Accessibility-support record</h3>',
-    '  <table>',
-    '    <tbody>',
-    '      <tr><th scope="row">Simpler explanations at submission</th><td>${e://Field/__js_ANTLX_FINAL_SIMPLE_LANGUAGE}</td></tr>',
-    '      <tr><th scope="row">Answer presentation at submission</th><td>${e://Field/__js_ANTLX_FINAL_ANSWER_MODE}</td></tr>',
-    '      <tr><th scope="row">Large text at submission</th><td>${e://Field/__js_ANTLX_FINAL_LARGE_TEXT}</td></tr>',
-    '      <tr><th scope="row">Automatic audio at submission</th><td>${e://Field/__js_ANTLX_FINAL_AUDIO}</td></tr>',
-    '      <tr><th scope="row">Recovery at submission</th><td>${e://Field/__js_ANTLX_FINAL_RECOVERY}</td></tr>',
-    '      <tr><th scope="row">Read aloud used</th><td>${e://Field/__js_ANTLX_READ_ALOUD_USED}</td></tr>',
-    '      <tr><th scope="row">Gaze used</th><td>${e://Field/__js_ANTLX_GAZE_USED}</td></tr>',
-    '      <tr><th scope="row">Support changes</th><td>${e://Field/__js_ANTLX_SUPPORT_CHANGE_COUNT}</td></tr>',
-    '    </tbody>',
-    '  </table>',
-    '  <p><strong>Rating input routes:</strong> <span class="antlx-long-value">${e://Field/__js_ANTLX_RATING_ROUTES_JSON}</span></p>',
-    '  <p><strong>Pair input routes:</strong> <span class="antlx-long-value">${e://Field/__js_ANTLX_PAIR_ROUTES_JSON}</span></p>',
-    '  <p>The CSV or JSON export remains the lossless research record. This section is a readable response/PDF summary.</p>',
-    '</section>',
-    '<div id="accessible-nasa-tlx-live-question">',
-    '  <iframe',
-    '    id="accessible-nasa-tlx-frame"',
-    `    src="${escapedUrl}"`,
-    '    title="Accessible NASA Task Load Index participant questionnaire"',
-    '    allow="camera; microphone"',
-    '    style="width:100%;min-height:1200px;border:0"',
-    '  ></iframe>',
-    '  <p id="accessible-nasa-tlx-collection-status" role="status" aria-live="polite"></p>',
-    '</div>',
-  ].join('\n');
+  return qualtricsQuestionTemplate.trim().replace(placeholder, escapedUrl);
 }
 
 @customElement('study-conductor-app')
@@ -380,14 +299,7 @@ export class StudyConductorApp extends LitElement {
                   <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
                 </div>
                 ${this.generatedConfig.collection.mode === 'qualtrics'
-                  ? html`<div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
-                      <h3 id="qualtrics-setup-heading">Qualtrics iframe HTML</h3>
-                      <p>Paste this into the HTML view of the Qualtrics question, then install the tested question JavaScript from the integration guide.</p>
-                      <textarea readonly rows="8" .value=${this.qualtricsIframeHtml()}></textarea>
-                      <p>
-                        <a href="docs/QUALTRICS-INTEGRATION.md">Open the Qualtrics integration and verification guide</a>
-                      </p>
-                    </div>`
+                  ? this.renderQualtricsSetup()
                   : nothing}
                 <p class="support-boundary">
                   Save the JSON with the study protocol. Importing it later regenerates the same configuration ID and participant link.
@@ -501,6 +413,123 @@ export class StudyConductorApp extends LitElement {
     return buildQualtricsQuestionHtml(this.participantUrl);
   }
 
+  private renderQualtricsSetup() {
+    const questionHtml = this.qualtricsIframeHtml();
+    return html`
+      <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
+        <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
+        <aside class="boundary-note important-boundary">
+          <p>
+            <strong>Do not upload these repository files to Qualtrics and do not paste the static HTML template unchanged.</strong>
+            They are four different installation inputs. Only the first block below contains this study's generated
+            participant URL.
+          </p>
+        </aside>
+        <ol class="qualtrics-install-steps">
+          <li>
+            <h4>Text/Graphic question: complete generated HTML</h4>
+            <p>
+              Add one Text/Graphic question on its own page. Open that question's HTML or source view, replace the
+              whole question body with this block, and save it. Do not paste it into the ordinary rich-text view.
+            </p>
+            <label for="qualtrics-question-html"><strong>Complete question HTML</strong></label>
+            <textarea
+              id="qualtrics-question-html"
+              data-qualtrics-asset="question-html"
+              readonly
+              rows="10"
+              .value=${questionHtml}
+            ></textarea>
+            <button
+              class="secondary-button"
+              type="button"
+              @click=${() => this.copySetupAsset(questionHtml, 'question HTML')}
+            >
+              Copy complete question HTML
+            </button>
+          </li>
+          <li>
+            <h4>Survey Flow: Embedded Data field names</h4>
+            <p>
+              Before the NASA-TLX block, add one Embedded Data element. Add every non-empty line below as a separate
+              field name, including the <code>__js_</code> prefix, and leave each value unset. This list does not go
+              into the question body.
+            </p>
+            <label for="qualtrics-embedded-fields"><strong>63 Embedded Data field names</strong></label>
+            <textarea
+              id="qualtrics-embedded-fields"
+              data-qualtrics-asset="embedded-data"
+              readonly
+              rows="10"
+              .value=${embeddedDataFields.trim()}
+            ></textarea>
+            <button
+              class="secondary-button"
+              type="button"
+              @click=${() => this.copySetupAsset(embeddedDataFields.trim(), 'Embedded Data field list')}
+            >
+              Copy Embedded Data field list
+            </button>
+          </li>
+          <li>
+            <h4>Question behavior: JavaScript</h4>
+            <p>
+              Open JavaScript for the same Text/Graphic question. Replace the sample callback content with this
+              complete script and save it. Do not add <code>&lt;script&gt;</code> tags and do not paste it into the
+              question HTML.
+            </p>
+            <label for="qualtrics-question-javascript"><strong>Complete question JavaScript</strong></label>
+            <textarea
+              id="qualtrics-question-javascript"
+              data-qualtrics-asset="question-javascript"
+              readonly
+              rows="10"
+              .value=${qualtricsQuestionJavaScript.trim()}
+            ></textarea>
+            <button
+              class="secondary-button"
+              type="button"
+              @click=${() => this.copySetupAsset(qualtricsQuestionJavaScript.trim(), 'question JavaScript')}
+            >
+              Copy complete question JavaScript
+            </button>
+          </li>
+          <li>
+            <h4>End of Survey: custom message</h4>
+            <p>
+              Create or select a custom End of Survey message, paste this as ordinary text, and do not configure a
+              redirect. If Survey Flow contains a separate End of Survey element, apply the same message there.
+            </p>
+            <label for="qualtrics-end-message"><strong>End of Survey message</strong></label>
+            <textarea
+              id="qualtrics-end-message"
+              data-qualtrics-asset="end-message"
+              readonly
+              rows="8"
+              .value=${endOfSurveyMessage.trim()}
+            ></textarea>
+            <button
+              class="secondary-button"
+              type="button"
+              @click=${() => this.copySetupAsset(endOfSurveyMessage.trim(), 'End of Survey message')}
+            >
+              Copy End of Survey message
+            </button>
+          </li>
+        </ol>
+        <p class="support-boundary">
+          The Qualtrics editing canvas may show piped-text tokens such as
+          <code>\${e://Field/__js_ANTLX_PARTICIPANT_CODE}</code>. That canvas is not the participant test. In Preview,
+          before a response is recorded, the summary must be hidden and the configured participant iframe must be
+          visible. If it is not, clear the question body and repeat step 1 in HTML or source view.
+        </p>
+        <p>
+          <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
+        </p>
+      </div>
+    `;
+  }
+
   private generateParticipantLink = () => {
     this.errorMessage = '';
     try {
@@ -521,11 +550,16 @@ export class StudyConductorApp extends LitElement {
 
   private copyParticipantLink = async () => {
     if (!this.participantUrl) return;
+    await this.copySetupAsset(this.participantUrl, 'participant link');
+  };
+
+  private copySetupAsset = async (value: string, label: string) => {
     try {
-      await navigator.clipboard.writeText(this.participantUrl);
-      this.message = 'Participant link copied.';
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable.');
+      await navigator.clipboard.writeText(value);
+      this.message = `${label.charAt(0).toUpperCase()}${label.slice(1)} copied.`;
     } catch {
-      this.message = 'Automatic copy was unavailable. Select and copy the link from the text box.';
+      this.message = `Automatic copy was unavailable. Select and copy the ${label} from its text box.`;
     }
   };
 

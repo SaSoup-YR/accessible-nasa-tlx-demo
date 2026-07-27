@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildQualtricsQuestionHtml } from '../src/study-conductor';
 import { readStudyConfigFromHash } from '../src/study';
 
@@ -27,6 +27,8 @@ afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
   window.history.replaceState({}, '', '/');
+  vi.restoreAllMocks();
+  Reflect.deleteProperty(navigator, 'clipboard');
 });
 
 describe('study conductor defaults and guidance', () => {
@@ -99,15 +101,22 @@ describe('study conductor defaults and guidance', () => {
       parentOrigin: 'https://ucl-example.eu.qualtrics.com',
     });
     expect(participantUrl).not.toContain('SV_TEST');
-    const questionHtml = component.querySelector<HTMLTextAreaElement>('.qualtrics-setup textarea')!.value;
+    const setupAssets = [
+      ...component.querySelectorAll<HTMLTextAreaElement>('[data-qualtrics-asset]'),
+    ];
+    expect(setupAssets).toHaveLength(4);
+    const questionHtml = component.querySelector<HTMLTextAreaElement>('[data-qualtrics-asset="question-html"]')!.value;
     expect(questionHtml).toContain('id="accessible-nasa-tlx-frame"');
     expect(questionHtml).toContain('id="accessible-nasa-tlx-recorded-summary"');
+    expect(questionHtml).toContain('style="display:none"');
     expect(questionHtml).toContain('data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"');
     expect(questionHtml).toContain(
       '#accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question',
     );
     expect(questionHtml).toContain('${e://Field/__js_ANTLX_PARTICIPANT_CODE}');
     expect(questionHtml).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(questionHtml).toContain(participantUrl);
+    expect(questionHtml).not.toContain('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE');
     expect(questionHtml).toBe(buildQualtricsQuestionHtml(participantUrl));
     expect(questionHtml).toBe(
       readFileSync(
@@ -117,6 +126,44 @@ describe('study conductor defaults and guidance', () => {
         .trim()
         .replace('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE', participantUrl),
     );
+    const embeddedFields = component.querySelector<HTMLTextAreaElement>(
+      '[data-qualtrics-asset="embedded-data"]',
+    )!.value;
+    expect(embeddedFields.trim().split(/\r?\n/)).toHaveLength(63);
+    expect(embeddedFields).toContain('__js_ANTLX_ACCEPTED');
+    expect(component.querySelector<HTMLTextAreaElement>(
+      '[data-qualtrics-asset="question-javascript"]',
+    )!.value).toContain('Qualtrics.SurveyEngine.addOnReady');
+    expect(component.querySelector<HTMLTextAreaElement>(
+      '[data-qualtrics-asset="end-message"]',
+    )!.value).toContain('Questionnaire complete');
+    expect(component.textContent).toContain('Do not upload these repository files to Qualtrics');
+    expect(component.textContent).toContain('Copy complete question HTML');
+    expect(component.textContent).toContain('Copy Embedded Data field list');
+    expect(component.textContent).toContain('Copy complete question JavaScript');
+    expect(component.textContent).toContain('Copy End of Survey message');
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Copy complete question HTML')!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+    expect(writeText).toHaveBeenCalledWith(questionHtml);
+    expect(component.querySelector('[aria-live="polite"]')?.textContent).toContain(
+      'Question HTML copied.',
+    );
+  });
+
+  it('refuses to build Qualtrics question HTML without a generated participant URL', () => {
+    expect(() => buildQualtricsQuestionHtml('')).toThrow(/generated participant URL/i);
+    expect(() =>
+      buildQualtricsQuestionHtml('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE'),
+    ).toThrow(/generated participant URL/i);
   });
 
   it('identifies a result export as the wrong file type and moves focus to the import error', async () => {

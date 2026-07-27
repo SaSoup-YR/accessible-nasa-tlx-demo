@@ -32,9 +32,11 @@ confirmation belong on the persistent End-of-Survey page.
 | Mid-questionnaire reload | Enable recovery, answer at least one item and reload | Saved-session offer reports the exact completed count and next step | Component reload/recreation test | Screen-reader announcement and browser-specific storage behaviour |
 | Storage blocked or full | Block site storage or simulate quota exhaustion before submission | No crash or false local-save claim; in-memory JSON/CSV remain available; any existing progress copy is not deliberately cleared | Storage unit and component tests | Browser privacy mode and quota test |
 | Parent staging failure | Send an invalid or oversized synthetic record | Qualtrics navigation is restored and an error receipt is returned | Executed bridge test | Qualtrics editor and survey-theme interaction |
+| Missing iframe | Remove the generated iframe or paste the static template incorrectly | A visible setup error is shown and native navigation is not hidden | Executed bridge test | UCL editor and theme interaction |
 | Return after failed save | After host failure, return and edit an answer | The stale completed backup is removed; a retry must be recalculated from the edited answer | Component and storage tests | End-to-end exported-row comparison |
 | Negated speech | Say `not low` or `not good` | No proposal and no selected answer | Parser and component tests | Browser recognition accuracy with microphone |
 | Ambiguous speech | Say `low or high`, two factor names, `twenty three` or `73` | No proposal and no selected answer | Parser and component tests | Browser recognition transcript and screen-reader feedback |
+| Intermediate landmark speech | Say `close to low`, `closer to low`, `closer to high` and repeat with Performance's Good/Poor anchors | The proposals match the visible values 25 or 75; they are not converted to 0 or 100 | Parser and component tests | Browser recognition accuracy with microphone |
 | Valid speech | Say `seventy`, `seven zero` or a valid factor name | Exact proposed answer is announced; the named confirmation control receives focus; nothing is selected before confirmation | Parser and component tests | NVDA/VoiceOver run |
 
 ## Why these behaviours were selected
