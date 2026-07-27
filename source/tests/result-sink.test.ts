@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   QUALTRICS_RECEIPT_MESSAGE,
   QUALTRICS_SUBMIT_MESSAGE,
@@ -124,11 +124,11 @@ describe('approved host result sink', () => {
     expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
     expect(bridge).toContain('var rawChunkLength = 900');
     expect(bridge).toContain('var maximumRawChunks = 24');
-    expect(bridge).toContain('var completionDelayMs = 8000');
+    expect(bridge).toContain('var completionDelayMs = 1500');
     expect(bridge).toContain('}, completionDelayMs);');
-    expect(bridge).not.toContain('question.showNextButton();');
-    expect(bridge).toContain('No further action is required.');
-    expect(bridge).toContain('Qualtrics is completing your response now.');
+    expect(bridge).toContain('question.showNextButton();');
+    expect(bridge).not.toContain('No further action is required.');
+    expect(bridge).toContain('Please keep this page open until the next page appears by itself.');
     expect(bridge).not.toContain('five minutes');
     expect(bridge).toContain('window.clearTimeout(completionTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
@@ -176,5 +176,68 @@ describe('approved host result sink', () => {
       'accessibility-support choices and input-route information have been saved separately',
     );
     expect(endOfSurveyMessage).not.toMatch(/<[^>]+>/);
+  });
+
+  it('restores Qualtrics navigation when an invalid record cannot be staged', () => {
+    const bridge = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+      'utf8',
+    );
+    let onReady: (() => void) | undefined;
+    let receiveMessage: ((event: MessageEvent) => void) | undefined;
+    const showNextButton = vi.fn();
+    const frameWindow = { postMessage: vi.fn() };
+    const iframe = { contentWindow: frameWindow, style: { height: '' } };
+    const status = { textContent: '' };
+    const fakeWindow = {
+      setTimeout,
+      clearTimeout,
+      addEventListener(type: string, listener: EventListener) {
+        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+      },
+      removeEventListener: vi.fn(),
+    };
+    const fakeQualtrics = {
+      SurveyEngine: {
+        addOnReady(callback: () => void) {
+          onReady = callback;
+        },
+        addOnUnload: vi.fn(),
+        setJSEmbeddedData: vi.fn(),
+      },
+    };
+    const fakeDocument = {
+      getElementById(id: string) {
+        if (id === 'accessible-nasa-tlx-frame') return iframe;
+        if (id === 'accessible-nasa-tlx-collection-status') return status;
+        return null;
+      },
+    };
+    new Function('Qualtrics', 'document', 'window', bridge)(
+      fakeQualtrics,
+      fakeDocument,
+      fakeWindow,
+    );
+    onReady!.call({
+      hideNextButton: vi.fn(),
+      showNextButton,
+      clickNextButton: vi.fn(),
+    });
+
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: {
+        type: QUALTRICS_SUBMIT_MESSAGE,
+        record: { submissionId: 'incomplete' },
+      },
+    } as unknown as MessageEvent);
+
+    expect(showNextButton).toHaveBeenCalledOnce();
+    expect(status.textContent).toContain('Return to the questionnaire and try again');
+    expect(frameWindow.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ accepted: false, submissionId: 'incomplete' }),
+      'https://sasoup-yr.github.io',
+    );
   });
 });

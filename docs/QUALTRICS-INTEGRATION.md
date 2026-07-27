@@ -61,20 +61,32 @@ Use a non-participant code such as `TEST-001`.
 7. Open **View Response** and export the same individual response to PDF. Confirm
    that the blank interactive questionnaire is replaced by the read-only summary,
    including the participant code, weighted score, six ratings and six weights.
-8. Retry once with the network interrupted at submission. The questionnaire must remain on Review and allow retry instead of reporting a false completion.
-9. Delete the synthetic response before recruitment if the approved plan requires a clean dataset.
+8. Retry once with the network interrupted at submission. The questionnaire must remain on Review, move focus to the error summary and expose retry, answer-editing and JSON/CSV backup routes.
+9. Complete a synthetic response, close the result page immediately after the in-frame acknowledgement, then reopen the same configured link on the same device and enter the same synthetic code. Confirm that the completed local backup can be downloaded. Check Data & Analysis separately; the local backup is not evidence of a recorded Qualtrics row.
+10. Reload midway through a recovery-enabled questionnaire. Confirm that the saved-session offer restores the exact next step.
+11. Test with site storage blocked or full. Confirm that submission does not crash, the in-memory JSON/CSV buttons remain available and the page does not claim that a local backup exists.
+12. Cause a staging failure with synthetic data and confirm that the Qualtrics navigation control is restored instead of leaving a dead end.
+13. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two factor names. None may create a proposed or selected answer.
+14. Delete the synthetic response and local test backups before recruitment if the approved plan requires a clean dataset.
 
 Record the survey ID, activated distribution URL, frozen Git commit, configuration JSON, test date, browser/device and exported synthetic row in the study log.
 
 After the embedded prototype validates the record and calculates the score, the
 Qualtrics navigation button remains hidden. The participant has no additional
 completion action. The bridge sets the Embedded Data, acknowledges the matching
-submission ID and submits the page automatically after an 8-second handoff. Submitting
-that page completes the Qualtrics response.
+submission ID and submits the page automatically after a 1.5-second technical handoff.
+Submitting that page completes the Qualtrics response.
+The handoff is not reading time. Participant-facing completion information belongs on
+the End-of-Survey page, which remains visible after Qualtrics has submitted the
+response.
 
 The receipt displayed inside the embedded prototype means that the parent Qualtrics
 page has acknowledged and staged the record; it is not, by itself, a server-side
-completion marker. The custom End of Survey message is therefore used as the final
+completion marker. Before contacting the parent page, the prototype attempts to keep a
+complete local backup and retains JSON/CSV download routes. If the page is reopened on
+the same device with the same configuration and pseudonymous code, that backup is
+discoverable. This recovery route does not prove that Qualtrics recorded the response.
+The custom End of Survey message is therefore used as the final
 recorded-result page. It appears after Qualtrics completes the response, repeats the
 score and remains visible until the participant closes the page.
 

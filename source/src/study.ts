@@ -442,6 +442,19 @@ export function saveCompletedResult(record: StudyResultRecord, storage: StorageL
   }
 }
 
+export function removeCompletedResult(submissionId: string, storage: StorageLike = localStorage) {
+  try {
+    const records = loadCompletedResults(storage).filter(
+      (existing) => existing.submissionId !== submissionId,
+    );
+    if (records.length === 0) storage.removeItem(COMPLETED_RESULTS_KEY);
+    else storage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify(records));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function clearCompletedResults(storage: StorageLike = localStorage) {
   storage.removeItem(COMPLETED_RESULTS_KEY);
 }
