@@ -60,8 +60,8 @@ observed result and Pass, Partial, Fail or Not supported.
 1. Leave an item unanswered and press Next. Confirm an explicit error, programmatic
    focus and immediate movement to the start of the visible viewport on desktop,
    phone and tablet. Test both the
-   direct participant page and the participant iframe inside the Qualtrics Preview;
-   the latter must move the parent survey viewport as well as the iframe content.
+   direct participant page and the full-viewport participant page inside Qualtrics
+   Preview.
 2. Reload a recovery-enabled questionnaire midway. Re-enter or recover the
    pseudonymous code according to the shared-device procedure. Confirm focus moves
    to the saved-questionnaire region and its accessible description states the
@@ -124,11 +124,14 @@ At minimum:
 - close immediately after acknowledgement;
 - submit while offline;
 - reload midway;
-- trigger a missing-answer error near the bottom of the iframe and verify the outer
-  mobile Qualtrics viewport reveals it;
+- trigger a missing-answer error near the bottom of the full-viewport iframe and
+  verify that its single mobile viewport reveals it;
 - block/fill storage;
 - force staging and native-advance failures;
+- deliberately combine old and new generated HTML/JavaScript and confirm that the
+  participant cannot start;
 - verify the recorded-response/PDF summary;
+- select Review and Publish, then verify a newly dated row rather than an older row;
 - confirm the distribution bundle contains no secret and accepts only the configured
   origin.
 

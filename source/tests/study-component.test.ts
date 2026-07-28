@@ -3,6 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/accessible-nasa-tlx';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 import {
+  QUALTRICS_BRIDGE_BUILD,
+  QUALTRICS_CHILD_READY_MESSAGE,
+  QUALTRICS_PARENT_READY_MESSAGE,
+} from '../src/result-sink';
+import {
   buildParticipantUrl,
   createStudyConfig,
   loadCompletedResults,
@@ -78,12 +83,77 @@ afterEach(() => {
   sessionStorage.clear();
   window.history.replaceState({}, '', '/');
   delete (window as any).speechSynthesis;
+  delete window.accessibleQuestionnaireResultSink;
   delete window.accessibleNasaTlxResultSink;
+  Object.defineProperty(window, 'parent', {
+    configurable: true,
+    value: window,
+  });
   delete (globalThis as any).SpeechSynthesisUtterance;
   vi.restoreAllMocks();
 });
 
 describe('study-conductor and participant separation', () => {
+  it('keeps the participant start control unavailable until the exact Qualtrics bridge connects', async () => {
+    const parentOrigin = 'https://ucl-example.eu.qualtrics.com';
+    const parentWindow = { postMessage: vi.fn() };
+    Object.defineProperty(window, 'parent', {
+      configurable: true,
+      value: parentWindow,
+    });
+    const config = createStudyConfig(
+      {
+        studyId: 'STUDY-Q2',
+        studyTitle: 'Configured Qualtrics study',
+        taskLabel: 'the route-planning task',
+        showScoreToParticipant: false,
+        support: {
+          showSimpleLanguage: false,
+          answerMode: 'standard',
+          largeText: false,
+          audioGuidance: false,
+          recoveryEnabled: true,
+          participantAdjustmentPolicy: 'locked',
+          voiceInputAvailable: false,
+          gazeInputAvailable: false,
+        },
+        collection: { mode: 'qualtrics', parentOrigin },
+      },
+      { configId: 'config-q2', createdAt: '2026-07-28T17:00:00.000Z' },
+    );
+    const url = buildParticipantUrl(window.location.href, config);
+    window.history.replaceState({}, '', new URL(url).pathname + new URL(url).hash);
+    const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+
+    const start = [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!;
+    expect(start.disabled).toBe(true);
+    expect(component.textContent).toContain('Checking secure result collection');
+
+    window.dispatchEvent(new MessageEvent('message', {
+      origin: parentOrigin,
+      source: parentWindow as unknown as Window,
+      data: {
+        type: QUALTRICS_PARENT_READY_MESSAGE,
+        protocolVersion: 2,
+        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+      },
+    }));
+    await component.updateComplete;
+
+    expect(start.disabled).toBe(false);
+    expect(parentWindow.postMessage).toHaveBeenCalledWith(
+      {
+        type: QUALTRICS_CHILD_READY_MESSAGE,
+        protocolVersion: 2,
+        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+      },
+      parentOrigin,
+    );
+  });
+
   it('speaks the configured task on the first participant-page request without pre-cancelling speech', async () => {
     const spoken: FakeUtterance[] = [];
     const cancel = vi.fn();

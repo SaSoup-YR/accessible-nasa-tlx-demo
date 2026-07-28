@@ -656,10 +656,16 @@ export class StudyConductorApp extends LitElement {
           visible. If it is not, clear the question body and repeat step 1 in HTML or source view.
         </p>
         <p class="support-boundary">
-          On the live questionnaire page, the configured application must use the available Qualtrics
-          content width and the outer Qualtrics page must be the only vertical scrollbar. A narrow nested
-          viewport or a second scrollbar means that the HTML and JavaScript are not both from this
-          installation fingerprint; do not collect data from that survey.
+          In Preview, the participant application must fill the browser viewport and expose one visible
+          vertical scrollbar at the browser edge. A narrow inner panel, clipped content or two visible
+          scrollbars means that the HTML and JavaScript are not both from this installation fingerprint;
+          do not collect data from that survey.
+        </p>
+        <p class="support-boundary">
+          After replacing the HTML, JavaScript, Survey Flow fields or End of Survey message, select
+          <strong>Review and Publish</strong>. Preview one new synthetic response after publishing. Draft
+          changes do not update an already active distribution link, and older recorded rows are not
+          backfilled with new <code>__js_AQP_*</code> values.
         </p>
         <p>
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>

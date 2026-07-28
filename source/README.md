@@ -9,8 +9,8 @@ This directory builds the public Accessible Questionnaire Platform candidate.
 - `src/questionnaire-definition.ts` — discovery and strict semantic validation.
 - `src/scoring.ts` — allowlisted weighted NASA-TLX, Raw TLX, SUS and UEQ-S scorers.
 - `src/study.ts` — Version 4 configuration/result schemas and exports.
-- `src/result-sink.ts` — exact-origin Qualtrics child sink and parent-viewport
-  reveal request.
+- `src/result-sink.ts` — exact-origin, exact-build Qualtrics handshake and child
+  result sink.
 - `src/study-conductor.ts` — researcher configuration and collection setup.
 - `src/accessible-nasa-tlx.ts` — shared participant runner; filename retained for
   implementation provenance.
