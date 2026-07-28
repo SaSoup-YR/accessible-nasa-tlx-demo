@@ -1,6 +1,4 @@
-from pathlib import Path
-
-Path('source/src/saved-session-announcement.test.ts').write_text("""// @vitest-environment jsdom
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccessibleNasaTlx } from './accessible-nasa-tlx';
 
@@ -69,4 +67,3 @@ describe('saved questionnaire recovery announcement', () => {
     expect(speakText.mock.calls[0][0]).toContain('Erase saved answers');
   });
 });
-""", encoding='utf-8')

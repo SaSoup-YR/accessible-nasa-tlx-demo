@@ -200,6 +200,7 @@ export class AccessibleNasaTlx extends LitElement {
   private gazePendingElement: HTMLElement | null = null;
   private gazeActivationInProgress = false;
   private speechRequestId = 0;
+  private savedSessionAnnouncementKey = '';
   private configurationApplied = false;
   private readonly gazeCandidateTracker = new DwellTracker(1000);
   private readonly gazeConfirmationTracker = new DwellTracker(1200);
@@ -219,9 +220,6 @@ export class AccessibleNasaTlx extends LitElement {
           );
           heading?.focus();
           heading?.scrollIntoView?.({ block: 'start' });
-          if (this.savedSession) {
-            this.announceAutomatic(this.savedSessionOfferSpeech(this.savedSession));
-          }
         });
       }
     });
@@ -1330,6 +1328,40 @@ export class AccessibleNasaTlx extends LitElement {
     `;
   }
 
+  private announceSavedSessionOffer(session: SavedSession) {
+    const announcementKey = `${session.configId}:${session.participantCode}:${session.savedAt}`;
+    if (this.savedSessionAnnouncementKey === announcementKey) return;
+    this.savedSessionAnnouncementKey = announcementKey;
+
+    const message = this.savedSessionOfferSpeech(session);
+    this.statusMessage = '';
+    void this.updateComplete.then(() => {
+      window.setTimeout(() => {
+        const current = this.savedSession;
+        if (
+          !current ||
+          current.savedAt !== session.savedAt ||
+          current.configId !== session.configId ||
+          current.participantCode !== session.participantCode
+        ) {
+          return;
+        }
+
+        // Updating the existing live region after rendering gives external screen
+        // readers a genuine content change to announce. Built-in audio uses the
+        // same speakText pathway as the rest of the questionnaire, but is delayed
+        // slightly so a page refresh does not race the browser speech engine.
+        this.statusMessage = message;
+        if (this.audioGuidance) this.speakText(message);
+      }, 400);
+    });
+  }
+
+  private repeatSavedSessionOffer = () => {
+    if (!this.savedSession) return;
+    this.speakText(this.savedSessionOfferSpeech(this.savedSession));
+  };
+
   private savedSessionOfferSpeech(session: SavedSession) {
     const count = Object.keys(session.ratings).length + Object.keys(session.pairResponses).length;
     return `Saved questionnaire found. ${count} of ${dimensions.length + pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
@@ -1345,6 +1377,9 @@ export class AccessibleNasaTlx extends LitElement {
         <div class="button-row compact">
           <button class="primary-button large-answer-button" type="button" @click=${this.restoreSavedSession}>
             Resume saved questionnaire
+          </button>
+          <button class="secondary-button" type="button" @click=${this.repeatSavedSessionOffer}>
+            Hear saved-progress message
           </button>
           <button class="secondary-button" type="button" @click=${this.eraseSavedSession}>Erase saved answers</button>
         </div>
@@ -2478,6 +2513,7 @@ export class AccessibleNasaTlx extends LitElement {
       if (this.validSavedSession(session)) {
         this.savedSession = session;
         this.applySavedRecoveryPresentation(session);
+        this.announceSavedSessionOffer(session);
       } else {
         this.clearSavedProgress();
       }
@@ -2538,6 +2574,7 @@ export class AccessibleNasaTlx extends LitElement {
     }
     this.recoveryEnabled = true;
     this.savedSession = null;
+    this.savedSessionAnnouncementKey = '';
     this.resumeSummaryVisible = true;
     this.interruptionSummaryShown = true;
     void this.updateComplete.then(() => {
@@ -2549,6 +2586,7 @@ export class AccessibleNasaTlx extends LitElement {
   private eraseSavedSession = () => {
     this.clearSavedProgress();
     this.savedSession = null;
+    this.savedSessionAnnouncementKey = '';
     this.statusMessage = 'Saved answers erased.';
   };
 
