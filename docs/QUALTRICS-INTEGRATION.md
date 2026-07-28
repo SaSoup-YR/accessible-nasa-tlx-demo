@@ -73,10 +73,22 @@ In Preview before submission:
 
 - the recorded-response summary is hidden;
 - the configured participant page is visible in the iframe;
-- the status states that the response will save to the current Qualtrics response.
+- the status changes from `Connecting the questionnaire` to `The questionnaire is
+  connected`;
+- the questionnaire uses the outer Qualtrics page as the only vertical scrollbar.
 
 If the raw summary is visible, repeat the HTML/source-view step. If the iframe is
 blank, regenerate the complete HTML and confirm that the placeholder is absent.
+If the connection status does not change, do not continue a real response. Replace
+both the complete generated HTML and the generated JavaScript from the same
+configuration. The bridge restores native navigation after eight seconds so a
+misconfigured synthetic run cannot trap the tester.
+
+Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
+The child iframe can therefore finish its first render before the parent message
+listener exists. Version 0.8 uses a two-way ready handshake, bounded retries,
+mutation/resize observation and a non-scrolling iframe so this timing order cannot
+leave a fixed-height inner scrollbar.
 
 ## Handoff and data-loss protection
 
@@ -84,12 +96,14 @@ blank, regenerate the complete HTML and confirm that the placeholder is absent.
 make them durable until the Qualtrics page is submitted. Version 0.8 therefore:
 
 1. creates a complete local backup before contacting the parent;
-2. sends the result only to the configured HTTPS origin;
-3. requires a receipt with the same submission ID;
-4. keeps JSON and CSV emergency buttons available;
-5. starts native Qualtrics advancement after a 1.5-second technical handoff;
-6. restores native navigation after a staging error or a failed-advance watchdog;
-7. accepts only an exact-origin reveal request from its own iframe and moves the
+2. establishes a two-way parent/child readiness handshake;
+3. sends the result only to the configured HTTPS origin;
+4. requires a receipt with the same submission ID;
+5. keeps JSON and CSV emergency buttons available;
+6. starts native Qualtrics advancement after a 1.5-second technical handoff;
+7. restores native navigation after a missing connection, staging error or a
+   failed-advance watchdog;
+8. accepts only an exact-origin reveal request from its own iframe and moves the
    outer Qualtrics viewport to a newly focused error or recovery control.
 
 The 1.5 seconds is not participant reading time. Increasing it enlarges the window
@@ -120,6 +134,11 @@ The normalized fields include:
 The normalized primary score is stored to two decimals for display and export. The
 raw chunks retain the lossless record. Reconstruct it by concatenating
 `__js_AQP_RAW_01` through the count in `__js_AQP_RAW_CHUNK_COUNT`.
+
+`AQP_RAW_01` through `AQP_RAW_24` are bounded storage chunks, not 24 questionnaire
+answers. They preserve one complete JSON record when a single Qualtrics field is too
+short. Keep them in Survey Flow, but hide them from the ordinary Data Table view
+with Column chooser if they make manual inspection difficult.
 
 The recorded-response/PDF view replaces the fresh iframe with a read-only generic
 summary whenever `__js_AQP_ACCEPTED = 1`. The raw JSON and CSV export remain the
@@ -183,8 +202,10 @@ browser/device and exported rows in the study log.
 
 Version 0.7 used `__js_ANTLX_*` fields and a Version 3 result. A Version 0.7
 Qualtrics question must be replaced with the complete Version 0.8 four-part package.
-The change is not retroactive and old responses are not rewritten. See
-`MIGRATION-V0.7-V0.8.md`.
+The change is not retroactive: old responses remain in their `__js_ANTLX_*` columns,
+and the new `__js_AQP_*` columns are expected to be blank for those rows. Do not
+delete the old fields until the Version 0.7 rows have been exported and verified.
+See `MIGRATION-V0.7-V0.8.md`.
 
 ## Participant preference policy
 
