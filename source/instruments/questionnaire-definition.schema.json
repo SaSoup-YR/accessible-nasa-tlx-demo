@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sasoup-yr.github.io/accessible-nasa-tlx-demo/questionnaires/questionnaire-definition.schema.json",
+  "title": "Accessible questionnaire platform definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "version",
+    "name",
+    "shortName",
+    "description",
+    "introPrompt",
+    "officialContentNotice",
+    "source",
+    "scale",
+    "items",
+    "scoring",
+    "supports"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "version": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "shortName": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "introPrompt": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "officialContentNotice": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "url"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum", "step"],
+      "properties": {
+        "minimum": { "type": "integer" },
+        "maximum": { "type": "integer" },
+        "step": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "prompt", "shortMeaning", "lowAnchor", "highAnchor"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "prompt": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "simpleExplanation": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "shortMeaning": { "type": "string", "minLength": 1, "maxLength": 240 },
+          "lowAnchor": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "highAnchor": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "voiceLowAliases": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "uniqueItems": true
+          },
+          "voiceHighAliases": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "landmarks": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "cue", "position"],
+        "properties": {
+          "value": { "type": "integer" },
+          "cue": { "type": "string", "minLength": 1, "maxLength": 8 },
+          "position": {
+            "enum": ["low", "closer-low", "middle", "closer-high", "high"]
+          }
+        }
+      }
+    },
+    "pairwise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "prompt", "instruction", "simplePrompt"],
+      "properties": {
+        "mode": { "const": "all-pairs" },
+        "prompt": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "instruction": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "simplePrompt": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
+    "scoring": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "nasa-tlx-weighted-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "sus-standard-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        }
+      ]
+    },
+    "supports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["simplerExplanations", "smileyLandmarks"],
+      "properties": {
+        "simplerExplanations": { "type": "boolean" },
+        "smileyLandmarks": { "type": "boolean" }
+      }
+    }
+  }
+}

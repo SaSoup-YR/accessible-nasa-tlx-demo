@@ -1,4 +1,10 @@
-import { ratingValues, type DimensionId, type TlxDimension } from './nasa-tlx';
+import {
+  ratingValues as nasaRatingValues,
+  smileyLandmarks as nasaSmileyLandmarks,
+  type DimensionId,
+  type TlxDimension,
+} from './nasa-tlx';
+import type { RatingLandmark } from './questionnaire-definition';
 
 const spokenNumbers = new Map<string, number>([
   ['zero', 0],
@@ -41,7 +47,7 @@ const digitWords = new Map<string, string>([
   ['nine', '9'],
 ]);
 
-for (const value of ratingValues) {
+for (const value of nasaRatingValues) {
   const digits = String(value)
     .split('')
     .map((digit) => [...digitWords].find(([, mapped]) => mapped === digit)?.[0])
@@ -76,7 +82,7 @@ const numberWords = new Set([
 const unsafeMeaning =
   /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b|\b(?:anything\s+but|other\s+than|don\s+t)\b/;
 
-const dimensionAliases: Record<DimensionId, readonly string[]> = {
+const dimensionAliases: Record<string, readonly string[]> = {
   mental: ['mental demand', 'mental'],
   physical: ['physical demand', 'physical'],
   temporal: ['temporal demand', 'temporal', 'time pressure'],
@@ -126,14 +132,14 @@ function chooseConsistentAlternative<T>(
   return { transcript: parsed[0].transcript, value: parsed[0].value };
 }
 
-function numericCandidates(text: string) {
+function numericCandidates(text: string, allowedValues: readonly number[]) {
   const tokens = text.split(' ').filter(Boolean);
   const candidates: Array<number | null> = [];
 
   for (const token of tokens) {
     if (/^(?:100|[0-9]{1,2})$/.test(token)) {
       const value = Number(token);
-      candidates.push(ratingValues.includes(value) ? value : null);
+      candidates.push(allowedValues.includes(value) ? value : null);
     }
   }
 
@@ -147,46 +153,82 @@ function numericCandidates(text: string) {
       sequence.push(tokens[index]);
       index += 1;
     }
-    candidates.push(spokenNumbers.get(sequence.join(' ')) ?? null);
+    const value =
+      sequence.length === 1 && digitWords.has(sequence[0])
+        ? Number(digitWords.get(sequence[0]))
+        : spokenNumbers.get(sequence.join(' '));
+    candidates.push(value !== undefined && allowedValues.includes(value) ? value : null);
   }
 
   return candidates;
 }
 
-function anchorCandidate(text: string, dimension: TlxDimension): number | null | undefined {
+function escapedAlternatives(aliases: readonly string[] | undefined) {
+  return aliases
+    ?.map((alias) => alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+}
+
+function landmarkValue(
+  landmarks: readonly RatingLandmark[],
+  position: RatingLandmark['position'],
+) {
+  return landmarks.find((landmark) => landmark.position === position)?.value;
+}
+
+function anchorCandidate(
+  text: string,
+  dimension: TlxDimension,
+  landmarks: readonly RatingLandmark[],
+): number | null | undefined {
   const middle = /\b(middle|midpoint|centre|center)\b/.test(text);
   // The short endpoints are often returned as true homophones by a browser
   // recogniser. Accept only a small, explicit alias set and still require the
   // participant to confirm the labelled value before it becomes an answer.
-  const lowWords = dimension.id === 'performance'
-    ? '(?:good|successful)'
-    : '(?:low|lo)';
-  const highWords = dimension.id === 'performance'
-    ? '(?:poor|pour|bad|unsuccessful)'
-    : '(?:high|hi)';
+  const lowAliases = escapedAlternatives(dimension.voiceLowAliases);
+  const highAliases = escapedAlternatives(dimension.voiceHighAliases);
+  if (!lowAliases || !highAliases || landmarks.length !== 5) return undefined;
+  const lowWords = `(?:${lowAliases})`;
+  const highWords = `(?:${highAliases})`;
   const closerLow = new RegExp(`\\bclose(?:r)?\\s+(?:to|too)\\s+${lowWords}\\b`).test(text);
   const closerHigh = new RegExp(`\\bclose(?:r)?\\s+(?:to|too)\\s+${highWords}\\b`).test(text);
-  const low = new RegExp(`\\b${lowWords}\\b`).test(text);
+  // Some mobile Web Speech implementations return the exact harmless
+  // homophone "hello" when the participant says the one-word endpoint "low".
+  // Keep this rescue deliberately narrow: no fuzzy matching and no occurrence
+  // inside a longer utterance. The proposed value still requires confirmation.
+  const mobileLowHomophone =
+    dimension.voiceLowAliases?.includes('low') === true &&
+    text === 'hello';
+  const low = new RegExp(`\\b${lowWords}\\b`).test(text) || mobileLowHomophone;
   const high = new RegExp(`\\b${highWords}\\b`).test(text);
 
   if (closerLow || closerHigh) {
     if ([middle, closerLow, closerHigh].filter(Boolean).length !== 1) return null;
     if ((closerLow && high) || (closerHigh && low)) return null;
-    return closerLow ? 25 : 75;
+    return closerLow
+      ? landmarkValue(landmarks, 'closer-low') ?? null
+      : landmarkValue(landmarks, 'closer-high') ?? null;
   }
 
   if (![middle, low, high].some(Boolean)) return undefined;
   if ([middle, low, high].filter(Boolean).length !== 1) return null;
-  if (middle) return 50;
-  return low ? 0 : 100;
+  if (middle) return landmarkValue(landmarks, 'middle') ?? null;
+  return low
+    ? landmarkValue(landmarks, 'low') ?? null
+    : landmarkValue(landmarks, 'high') ?? null;
 }
 
-export function parseRatingTranscript(transcript: string, dimension: TlxDimension) {
+export function parseRatingTranscript(
+  transcript: string,
+  dimension: TlxDimension,
+  allowedValues: readonly number[] = nasaRatingValues,
+  landmarks: readonly RatingLandmark[] = nasaSmileyLandmarks,
+) {
   const text = normalise(transcript);
   if (!text || unsafeMeaning.test(text)) return null;
 
-  const candidates = numericCandidates(text);
-  const anchor = anchorCandidate(text, dimension);
+  const candidates = numericCandidates(text, allowedValues);
+  const anchor = anchorCandidate(text, dimension, landmarks);
   if (candidates.length > 0) {
     if (candidates.length !== 1 || candidates[0] === null || anchor === null) return null;
     if (anchor !== undefined && anchor !== candidates[0]) return null;
@@ -198,27 +240,36 @@ export function parseRatingTranscript(transcript: string, dimension: TlxDimensio
 
 export function parsePairTranscript(
   transcript: string,
-  availableDimensions: readonly DimensionId[],
+  availableDimensions: readonly (DimensionId | TlxDimension)[],
 ) {
   const text = normalise(transcript);
   if (!text || unsafeMeaning.test(text)) return null;
-  const matches = availableDimensions.filter((dimension) =>
-    dimensionAliases[dimension].some((alias) => text === alias || text.includes(alias)),
-  );
+  const matches = availableDimensions
+    .map((dimension) => {
+      const id = typeof dimension === 'string' ? dimension : dimension.id;
+      const aliases =
+        typeof dimension === 'string'
+          ? dimensionAliases[id] ?? [id.replace(/[-_]/g, ' ')]
+          : [dimension.name.toLowerCase(), id.replace(/[-_]/g, ' ')];
+      return aliases.some((alias) => text === alias || text.includes(alias)) ? id : null;
+    })
+    .filter((id): id is string => Boolean(id));
   return matches.length === 1 ? matches[0] : null;
 }
 
 export function parseRatingAlternatives(
   transcripts: readonly string[],
   dimension: TlxDimension,
+  allowedValues: readonly number[] = nasaRatingValues,
+  landmarks: readonly RatingLandmark[] = nasaSmileyLandmarks,
 ) {
   return chooseConsistentAlternative(transcripts, (transcript) =>
-    parseRatingTranscript(transcript, dimension));
+    parseRatingTranscript(transcript, dimension, allowedValues, landmarks));
 }
 
 export function parsePairAlternatives(
   transcripts: readonly string[],
-  availableDimensions: readonly DimensionId[],
+  availableDimensions: readonly (DimensionId | TlxDimension)[],
 ) {
   return chooseConsistentAlternative(transcripts, (transcript) =>
     parsePairTranscript(transcript, availableDimensions));

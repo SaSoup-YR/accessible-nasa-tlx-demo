@@ -1,19 +1,26 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { focusAndReveal } from './accessibility-utils';
 import {
-  dimensionById,
-  dimensions,
-  pairs,
-  ratingValues,
-  smileyLandmarks,
-  type DimensionId,
-  type TlxDimension,
-  type TlxPair,
-} from './nasa-tlx';
-import { calculateResult, type PairResponses, type Ratings, type TlxResult } from './scoring';
+  DEFAULT_QUESTIONNAIRE_ID,
+  buildQuestionnairePairs,
+  buildRatingValues,
+  getQuestionnaireDefinition,
+  type ItemId as DimensionId,
+  type QuestionnaireDefinition,
+  type QuestionnaireItem as TlxDimension,
+  type QuestionnairePair as TlxPair,
+} from './questionnaire-definition';
+import {
+  scoreQuestionnaire,
+  type PairResponses,
+  type QuestionnaireScore,
+  type Ratings,
+} from './scoring';
 import {
   configuredResultSink,
   installStudyResultSink,
+  requestQualtricsParentReveal,
   submitToApprovedResultSink,
   type ResultSinkReceipt,
 } from './result-sink';
@@ -61,7 +68,8 @@ interface PendingVoiceAnswer {
 }
 
 interface SavedSession {
-  version: 3;
+  version: 4;
+  instrumentId: string;
   savedAt: number;
   startedAt: string;
   configId: string;
@@ -133,8 +141,8 @@ const CALIBRATION_POINTS = [
 ] as const;
 const CALIBRATION_REPETITIONS = 3;
 
-function shuffledPairs() {
-  const order = [...pairs];
+function shuffledPairs(definition: QuestionnaireDefinition) {
+  const order = buildQuestionnairePairs(definition);
   for (let index = order.length - 1; index > 0; index -= 1) {
     const randomIndex = Math.floor(Math.random() * (index + 1));
     [order[index], order[randomIndex]] = [order[randomIndex], order[index]];
@@ -147,7 +155,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private stage: Stage = 'intro';
   @state() private ratingIndex = 0;
   @state() private pairIndex = 0;
-  @state() private pairOrder = shuffledPairs();
+  @state() private pairOrder = shuffledPairs(getQuestionnaireDefinition(DEFAULT_QUESTIONNAIRE_ID)!);
   @state() private pairResponses: PairResponses = {};
   @state() private ratings: Partial<Ratings> = {};
   @state() private ratingInputRoutes: Partial<Record<DimensionId, RatingInputRoute>> = {};
@@ -170,7 +178,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private pendingVoiceAnswer: PendingVoiceAnswer | null = null;
   @state() private errorMessage = '';
   @state() private statusMessage = '';
-  @state() private result: TlxResult | null = null;
+  @state() private result: QuestionnaireScore | null = null;
   @state() private gazeState: GazeState = 'off';
   @state() private gazeMessage = '';
   @state() private gazeCalibrationIndex = 0;
@@ -213,13 +221,15 @@ export class AccessibleNasaTlx extends LitElement {
       this.restoreParticipantCodeForTab();
       this.findSavedSession();
       this.findCompletedBackup();
-      if (this.participantCodeRestoredForTab && (this.savedSession || this.recoveredCompletedRecord)) {
+      if (this.participantCodeRestoredForTab && !this.savedSession && this.recoveredCompletedRecord) {
         void this.updateComplete.then(() => {
-          const heading = this.querySelector<HTMLElement>(
-            this.savedSession ? '#saved-session-heading' : '#completed-backup-heading',
-          );
-          heading?.focus();
-          heading?.scrollIntoView?.({ block: 'start' });
+          const heading = this.querySelector<HTMLElement>('#completed-backup-heading');
+          if (heading) {
+            focusAndReveal(heading, {
+              block: 'start',
+              onReveal: () => this.requestParentReveal(heading),
+            });
+          }
         });
       }
     });
@@ -248,6 +258,7 @@ export class AccessibleNasaTlx extends LitElement {
     }
     if (!config) return;
     this.studyConfig = config;
+    this.pairOrder = shuffledPairs(this.definition);
     this.applyConfiguredSupport();
     if (config.collection.mode === 'qualtrics') {
       if (window.parent === window) {
@@ -282,6 +293,32 @@ export class AccessibleNasaTlx extends LitElement {
     this.recoveryEnabled = support.recoveryEnabled;
   }
 
+  private get definition() {
+    return getQuestionnaireDefinition(
+      this.studyConfig?.instrumentId ?? DEFAULT_QUESTIONNAIRE_ID,
+    )!;
+  }
+
+  private get dimensions() {
+    return this.definition.items;
+  }
+
+  private get pairs() {
+    return buildQuestionnairePairs(this.definition);
+  }
+
+  private get ratingValues() {
+    return buildRatingValues(this.definition);
+  }
+
+  private get smileyLandmarks() {
+    return this.definition.landmarks ?? [];
+  }
+
+  private get dimensionById() {
+    return new Map(this.dimensions.map((item) => [item.id, item]));
+  }
+
   private get canAdjustAllSupport() {
     return !this.studyConfig || this.studyConfig.support.participantAdjustmentPolicy === 'participant-choice';
   }
@@ -308,9 +345,9 @@ export class AccessibleNasaTlx extends LitElement {
       <main class=${`app-shell${this.largeText ? ' large-text' : ''}`} id="main-content">
         <p class="sr-only" aria-live="polite" aria-atomic="true">${this.statusMessage}</p>
         <header class="app-header">
-          <p class="eyebrow">Research prototype · Version 0.7 release candidate</p>
-          <h1>NASA Task Load Index</h1>
-          <p class="subtitle">Weighted NASA-TLX with configurable reading, answering and recovery support</p>
+          <p class="eyebrow">Accessible questionnaire platform · Version ${PROTOTYPE_VERSION}</p>
+          <h1>${this.definition.name}</h1>
+          <p class="subtitle">${this.definition.description}</p>
         </header>
 
         ${this.resumeSummaryVisible ? this.renderResumeSummary() : nothing}
@@ -339,7 +376,7 @@ export class AccessibleNasaTlx extends LitElement {
               <summary>Adjust accessibility support (optional)</summary>
               <p>
                 The study conductor has already prepared usable starting settings. You may change optional support if it
-                helps you complete the questionnaire; every change is recorded separately from your NASA-TLX answers.
+                helps you complete the questionnaire; every change is recorded separately from your scored answers.
               </p>
               ${this.renderSupportSettings('toolbar', 'all')}
             </details>`
@@ -378,6 +415,10 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private renderIntro() {
+    const startLabel =
+      this.definition.id === DEFAULT_QUESTIONNAIRE_ID
+        ? 'Start the six ratings'
+        : `Start the ${this.dimensions.length} items`;
     return html`
       <section class="panel" id="question-panel" aria-labelledby="intro-heading">
         <h2 id="intro-heading">Before you begin</h2>
@@ -387,20 +428,26 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.renderStudyContext()}
         ${this.savedSession ? this.renderSavedSessionOffer() : nothing}
         ${this.recoveredCompletedRecord ? this.renderCompletedBackupOffer() : nothing}
-        <p>
-          Think about ${this.studyConfig ? html`the task: <strong>${this.studyConfig.taskLabel}</strong>` : 'one task that you have just completed'}.
-        </p>
+        <p>${this.definition.introPrompt}</p>
+        ${this.studyConfig
+          ? html`<p>Study task: <strong>${this.studyConfig.taskLabel}</strong></p>`
+          : nothing}
         <ol class="process-overview">
-          <li>First, rate six aspects of the workload from 0 to 100.</li>
-          <li>Then, make fifteen comparisons about which aspect contributed more to workload.</li>
+          <li>
+            First, answer ${this.dimensions.length} items using values from
+            ${this.definition.scale.minimum} to ${this.definition.scale.maximum}.
+          </li>
+          ${this.pairs.length
+            ? html`<li>Then, make ${this.pairs.length} pairwise comparisons.</li>`
+            : nothing}
           <li>Finally, review and submit your responses.</li>
         </ol>
 
         <div class="boundary-note">
           <h3>Official questionnaire and optional support</h3>
           <p>
-            The official NASA-TLX dimensions, values, direction and scoring remain authoritative.
-            Simpler explanations, smileys, built-in audio, voice, gaze and recovery are separate support routes.
+            ${this.definition.officialContentNotice}
+            Optional accessibility supports remain separate from the scored response.
           </p>
           <p>
             Screen-reader compatibility is always on through headings, native controls, labels,
@@ -410,12 +457,12 @@ export class AccessibleNasaTlx extends LitElement {
         </div>
 
         <details class="factor-reference">
-          <summary>Review the six official factor definitions</summary>
-          ${dimensions.map(
+          <summary>Review the ${this.dimensions.length} official ${this.pairs.length ? 'factor definitions' : 'items'}</summary>
+          ${this.dimensions.map(
             (dimension) => html`
               <div class="reference-item">
                 <h3>${dimension.name}</h3>
-                <p>${dimension.officialDefinition}</p>
+                <p>${dimension.prompt}</p>
               </div>
             `,
           )}
@@ -452,11 +499,11 @@ export class AccessibleNasaTlx extends LitElement {
           class="primary-button large-answer-button"
           type="button"
           data-gaze-target
-          data-gaze-label="Start the six ratings"
+          data-gaze-label=${startLabel}
           ?disabled=${Boolean(this.configurationError)}
           @click=${this.startQuestionnaire}
         >
-          Start the six ratings
+          ${startLabel}
         </button>
       </section>
     `;
@@ -520,8 +567,14 @@ export class AccessibleNasaTlx extends LitElement {
         <h3 id="configured-support-heading">Support prepared by the study conductor</h3>
         <p>You do not need to configure the questionnaire before starting.</p>
         <ul>
-          <li>${support.showSimpleLanguage ? 'Simpler explanations shown' : 'Official wording with optional help hidden'}</li>
-          <li>${support.answerMode === 'smiley' ? 'Smiley landmark rating view' : 'Standard 21-point rating scale'}</li>
+          ${this.definition.supports.simplerExplanations
+            ? html`<li>${support.showSimpleLanguage ? 'Simpler explanations shown' : 'Optional simpler help hidden'}</li>`
+            : html`<li>Official item wording only; no reworded item support is enabled for this instrument</li>`}
+          <li>
+            ${support.answerMode === 'smiley'
+              ? 'Smiley landmark rating view'
+              : `Standard ${this.ratingValues.length}-value rating scale`}
+          </li>
           <li>${support.largeText ? 'Large text' : 'Standard text size'}</li>
           <li>${support.recoveryEnabled ? 'Interruption recovery on' : 'Interruption recovery off'}</li>
           <li>${support.voiceInputAvailable ? 'Confirmed voice input available' : 'Built-in voice input not included'}</li>
@@ -544,7 +597,7 @@ export class AccessibleNasaTlx extends LitElement {
       <fieldset class="support-settings">
         <legend>${scope === 'all' ? 'Accessibility support options' : 'Display and recovery preferences'}</legend>
 
-        ${scope === 'all'
+        ${scope === 'all' && this.definition.supports.simplerExplanations
           ? html`<label class="toggle-card" for=${`${prefix}-simple`}>
             <input
               id=${`${prefix}-simple`}
@@ -554,11 +607,13 @@ export class AccessibleNasaTlx extends LitElement {
             />
             <span>
               <strong>Show simpler explanations</strong>
-              <small>The official NASA wording remains visible once, without being duplicated inside the help.</small>
+              <small>The official item remains visible once, without being duplicated inside the help.</small>
             </span>
-          </label>
+          </label>`
+          : nothing}
 
-          <fieldset class="answer-mode-control">
+        ${scope === 'all' && this.definition.supports.smileyLandmarks
+          ? html`<fieldset class="answer-mode-control">
             <legend>Rating answer format</legend>
             <label for=${`${prefix}-standard-answer`}>
               <input
@@ -569,7 +624,10 @@ export class AccessibleNasaTlx extends LitElement {
                 .checked=${this.answerMode === 'standard'}
                 @change=${() => this.setAnswerMode('standard')}
               />
-              <span><strong>Standard 21-point scale</strong><small>Default NASA-TLX presentation.</small></span>
+              <span>
+                <strong>Standard ${this.ratingValues.length}-value scale</strong>
+                <small>Official ${this.definition.shortName} response values.</small>
+              </span>
               ${this.answerMode === 'standard'
                 ? html`<span class="selected-marker" aria-hidden="true">✓ Selected</span>`
                 : nothing}
@@ -848,7 +906,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderProgress() {
     const completed = Object.keys(this.ratings).length + Object.keys(this.pairResponses).length;
-    const total = dimensions.length + this.pairOrder.length;
+    const total = this.dimensions.length + this.pairOrder.length;
     const section = this.stage === 'ratings' ? 'Ratings' : this.stage === 'pairs' ? 'Comparisons' : 'Review';
     return html`
       <nav class="progress-card" aria-label="Questionnaire progress">
@@ -859,15 +917,20 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private renderRating() {
-    const dimension = dimensions[this.ratingIndex];
+    const dimension = this.dimensions[this.ratingIndex];
     const selected = this.ratings[dimension.id];
     return html`
       <section class="panel" id="question-panel" aria-labelledby="rating-heading">
-        <p class="step-label">Rating ${this.ratingIndex + 1} of ${dimensions.length}</p>
+        <p class="step-label">Rating ${this.ratingIndex + 1} of ${this.dimensions.length}</p>
         <h2 id="rating-heading">${dimension.name}</h2>
-        <p class="official-definition"><strong>Official definition:</strong> ${dimension.officialDefinition}</p>
+        <p class="official-definition">
+          <strong>${this.pairs.length ? 'Official definition' : 'Official item'}:</strong>
+          ${dimension.prompt}
+        </p>
 
-        ${this.showSimpleLanguage
+        ${!this.definition.supports.simplerExplanations
+          ? nothing
+          : this.showSimpleLanguage
           ? html`<aside class="simple-language-panel" aria-label="Simpler explanation">
               <p class="support-label">Simpler explanation</p>
               <p>${dimension.simpleExplanation}</p>
@@ -885,7 +948,7 @@ export class AccessibleNasaTlx extends LitElement {
               </div>
             </details>`}
 
-        ${this.answerMode === 'smiley'
+        ${this.answerMode === 'smiley' && this.definition.supports.smileyLandmarks
           ? html`
               ${this.renderSmileyResponse(dimension, selected)}
               <details class="precision-scale">
@@ -904,12 +967,16 @@ export class AccessibleNasaTlx extends LitElement {
   private renderFullRatingScale(dimension: TlxDimension, selected: number | undefined) {
     return html`
       <fieldset class="rating-fieldset">
-        <legend>Rate ${dimension.name}: 0 is ${dimension.lowAnchor}; 100 is ${dimension.highAnchor}</legend>
+        <legend>
+          Rate ${dimension.name}: ${this.definition.scale.minimum} is ${dimension.lowAnchor};
+          ${this.definition.scale.maximum} is ${dimension.highAnchor}
+        </legend>
         <div class="rating-anchors" aria-hidden="true">
-          <span>0 — ${dimension.lowAnchor}</span><span>100 — ${dimension.highAnchor}</span>
+          <span>${this.definition.scale.minimum} — ${dimension.lowAnchor}</span>
+          <span>${this.definition.scale.maximum} — ${dimension.highAnchor}</span>
         </div>
         <div class="rating-grid">
-          ${ratingValues.map((value) => {
+          ${this.ratingValues.map((value) => {
             const inputId = `rating-${dimension.id}-${value}`;
             return html`
               <label
@@ -946,7 +1013,7 @@ export class AccessibleNasaTlx extends LitElement {
           Each face is one official value. Facial expression may imply good or bad, so this route is experimental.
         </p>
         <div class="smiley-grid">
-          ${smileyLandmarks.map(({ value, cue }) => {
+          ${this.smileyLandmarks.map(({ value, cue }) => {
             const inputId = `smiley-${dimension.id}-${value}`;
             return html`
               <label
@@ -983,15 +1050,15 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderPair() {
     const pair = this.pairOrder[this.pairIndex];
-    const left = dimensionById.get(pair.left)!;
-    const right = dimensionById.get(pair.right)!;
+    const left = this.dimensionById.get(pair.left)!;
+    const right = this.dimensionById.get(pair.right)!;
     const selected = this.pairResponses[pair.id];
     return html`
       <section class="panel" id="question-panel" aria-labelledby="pair-heading">
         <p class="step-label">Comparison ${this.pairIndex + 1} of ${this.pairOrder.length}</p>
-        <h2 id="pair-heading">Which factor contributed more to the workload you experienced?</h2>
+        <h2 id="pair-heading">${this.definition.pairwise!.prompt}</h2>
         <p class="pair-instruction">
-          This is not a Low-to-High rating. Choose the factor that was the more important source of workload in the task.
+          ${this.definition.pairwise!.instruction}
         </p>
 
         ${this.renderPairHelp(left, right)}
@@ -1037,7 +1104,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderPairHelp(left: TlxDimension, right: TlxDimension) {
     if (this.showSimpleLanguage) {
-      return html`<p class="simple-pair-prompt">In simpler words: which one added more to the work you had to do?</p>`;
+      return html`<p class="simple-pair-prompt">In simpler words: ${this.definition.pairwise!.simplePrompt}</p>`;
     }
     return html`
       <details
@@ -1122,8 +1189,12 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private renderNavigation(canGoBack: boolean, context: 'rating' | 'pair') {
-    const finalRating = context === 'rating' && this.ratingIndex === dimensions.length - 1;
+    const finalRating = context === 'rating' && this.ratingIndex === this.dimensions.length - 1;
     const finalPair = context === 'pair' && this.pairIndex === this.pairOrder.length - 1;
+    const nextLabel =
+      finalRating
+        ? this.pairOrder.length ? 'Continue to comparisons' : 'Review responses'
+        : finalPair ? 'Review responses' : 'Next question';
     return html`
       <div class="button-row">
         <button
@@ -1140,10 +1211,10 @@ export class AccessibleNasaTlx extends LitElement {
           class="primary-button large-answer-button"
           type="button"
           data-gaze-target
-          data-gaze-label=${finalRating ? 'Continue to comparisons' : finalPair ? 'Review responses' : 'Next question'}
+          data-gaze-label=${nextLabel}
           @click=${() => this.goNext(context)}
         >
-          ${finalRating ? 'Continue to comparisons' : finalPair ? 'Review responses' : 'Next question'}
+          ${nextLabel}
         </button>
       </div>
     `;
@@ -1153,7 +1224,7 @@ export class AccessibleNasaTlx extends LitElement {
     return html`
       <section class="panel" id="question-panel" aria-labelledby="review-heading">
         <h2 id="review-heading">Review your responses</h2>
-        <p>Check every response before calculating the weighted workload score.</p>
+        <p>Check every response before calculating the ${this.definition.scoring.scoreName.toLowerCase()}.</p>
 
         ${this.hostSubmissionFailed && this.submittedRecord
           ? html`
@@ -1180,9 +1251,9 @@ export class AccessibleNasaTlx extends LitElement {
             `
           : nothing}
 
-        <h3>Magnitude ratings</h3>
+        <h3>Item responses</h3>
         <dl class="review-ratings">
-          ${dimensions.map(
+          ${this.dimensions.map(
             (dimension) => html`
               <div>
                 <dt>${dimension.name}</dt>
@@ -1195,15 +1266,17 @@ export class AccessibleNasaTlx extends LitElement {
           )}
         </dl>
 
-        <h3>Sources-of-workload comparisons</h3>
-        <ol class="review-list">
-          ${this.pairOrder.map((pair) => {
-            const left = dimensionById.get(pair.left)!;
-            const right = dimensionById.get(pair.right)!;
-            const selected = dimensionById.get(this.pairResponses[pair.id])!;
-            return html`<li>${left.name} or ${right.name}: <strong>${selected.name}</strong></li>`;
-          })}
-        </ol>
+        ${this.pairOrder.length
+          ? html`<h3>Pairwise comparisons</h3>
+              <ol class="review-list">
+                ${this.pairOrder.map((pair) => {
+                  const left = this.dimensionById.get(pair.left)!;
+                  const right = this.dimensionById.get(pair.right)!;
+                  const selected = this.dimensionById.get(this.pairResponses[pair.id])!;
+                  return html`<li>${left.name} or ${right.name}: <strong>${selected.name}</strong></li>`;
+                })}
+              </ol>`
+          : nothing}
 
         <div class="button-row review-actions">
           <button
@@ -1215,15 +1288,17 @@ export class AccessibleNasaTlx extends LitElement {
           >
             Return to ratings
           </button>
-          <button
-            class="secondary-button large-answer-button"
-            type="button"
-            data-gaze-target
-            data-gaze-label="Return to comparisons"
-            @click=${this.returnToPairs}
-          >
-            Return to comparisons
-          </button>
+          ${this.pairOrder.length
+            ? html`<button
+                class="secondary-button large-answer-button"
+                type="button"
+                data-gaze-target
+                data-gaze-label="Return to comparisons"
+                @click=${this.returnToPairs}
+              >
+                Return to comparisons
+              </button>`
+            : nothing}
           <button
             class="primary-button large-answer-button"
             type="button"
@@ -1246,7 +1321,11 @@ export class AccessibleNasaTlx extends LitElement {
       <section class="panel confirmation" id="question-panel" aria-labelledby="complete-heading">
         <h2 id="complete-heading">${this.studyConfig ? 'Result prepared' : 'Responses calculated'}</h2>
         ${showScore
-          ? html`<p class="score">Weighted workload score: <strong>${this.result.weightedScore.toFixed(2)}</strong></p>`
+          ? html`<p class="score">
+              ${this.result.scoreName}:
+              <strong>${this.result.primaryScore.toFixed(2)}</strong>
+              out of ${this.result.scoreMaximum}
+            </p>`
           : html`<p>Your responses have been recorded. The study configuration does not display the calculated score on the participant page.</p>`}
         ${this.studyConfig
           ? this.completionSavedByHost
@@ -1278,7 +1357,7 @@ export class AccessibleNasaTlx extends LitElement {
                 <p>Use the JSON or CSV backup button below and give the file to the study conductor through the approved study procedure.</p>
               </div>`
           : html`<p>No response, audio or webcam video has been uploaded. Demonstration results are not retained after this page is closed.</p>`}
-        <p>Support and input-route metadata remain separate from the NASA-TLX score.</p>
+        <p>Support and input-route metadata remain separate from the questionnaire score.</p>
         ${!this.studyConfig || !this.completionSavedByHost
           ? this.renderCompletionReadAloudControl()
           : nothing}
@@ -1336,9 +1415,28 @@ export class AccessibleNasaTlx extends LitElement {
     const message = this.savedSessionOfferSpeech(session);
     this.statusMessage = '';
     void this.updateComplete.then(() => {
+      const current = this.savedSession;
+      if (
+        !current ||
+        current.savedAt !== session.savedAt ||
+        current.configId !== session.configId ||
+        current.participantCode !== session.participantCode
+      ) {
+        return;
+      }
+
+      const resumeButton = this.querySelector<HTMLElement>('#resume-saved-questionnaire');
+      if (resumeButton) {
+        focusAndReveal(resumeButton, {
+          block: 'center',
+          onReveal: () => this.requestParentReveal(resumeButton),
+        });
+      }
+
       window.setTimeout(() => {
         const current = this.savedSession;
         if (
+          !this.isConnected ||
           !current ||
           current.savedAt !== session.savedAt ||
           current.configId !== session.configId ||
@@ -1359,23 +1457,35 @@ export class AccessibleNasaTlx extends LitElement {
 
   private repeatSavedSessionOffer = () => {
     if (!this.savedSession) return;
+    this.readAloudUsed = true;
     this.speakText(this.savedSessionOfferSpeech(this.savedSession));
   };
 
   private savedSessionOfferSpeech(session: SavedSession) {
     const count = Object.keys(session.ratings).length + Object.keys(session.pairResponses).length;
-    return `Saved questionnaire found. ${count} of ${dimensions.length + pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
+    return `Saved questionnaire found. ${count} of ${this.dimensions.length + this.pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
   }
 
   private renderSavedSessionOffer() {
     if (!this.savedSession) return nothing;
     const count = Object.keys(this.savedSession.ratings).length + Object.keys(this.savedSession.pairResponses).length;
     return html`
-      <aside class="saved-session" aria-labelledby="saved-session-heading">
-        <h3 id="saved-session-heading" tabindex="-1">Saved questionnaire found</h3>
-        <p>${count} of ${dimensions.length + pairs.length} responses are saved in this browser.</p>
+      <aside class="saved-session" role="region" aria-labelledby="saved-session-heading">
+        <h3 id="saved-session-heading">Saved questionnaire found</h3>
+        <p id="saved-session-count">
+          ${count} of ${this.dimensions.length + this.pairs.length} responses are saved in this browser.
+        </p>
+        <p id="saved-session-instructions">
+          Resume to continue from the saved position, or erase the saved copy and start again.
+        </p>
         <div class="button-row compact">
-          <button class="primary-button large-answer-button" type="button" @click=${this.restoreSavedSession}>
+          <button
+            id="resume-saved-questionnaire"
+            class="primary-button large-answer-button"
+            type="button"
+            aria-describedby="saved-session-count saved-session-instructions"
+            @click=${this.restoreSavedSession}
+          >
             Resume saved questionnaire
           </button>
           <button class="secondary-button" type="button" @click=${this.repeatSavedSessionOffer}>
@@ -1426,7 +1536,7 @@ export class AccessibleNasaTlx extends LitElement {
       <aside class="resume-summary" aria-labelledby="resume-heading">
         <h2 id="resume-heading" tabindex="-1">Welcome back — here is where you stopped</h2>
         <dl class="resume-details">
-          <div><dt>Completed</dt><dd>${this.completedCount()} of ${dimensions.length + pairs.length} responses</dd></div>
+          <div><dt>Completed</dt><dd>${this.completedCount()} of ${this.dimensions.length + this.pairs.length} responses</dd></div>
           <div><dt>Last saved response</dt><dd>${this.lastSavedDescription()}</dd></div>
           <div><dt>Current position</dt><dd>${this.currentPositionDescription()}</dd></div>
           <div><dt>Next action</dt><dd>${this.nextActionDescription()}</dd></div>
@@ -1494,6 +1604,7 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private setAnswerMode(mode: AnswerMode) {
+    if (mode === 'smiley' && !this.definition.supports.smileyLandmarks) return;
     this.recordSupportChange('answer-mode', this.answerMode, mode);
     this.answerMode = mode;
     this.invalidatePendingSubmission();
@@ -1501,7 +1612,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.announceAutomatic(
       mode === 'smiley'
         ? 'Smiley landmark answer format selected. Each rating offers five labelled values, with the full precise scale available on request.'
-        : 'Standard 21-point answer format selected. Each rating uses values from 0 to 100 in steps of 5.',
+        : `Standard answer format selected. Each rating uses ${this.ratingValues.length} values from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} in steps of ${this.definition.scale.step}.`,
     );
   }
 
@@ -1547,25 +1658,28 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private landmarkLabel(dimension: TlxDimension, value: number) {
-    if (value === 0) return dimension.lowAnchor;
-    if (value === 25) return `Closer to ${dimension.lowAnchor}`;
-    if (value === 50) return 'Middle';
-    if (value === 75) return `Closer to ${dimension.highAnchor}`;
-    return dimension.highAnchor;
+    const position = this.smileyLandmarks.find((landmark) => landmark.value === value)?.position;
+    if (position === 'low') return dimension.lowAnchor;
+    if (position === 'closer-low') return `Closer to ${dimension.lowAnchor}`;
+    if (position === 'middle') return 'Middle';
+    if (position === 'closer-high') return `Closer to ${dimension.highAnchor}`;
+    if (position === 'high') return dimension.highAnchor;
+    return String(value);
   }
 
   private ratingVoicePrompt(dimension: TlxDimension) {
     if (this.answerMode !== 'smiley') {
-      return 'Say a number from 0 to 100 in steps of 5, such as 25 or 70.';
+      return `Say one shown value from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} in steps of ${this.definition.scale.step}.`;
     }
-    const labels = smileyLandmarks.map(({ value }) => this.landmarkLabel(dimension, value));
-    return `For the most reliable voice input, say one shown value: 0, 25, 50, 75, or 100. You may instead say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}.`;
+    const labels = this.smileyLandmarks.map(({ value }) => this.landmarkLabel(dimension, value));
+    const values = this.smileyLandmarks.map(({ value }) => value);
+    return `For the most reliable voice input, say one shown value: ${values.slice(0, -1).join(', ')}, or ${values.at(-1)}. You may instead say one visible label: ${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}. On a phone, use the number if a short label such as Low is not recognised.`;
   }
 
   private ratingVoiceAnswerLabel(dimension: TlxDimension, value: number) {
     const visibleAsLandmark =
       this.answerMode === 'smiley' &&
-      smileyLandmarks.some((landmark) => landmark.value === value);
+      this.smileyLandmarks.some((landmark) => landmark.value === value);
     return visibleAsLandmark
       ? `${this.landmarkLabel(dimension, value)}, value ${value}, for ${dimension.name}`
       : `${value} for ${dimension.name}`;
@@ -1591,10 +1705,10 @@ export class AccessibleNasaTlx extends LitElement {
     this.ratings = { ...this.ratings, [dimension]: value };
     this.ratingInputRoutes = { ...this.ratingInputRoutes, [dimension]: effectiveRoute };
     this.clearError();
-    const currentDimension = dimensionById.get(dimension)!;
+    const currentDimension = this.dimensionById.get(dimension)!;
     const visibleAsLandmark =
       this.answerMode === 'smiley' &&
-      smileyLandmarks.some((landmark) => landmark.value === value);
+      this.smileyLandmarks.some((landmark) => landmark.value === value);
     this.statusMessage = visibleAsLandmark
       ? `${currentDimension.name}, ${this.landmarkLabel(currentDimension, value)}, value ${value}, selected.`
       : `${currentDimension.name}, ${value}, selected.`;
@@ -1609,7 +1723,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.pairResponses = { ...this.pairResponses, [pairId]: dimension };
     this.pairInputRoutes = { ...this.pairInputRoutes, [pairId]: effectiveRoute };
     this.clearError();
-    this.statusMessage = `${dimensionById.get(dimension)!.name} selected.`;
+    this.statusMessage = `${this.dimensionById.get(dimension)!.name} selected.`;
     this.announceAutomatic(this.statusMessage);
     this.persistProgress();
   }
@@ -1639,15 +1753,19 @@ export class AccessibleNasaTlx extends LitElement {
     this.stopReading();
     this.clearVoiceAnswer();
     if (context === 'rating') {
-      const dimension = dimensions[this.ratingIndex];
+      const dimension = this.dimensions[this.ratingIndex];
       if (this.ratings[dimension.id] === undefined) {
         this.showError(`Choose a rating for ${dimension.name} before continuing.`);
         return;
       }
-      if (this.ratingIndex < dimensions.length - 1) this.ratingIndex += 1;
+      if (this.ratingIndex < this.dimensions.length - 1) this.ratingIndex += 1;
       else {
-        this.stage = 'pairs';
-        this.pairIndex = 0;
+        if (this.pairOrder.length) {
+          this.stage = 'pairs';
+          this.pairIndex = 0;
+        } else {
+          this.stage = 'review';
+        }
       }
     } else {
       const pair = this.pairOrder[this.pairIndex];
@@ -1671,7 +1789,7 @@ export class AccessibleNasaTlx extends LitElement {
       if (this.pairIndex > 0) this.pairIndex -= 1;
       else {
         this.stage = 'ratings';
-        this.ratingIndex = dimensions.length - 1;
+        this.ratingIndex = this.dimensions.length - 1;
       }
     }
     this.clearError();
@@ -1681,7 +1799,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private returnToRatings = () => {
     this.stage = 'ratings';
-    this.ratingIndex = dimensions.length - 1;
+    this.ratingIndex = this.dimensions.length - 1;
     this.persistProgress();
     this.focusHeading();
   };
@@ -1696,10 +1814,11 @@ export class AccessibleNasaTlx extends LitElement {
   private effectiveStudyConfig(): StudyConfig {
     if (this.studyConfig) return this.studyConfig;
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       configId: 'demo-config',
       createdAt: this.startedAt || new Date().toISOString(),
       prototypeVersion: PROTOTYPE_VERSION,
+      instrumentId: this.definition.id,
       studyId: 'DEMO',
       studyTitle: 'Technical demonstration',
       taskLabel: 'a task completed before the questionnaire',
@@ -1740,7 +1859,11 @@ export class AccessibleNasaTlx extends LitElement {
     if (this.submittingResult) return;
     try {
       if (!this.result || !this.submittedRecord) {
-        this.result = calculateResult(this.pairOrder, this.pairResponses, this.ratings as Ratings);
+        this.result = scoreQuestionnaire(
+          this.definition,
+          this.ratings as Ratings,
+          this.pairResponses,
+        );
         this.submittedRecord = createStudyResultRecord({
           config: this.effectiveStudyConfig(),
           participantCode: this.studyConfig ? this.participantCode : 'DEMO',
@@ -1781,6 +1904,13 @@ export class AccessibleNasaTlx extends LitElement {
           this.submittingResult = false;
         }
       }
+      this.dispatchEvent(new CustomEvent<StudyResultRecord>('questionnaire-complete', {
+        detail: this.submittedRecord,
+        bubbles: true,
+        composed: true,
+      }));
+      // Compatibility event for existing host integrations during the Version
+      // 0.7 to 0.8 migration. It carries the same versioned generic record.
       this.dispatchEvent(new CustomEvent<StudyResultRecord>('nasa-tlx-complete', {
         detail: this.submittedRecord,
         bubbles: true,
@@ -1835,7 +1965,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.stage = 'intro';
     this.ratingIndex = 0;
     this.pairIndex = 0;
-    this.pairOrder = shuffledPairs();
+    this.pairOrder = shuffledPairs(this.definition);
     this.pairResponses = {};
     this.ratings = {};
     this.ratingInputRoutes = {};
@@ -1966,58 +2096,68 @@ export class AccessibleNasaTlx extends LitElement {
     if (this.stage === 'intro') {
       const task = this.studyConfig
         ? `Think about ${this.studyConfig.taskLabel}.`
-        : 'Think about one task that you have just completed.';
+        : '';
       const answerFormat = this.answerMode === 'smiley'
         ? 'The rating format uses five labelled smiley landmarks. A precise scale is available on request.'
-        : 'The rating format uses a 21-point scale from 0 to 100.';
-      return `Before you begin. ${task} First rate six aspects of workload. ${answerFormat} Then make fifteen comparisons. Finally review and submit.`;
+        : `The rating format uses ${this.ratingValues.length} values from ${this.definition.scale.minimum} to ${this.definition.scale.maximum}.`;
+      const comparisons = this.pairs.length
+        ? ` Then make ${this.pairs.length} pairwise comparisons.`
+        : '';
+      return `Before you begin. ${this.definition.introPrompt} ${task} Answer ${this.dimensions.length} items. ${answerFormat}${comparisons} Finally review and submit.`;
     }
     if (this.stage === 'ratings') {
-      const dimension = dimensions[this.ratingIndex];
-      const support = this.showSimpleLanguage ? ` Simpler explanation: ${dimension.simpleExplanation}` : '';
+      const dimension = this.dimensions[this.ratingIndex];
+      const support =
+        this.showSimpleLanguage && dimension.simpleExplanation
+          ? ` Simpler explanation: ${dimension.simpleExplanation}`
+          : '';
       const answerPrompt = this.answerMode === 'smiley'
-        ? `Choose a smiley landmark: ${smileyLandmarks
+        ? `Choose a smiley landmark: ${this.smileyLandmarks
             .map(({ value }) => `${this.landmarkLabel(dimension, value)}, value ${value}`)
             .join('; ')}. A more precise value is available on the full scale.`
-        : `Rate from 0, ${dimension.lowAnchor}, to 100, ${dimension.highAnchor}, in steps of 5.`;
-      return `Rating ${this.ratingIndex + 1} of 6. ${dimension.name}. Official definition: ${dimension.officialDefinition}.${support} ${answerPrompt}`;
+        : `Rate from ${this.definition.scale.minimum}, ${dimension.lowAnchor}, to ${this.definition.scale.maximum}, ${dimension.highAnchor}, in steps of ${this.definition.scale.step}.`;
+      return `Rating ${this.ratingIndex + 1} of ${this.dimensions.length}. ${dimension.name}. Official item: ${dimension.prompt}.${support} ${answerPrompt}`;
     }
     if (this.stage === 'pairs') {
       const pair = this.pairOrder[this.pairIndex];
-      const left = dimensionById.get(pair.left)!;
-      const right = dimensionById.get(pair.right)!;
+      const left = this.dimensionById.get(pair.left)!;
+      const right = this.dimensionById.get(pair.right)!;
       const support = this.showSimpleLanguage
-        ? ` In simpler words, choose which one added more to the work you had to do. ${left.name}: ${left.shortMeaning}. ${right.name}: ${right.shortMeaning}.`
+        ? ` In simpler words, ${this.definition.pairwise!.simplePrompt} ${left.name}: ${left.shortMeaning}. ${right.name}: ${right.shortMeaning}.`
         : '';
-      return `Comparison ${this.pairIndex + 1} of 15. Which factor contributed more to workload? This is not a low to high rating. Choose ${left.name} or ${right.name}.${support}`;
+      return `Comparison ${this.pairIndex + 1} of ${this.pairOrder.length}. ${this.definition.pairwise!.prompt} ${this.definition.pairwise!.instruction} Choose ${left.name} or ${right.name}.${support}`;
     }
-    if (this.stage === 'review') return 'Review your six ratings and fifteen source of workload comparisons before submitting.';
+    if (this.stage === 'review') {
+      return `Review ${this.dimensions.length} item responses${this.pairs.length ? ` and ${this.pairs.length} comparisons` : ''} before submitting.`;
+    }
     if (this.studyConfig && this.completionSavedByHost) {
       return 'Answers accepted. The study platform is finishing automatically.';
     }
     if (!this.result) return 'Responses calculated.';
     const score = !this.studyConfig || this.studyConfig.showScoreToParticipant
-      ? ` Weighted workload score: ${this.result.weightedScore.toFixed(2)} out of 100.`
+      ? ` ${this.result.scoreName}: ${this.result.primaryScore.toFixed(2)} out of ${this.result.scoreMaximum}.`
       : '';
     return `Responses calculated.${score} JSON and CSV backup buttons are available on this page.`;
   }
 
   private currentSimpleExplanationSpeech() {
     if (this.stage === 'ratings') {
-      const dimension = dimensions[this.ratingIndex];
-      return `Simpler explanation for ${dimension.name}. ${dimension.simpleExplanation} Use the official scale when choosing your response.`;
+      const dimension = this.dimensions[this.ratingIndex];
+      return dimension.simpleExplanation
+        ? `Simpler explanation for ${dimension.name}. ${dimension.simpleExplanation} Use the official scale when choosing your response.`
+        : 'This questionnaire definition does not provide reworded item text.';
     }
     if (this.stage === 'pairs') {
       const pair = this.pairOrder[this.pairIndex];
-      const left = dimensionById.get(pair.left)!;
-      const right = dimensionById.get(pair.right)!;
-      return `In simpler words, choose which one added more to the work you had to do. ${left.name}: ${left.shortMeaning}. ${right.name}: ${right.shortMeaning}.`;
+      const left = this.dimensionById.get(pair.left)!;
+      const right = this.dimensionById.get(pair.right)!;
+      return `In simpler words, ${this.definition.pairwise!.simplePrompt} ${left.name}: ${left.shortMeaning}. ${right.name}: ${right.shortMeaning}.`;
     }
     return 'Simpler explanations are on. Official questionnaire wording remains visible.';
   }
 
   private resumeSummarySpeech() {
-    return `Welcome back. ${this.completedCount()} of ${dimensions.length + pairs.length} responses completed. Last saved response: ${this.lastSavedDescription()}. Current position: ${this.currentPositionDescription()}. Next action: ${this.nextActionDescription()}`;
+    return `Welcome back. ${this.completedCount()} of ${this.dimensions.length + this.pairs.length} responses completed. Last saved response: ${this.lastSavedDescription()}. Current position: ${this.currentPositionDescription()}. Next action: ${this.nextActionDescription()}`;
   }
 
   private startGazeInput = async () => {
@@ -2279,7 +2419,12 @@ export class AccessibleNasaTlx extends LitElement {
         if (transcript) transcripts.push(transcript);
       }
       if (context === 'rating') {
-        const proposal = parseRatingAlternatives(transcripts, first);
+        const proposal = parseRatingAlternatives(
+          transcripts,
+          first,
+          this.ratingValues,
+          this.smileyLandmarks,
+        );
         if (proposal) {
           this.releaseRecognition(recognition);
           const label = this.ratingVoiceAnswerLabel(first, proposal.value);
@@ -2298,10 +2443,10 @@ export class AccessibleNasaTlx extends LitElement {
           return;
         }
       } else {
-        const proposal = parsePairAlternatives(transcripts, [first.id, second!.id]);
+        const proposal = parsePairAlternatives(transcripts, [first, second!]);
         if (proposal) {
           this.releaseRecognition(recognition);
-          const label = dimensionById.get(proposal.value)!.name;
+          const label = this.dimensionById.get(proposal.value)!.name;
           this.pendingVoiceAnswer = {
             context,
             transcript: proposal.transcript,
@@ -2355,10 +2500,10 @@ export class AccessibleNasaTlx extends LitElement {
     if (!pending) return;
     let confirmedControlId = '';
     if (pending.context === 'rating') {
-      const dimension = dimensions[this.ratingIndex];
+      const dimension = this.dimensions[this.ratingIndex];
       const value = pending.value as number;
       this.selectRating(dimension.id, value, 'voice');
-      const visibleAsLandmark = this.answerMode === 'smiley' && smileyLandmarks.some((landmark) => landmark.value === value);
+      const visibleAsLandmark = this.answerMode === 'smiley' && this.smileyLandmarks.some((landmark) => landmark.value === value);
       confirmedControlId = visibleAsLandmark
         ? `smiley-${dimension.id}-${value}`
         : `rating-${dimension.id}-${value}`;
@@ -2425,7 +2570,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private currentTabParticipantCodeKey() {
     if (!this.studyConfig) return null;
-    return `accessible-nasa-tlx-v0.7-tab-participant:${this.studyConfig.configId}`;
+    return `accessible-questionnaire-v0.8-tab-participant:${this.studyConfig.configId}`;
   }
 
   private rememberParticipantCodeForTab() {
@@ -2468,7 +2613,8 @@ export class AccessibleNasaTlx extends LitElement {
     const storageKey = this.currentProgressStorageKey();
     if (!storageKey) return;
     const session: SavedSession = {
-      version: 3,
+      version: 4,
+      instrumentId: this.definition.id,
       savedAt: Date.now(),
       startedAt: this.startedAt || new Date().toISOString(),
       configId: this.studyConfig?.configId ?? 'demo-config',
@@ -2534,13 +2680,14 @@ export class AccessibleNasaTlx extends LitElement {
 
   private validSavedSession(session: SavedSession) {
     return (
-      session?.version === 3 &&
+      session?.version === 4 &&
+      session.instrumentId === this.definition.id &&
       session.configId === (this.studyConfig?.configId ?? 'demo-config') &&
       session.participantCode === (this.studyConfig ? this.participantCode : 'DEMO') &&
       typeof session.startedAt === 'string' &&
       ['ratings', 'pairs', 'review'].includes(session.stage) &&
       Array.isArray(session.pairOrder) &&
-      session.pairOrder.length === pairs.length &&
+      session.pairOrder.length === this.pairs.length &&
       Number.isInteger(session.ratingIndex) &&
       Number.isInteger(session.pairIndex) &&
       Array.isArray(session.supportChanges)
@@ -2610,29 +2757,31 @@ export class AccessibleNasaTlx extends LitElement {
 
   private lastSavedDescription() {
     if (this.stage === 'ratings') {
-      const index = this.ratings[dimensions[this.ratingIndex].id] !== undefined ? this.ratingIndex : this.ratingIndex - 1;
-      return index >= 0 ? `${dimensions[index].name} rating` : 'No response yet';
+      const index = this.ratings[this.dimensions[this.ratingIndex].id] !== undefined ? this.ratingIndex : this.ratingIndex - 1;
+      return index >= 0 ? `${this.dimensions[index].name} rating` : 'No response yet';
     }
     if (this.stage === 'pairs') {
       if (this.pairResponses[this.pairOrder[this.pairIndex].id]) return `Comparison ${this.pairIndex + 1}`;
       if (this.pairIndex > 0) return `Comparison ${this.pairIndex}`;
-      return 'Frustration rating';
+      return `${this.dimensions.at(-1)?.name ?? 'Final item'} rating`;
     }
-    return 'Comparison 15';
+    return this.pairs.length
+      ? `Comparison ${this.pairs.length}`
+      : `${this.dimensions.at(-1)?.name ?? 'Final item'} rating`;
   }
 
   private currentPositionDescription() {
-    if (this.stage === 'ratings') return `Rating ${this.ratingIndex + 1} of ${dimensions.length}: ${dimensions[this.ratingIndex].name}`;
+    if (this.stage === 'ratings') return `Rating ${this.ratingIndex + 1} of ${this.dimensions.length}: ${this.dimensions[this.ratingIndex].name}`;
     if (this.stage === 'pairs') return `Comparison ${this.pairIndex + 1} of ${this.pairOrder.length}`;
     if (this.stage === 'review') return 'Review responses';
     return 'Questionnaire introduction';
   }
 
   private nextActionDescription() {
-    if (this.stage === 'ratings') return `Choose or check the ${dimensions[this.ratingIndex].name} rating, then select Next.`;
+    if (this.stage === 'ratings') return `Choose or check the ${this.dimensions[this.ratingIndex].name} rating, then select Next.`;
     if (this.stage === 'pairs') {
       const pair = this.pairOrder[this.pairIndex];
-      return `Choose ${dimensionById.get(pair.left)!.name} or ${dimensionById.get(pair.right)!.name}, then select Next.`;
+      return `Choose ${this.dimensionById.get(pair.left)!.name} or ${this.dimensionById.get(pair.right)!.name}, then select Next.`;
     }
     return 'Check the saved answers, then submit or return to a question.';
   }
@@ -2643,9 +2792,17 @@ export class AccessibleNasaTlx extends LitElement {
     void this.updateComplete.then(() => {
       const summary = this.querySelector<HTMLElement>('#error-summary');
       if (!summary) return;
-      summary.focus();
-      summary.scrollIntoView?.({ block: 'start' });
+      focusAndReveal(summary, {
+        block: 'center',
+        onReveal: () => this.requestParentReveal(summary),
+      });
     });
+  }
+
+  private requestParentReveal(element: HTMLElement) {
+    const collection = this.studyConfig?.collection;
+    if (collection?.mode !== 'qualtrics') return;
+    requestQualtricsParentReveal(element, collection.parentOrigin);
   }
 
   private clearError() {
@@ -2666,8 +2823,12 @@ export class AccessibleNasaTlx extends LitElement {
   }
 }
 
+@customElement('accessible-questionnaire')
+export class AccessibleQuestionnaire extends AccessibleNasaTlx {}
+
 declare global {
   interface HTMLElementTagNameMap {
     'accessible-nasa-tlx': AccessibleNasaTlx;
+    'accessible-questionnaire': AccessibleQuestionnaire;
   }
 }

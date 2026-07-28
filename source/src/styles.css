@@ -21,6 +21,23 @@ body {
   min-width: 320px;
 }
 
+accessible-questionnaire,
+accessible-nasa-tlx,
+study-conductor-app {
+  display: block;
+}
+
+a,
+a:visited {
+  color: #004f87;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  text-decoration-thickness: 0.18em;
+}
+
 .skip-link {
   position: fixed;
   z-index: 1000;
@@ -52,17 +69,25 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
+a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
+select:focus-visible,
 summary:focus-visible {
   outline: 3px solid var(--focus-outline);
   outline-offset: 3px;
   box-shadow: 0 0 0 6px var(--focus-halo);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--selected-border);
 }
 
 .app-shell {
@@ -141,6 +166,7 @@ progress {
 
 .error-summary {
   border: 3px solid #b10e1e;
+  scroll-margin-block: 25vh;
 }
 
 .error-summary h2 {
@@ -308,8 +334,9 @@ figcaption {
   align-items: flex-start;
   min-height: 3.5rem;
   padding: 0.75rem;
-  border: 2px solid transparent;
+  border: 2px solid var(--control-border);
   border-radius: 8px;
+  background: #fff;
   cursor: pointer;
 }
 
@@ -341,8 +368,9 @@ figcaption {
   align-items: center;
   min-height: 2.75rem;
   padding: 0.25rem 0.75rem;
-  border: 2px solid transparent;
+  border: 2px solid var(--control-border);
   border-radius: 8px;
+  background: #fff;
   cursor: pointer;
 }
 
@@ -1025,6 +1053,7 @@ button:disabled {
 
 .participant-code-field input,
 .form-grid input,
+.form-grid select,
 .generated-link textarea {
   width: 100%;
   min-height: 3rem;
@@ -1033,6 +1062,14 @@ button:disabled {
   border-radius: 6px;
   background: #fff;
   color: #1d2733;
+}
+
+.definition-summary {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-left: 5px solid #294c70;
+  background: #f6f8fa;
 }
 
 .field-error {
@@ -1098,7 +1135,7 @@ button:disabled {
 
 .qualtrics-install-steps > li {
   padding: 1rem;
-  border: 2px solid #9fb2c3;
+  border: 2px solid var(--control-border);
   border-radius: 8px;
   background: #fff;
 }
@@ -1128,7 +1165,7 @@ table {
 th,
 td {
   padding: 0.75rem;
-  border: 1px solid #aebccc;
+  border: 2px solid var(--control-border);
   text-align: left;
   vertical-align: top;
 }

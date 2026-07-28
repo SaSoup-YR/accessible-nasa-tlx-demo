@@ -1,8 +1,9 @@
 import type { StudyConfig, StudyResultRecord } from './study';
 
-export const QUALTRICS_SUBMIT_MESSAGE = 'accessible-nasa-tlx:qualtrics-submit:v1';
-export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-nasa-tlx:qualtrics-receipt:v1';
-export const QUALTRICS_RESIZE_MESSAGE = 'accessible-nasa-tlx:qualtrics-resize:v1';
+export const QUALTRICS_SUBMIT_MESSAGE = 'accessible-questionnaire:qualtrics-submit:v2';
+export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-questionnaire:qualtrics-receipt:v2';
+export const QUALTRICS_RESIZE_MESSAGE = 'accessible-questionnaire:qualtrics-resize:v2';
+export const QUALTRICS_REVEAL_MESSAGE = 'accessible-questionnaire:qualtrics-reveal:v2';
 
 export interface ResultSinkReceipt {
   accepted: true;
@@ -25,12 +26,16 @@ interface QualtricsReceiptMessage {
 
 declare global {
   interface Window {
+    accessibleQuestionnaireResultSink?: ApprovedResultSink;
+    /** @deprecated Version 0.7 host integration name retained during migration. */
     accessibleNasaTlxResultSink?: ApprovedResultSink;
   }
 }
 
 export function configuredResultSink(windowRef: Window = window) {
-  const sink = windowRef.accessibleNasaTlxResultSink;
+  const sink =
+    windowRef.accessibleQuestionnaireResultSink ??
+    windowRef.accessibleNasaTlxResultSink;
   if (!sink || typeof sink.name !== 'string' || !sink.name.trim() || typeof sink.submit !== 'function') return null;
   return sink;
 }
@@ -38,6 +43,9 @@ export function configuredResultSink(windowRef: Window = window) {
 export function installStudyResultSink(config: StudyConfig, windowRef: Window = window) {
   if (config.collection.mode !== 'qualtrics') return null;
   const sink = createQualtricsParentResultSink(config.collection.parentOrigin, windowRef);
+  windowRef.accessibleQuestionnaireResultSink = sink;
+  // Keep the old property for a bounded Version 0.7 migration period. Both
+  // properties refer to the same origin-bound sink and do not duplicate data.
   windowRef.accessibleNasaTlxResultSink = sink;
   installQualtricsAutoResize(config.collection.parentOrigin, windowRef);
   return sink;
@@ -66,6 +74,32 @@ export function installQualtricsAutoResize(parentOrigin: string, windowRef: Wind
   if (windowRef.document.body) observer.observe(windowRef.document.body);
   windowRef.requestAnimationFrame(sendHeight);
   return observer;
+}
+
+/**
+ * Requests that the trusted Qualtrics parent reveal an element inside the
+ * participant iframe. Scrolling the child document alone cannot move the
+ * parent's visual viewport when the iframe is expanded to the full document
+ * height. The configured exact origin is deliberately retained.
+ */
+export function requestQualtricsParentReveal(
+  element: HTMLElement,
+  parentOrigin: string,
+  windowRef: Window = window,
+) {
+  if (windowRef.parent === windowRef) return false;
+  const rect = element.getBoundingClientRect();
+  const offsetTop = rect.top + (windowRef.scrollY || windowRef.pageYOffset || 0);
+  if (!Number.isFinite(offsetTop) || !Number.isFinite(rect.height)) return false;
+  windowRef.parent.postMessage(
+    {
+      type: QUALTRICS_REVEAL_MESSAGE,
+      offsetTop,
+      targetHeight: Math.max(1, rect.height),
+    },
+    parentOrigin,
+  );
+  return true;
 }
 
 export function createQualtricsParentResultSink(

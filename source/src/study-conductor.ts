@@ -1,16 +1,25 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { focusAndReveal } from './accessibility-utils';
 import embeddedDataFields from '../../integrations/qualtrics/embedded-data-fields.txt?raw';
 import endOfSurveyMessage from '../../integrations/qualtrics/end-of-survey-message.txt?raw';
 import qualtricsQuestionJavaScript from '../../integrations/qualtrics/qualtrics-question.js?raw';
 import qualtricsQuestionTemplate from '../../integrations/qualtrics/question-html-template.html?raw';
 import {
+  DEFAULT_QUESTIONNAIRE_ID,
+  buildQuestionnairePairs,
+  buildRatingValues,
+  builtInQuestionnaires,
+  getQuestionnaireDefinition,
+} from './questionnaire-definition';
+import {
+  PROTOTYPE_VERSION,
   buildParticipantUrl,
   clearCompletedResults,
   createStudyConfig,
   downloadTextFile,
-  isStudyConfig,
   loadCompletedResults,
+  normaliseStudyConfig,
   normaliseHttpsOrigin,
   resultsToCsv,
   type AnswerMode,
@@ -20,6 +29,9 @@ import {
   type StudyResultRecord,
   type StudySupportConfig,
 } from './study';
+
+const qualtricsEmbeddedDataFieldCount =
+  embeddedDataFields.trim().split(/\r?\n/).filter(Boolean).length;
 
 function looksLikeCompletedResult(value: unknown) {
   const records = Array.isArray(value) ? value : [value];
@@ -39,8 +51,25 @@ export function buildQualtricsQuestionHtml(participantUrl: string) {
   return qualtricsQuestionTemplate.trim().replace(placeholder, escapedUrl);
 }
 
+export function buildQualtricsEndOfSurveyMessage(showScore: boolean) {
+  const scoreBlock = showScore
+    ? [
+        'Questionnaire:',
+        '${e://Field/__js_AQP_INSTRUMENT_NAME}',
+        '',
+        '${e://Field/__js_AQP_SCORE_NAME}:',
+        '${e://Field/__js_AQP_PRIMARY_SCORE}',
+      ].join('\n')
+    : '';
+  return endOfSurveyMessage
+    .replace('{{OPTIONAL_SCORE_BLOCK}}', scoreBlock)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 @customElement('study-conductor-app')
 export class StudyConductorApp extends LitElement {
+  @state() private instrumentId = DEFAULT_QUESTIONNAIRE_ID;
   @state() private studyId = '';
   @state() private studyTitle = '';
   @state() private taskLabel = '';
@@ -76,13 +105,29 @@ export class StudyConductorApp extends LitElement {
     return this;
   }
 
+  private get definition() {
+    return getQuestionnaireDefinition(this.instrumentId)!;
+  }
+
+  private selectInstrument = (event: Event) => {
+    const instrumentId = (event.currentTarget as HTMLSelectElement).value;
+    const definition = getQuestionnaireDefinition(instrumentId);
+    if (!definition) return;
+    this.instrumentId = instrumentId;
+    if (!definition.supports.simplerExplanations) this.showSimpleLanguage = false;
+    if (!definition.supports.smileyLandmarks) this.answerMode = 'standard';
+    this.generatedConfig = null;
+    this.participantUrl = '';
+    this.message = `${definition.name} selected. Generate a new configuration before testing.`;
+  };
+
   protected render() {
     return html`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
-          <p class="eyebrow">Study conductor · Version 0.7 release candidate</p>
-          <h1>Prepare an accessible NASA-TLX study</h1>
+          <p class="eyebrow">Study conductor · Version ${PROTOTYPE_VERSION}</p>
+          <h1>Prepare an accessible questionnaire study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
 
@@ -109,21 +154,47 @@ export class StudyConductorApp extends LitElement {
         <p class="sr-only" aria-live="polite">${this.message}</p>
 
         <section class="panel conductor-panel" aria-labelledby="study-details-heading">
-          <h2 id="study-details-heading">1. Study details</h2>
+          <h2 id="study-details-heading">1. Questionnaire and study details</h2>
           <p class="support-boundary">
             These fields identify the questionnaire configuration, not the participant. Give each participant a separate
             pseudonymous code such as P-001; they enter that code on the participant page.
           </p>
           <div class="form-grid">
+            <label class="full-width">
+              <strong>Questionnaire definition</strong>
+              <span>
+                Choose a versioned definition. Item wording, scale, workflow and scoring are loaded from that
+                definition; accessibility supports are configured separately.
+              </span>
+              <select .value=${this.instrumentId} @change=${this.selectInstrument}>
+                ${builtInQuestionnaires.map(
+                  (definition) => html`<option value=${definition.id}>
+                    ${definition.name} · ${definition.version}
+                  </option>`,
+                )}
+              </select>
+            </label>
+            <aside class="definition-summary full-width">
+              <strong>${this.definition.shortName}</strong>
+              <span>
+                ${this.definition.items.length} items,
+                ${buildRatingValues(this.definition).length} response values,
+                ${buildQuestionnairePairs(this.definition).length} comparisons,
+                ${this.definition.scoring.scoreName}.
+              </span>
+              <a href=${this.definition.source.url} target="_blank" rel="noopener">
+                Instrument source: ${this.definition.source.label}
+              </a>
+            </aside>
             <label>
               <strong>Study ID</strong>
-              <span>Internal label shared by records from one study or condition. Example: TLX-TECH-01. Do not use a participant name.</span>
-              <input placeholder="TLX-TECH-01" autocomplete="off" spellcheck="false" .value=${this.studyId} maxlength="64" @input=${(event: Event) => { this.studyId = (event.currentTarget as HTMLInputElement).value; }} />
+              <span>Internal label shared by records from one study or condition. Example: ACCESS-TECH-01. Do not use a participant name.</span>
+              <input placeholder="ACCESS-TECH-01" autocomplete="off" spellcheck="false" .value=${this.studyId} maxlength="64" @input=${(event: Event) => { this.studyId = (event.currentTarget as HTMLInputElement).value; }} />
             </label>
             <label>
               <strong>Study title</strong>
-              <span>Participant-facing name of the study. Example: Route-planning workload study.</span>
-              <input placeholder="Route-planning workload study" autocomplete="off" .value=${this.studyTitle} maxlength="120" @input=${(event: Event) => { this.studyTitle = (event.currentTarget as HTMLInputElement).value; }} />
+              <span>Participant-facing name of the study. Example: Route-planning interface study.</span>
+              <input placeholder="Route-planning interface study" autocomplete="off" .value=${this.studyTitle} maxlength="120" @input=${(event: Event) => { this.studyTitle = (event.currentTarget as HTMLInputElement).value; }} />
             </label>
             <label class="full-width">
               <strong>Task label</strong>
@@ -136,16 +207,24 @@ export class StudyConductorApp extends LitElement {
         <section class="panel conductor-panel" aria-labelledby="support-config-heading">
           <h2 id="support-config-heading">2. Prepare the participant questionnaire</h2>
           <p>
-            These are the starting settings. The official six dimensions, 0–100 values, fifteen comparisons and scoring do not change.
+            These are starting settings. The selected definition keeps its official items, values,
+            workflow and allowlisted scoring rule unchanged.
           </p>
           <div class="config-grid">
-            ${this.booleanOption('Show simpler explanations from the start', this.showSimpleLanguage, (value) => { this.showSimpleLanguage = value; })}
+            ${this.definition.supports.simplerExplanations
+              ? this.booleanOption('Show simpler explanations from the start', this.showSimpleLanguage, (value) => { this.showSimpleLanguage = value; })
+              : html`<aside class="boundary-note">
+                  <strong>Simpler item text is unavailable for ${this.definition.shortName}</strong>
+                  <p>
+                    This definition preserves the validated item statements without adding unvalidated rewording.
+                  </p>
+                </aside>`}
             ${this.booleanOption('Use large text from the start', this.largeText, (value) => { this.largeText = value; })}
             ${this.booleanOption('Use automatic spoken guidance from the start', this.audioGuidance, (value) => { this.audioGuidance = value; })}
             ${this.booleanOption('Save incomplete progress on this device', this.recoveryEnabled, (value) => { this.recoveryEnabled = value; })}
             ${this.booleanOption('Allow confirmed built-in voice answers', this.voiceInputAvailable, (value) => { this.voiceInputAvailable = value; })}
             ${this.booleanOption('Allow experimental webcam gaze input', this.gazeInputAvailable, (value) => { this.gazeInputAvailable = value; }, 'Default off because current gaze accuracy is recorded as Partial.')}
-            ${this.booleanOption('Show the weighted score to the participant', this.showScoreToParticipant, (value) => { this.showScoreToParticipant = value; }, 'Default off for a study; the conductor receives the score in the export.')}
+            ${this.booleanOption(`Show the ${this.definition.scoring.scoreName.toLowerCase()} to the participant`, this.showScoreToParticipant, (value) => { this.showScoreToParticipant = value; }, 'Default off for a study; the conductor receives the score in the export.')}
           </div>
 
           <fieldset class="answer-mode-control conductor-answer-mode">
@@ -191,23 +270,31 @@ export class StudyConductorApp extends LitElement {
                 <strong>Prepared defaults with optional participant choice</strong>
                 <small>
                   Recommended for evaluating the accessibility support. Nothing must be configured before starting; the
-                  participant may change optional support, and every change is exported separately from the NASA-TLX answers.
+                  participant may change applicable optional support, and every change is exported separately from the scored answers.
                 </small>
               </span>
             </label>
           </fieldset>
 
-          <fieldset class="answer-mode-control conductor-answer-mode">
-            <legend>Starting rating presentation</legend>
-            <label>
-              <input type="radio" name="conductor-answer-mode" value="standard" .checked=${this.answerMode === 'standard'} @change=${() => { this.answerMode = 'standard'; }} />
-              <span><strong>Standard 21-point scale</strong><small>Recommended default.</small></span>
-            </label>
-            <label>
-              <input type="radio" name="conductor-answer-mode" value="smiley" .checked=${this.answerMode === 'smiley'} @change=${() => { this.answerMode = 'smiley'; }} />
-              <span><strong>Experimental smiley landmarks</strong><small>Use only when this presentation is part of the approved protocol.</small></span>
-            </label>
-          </fieldset>
+          ${this.definition.supports.smileyLandmarks
+            ? html`<fieldset class="answer-mode-control conductor-answer-mode">
+                <legend>Starting rating presentation</legend>
+                <label>
+                  <input type="radio" name="conductor-answer-mode" value="standard" .checked=${this.answerMode === 'standard'} @change=${() => { this.answerMode = 'standard'; }} />
+                  <span>
+                    <strong>Standard ${buildRatingValues(this.definition).length}-value scale</strong>
+                    <small>Recommended default.</small>
+                  </span>
+                </label>
+                <label>
+                  <input type="radio" name="conductor-answer-mode" value="smiley" .checked=${this.answerMode === 'smiley'} @change=${() => { this.answerMode = 'smiley'; }} />
+                  <span><strong>Experimental smiley landmarks</strong><small>Use only when this presentation is part of the approved protocol.</small></span>
+                </label>
+              </fieldset>`
+            : html`<p class="support-boundary">
+                ${this.definition.shortName} uses its standard ${buildRatingValues(this.definition).length}-value
+                response scale. Smiley landmarks are disabled because facial valence is not equivalent to agreement.
+              </p>`}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="collection-heading">
@@ -281,6 +368,7 @@ export class StudyConductorApp extends LitElement {
             ? html`<div class="generated-link" role="region" aria-labelledby="generated-link-heading">
                 <h3 id="generated-link-heading">Configuration ready</h3>
                 <dl class="study-details">
+                  <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
                   <div><dt>Study ID</dt><dd>${this.generatedConfig.studyId}</dd></div>
                   <div><dt>Configuration ID</dt><dd>${this.generatedConfig.configId}</dd></div>
                   <div><dt>Created</dt><dd>${this.generatedConfig.createdAt}</dd></div>
@@ -316,13 +404,14 @@ export class StudyConductorApp extends LitElement {
             ? html`
                 <div class="table-scroll">
                   <table>
-                    <thead><tr><th>Study ID</th><th>Participant code</th><th>Completed</th><th>Weighted score</th></tr></thead>
+                    <thead><tr><th>Study ID</th><th>Instrument</th><th>Participant code</th><th>Completed</th><th>Primary score</th></tr></thead>
                     <tbody>
                       ${this.completedResults.map((record) => html`<tr>
                         <td>${record.study.studyId}</td>
+                        <td>${record.instrument.name}</td>
                         <td>${record.participantCode}</td>
                         <td>${record.timing.completedAt}</td>
-                        <td>${record.result.weightedScore.toFixed(2)}</td>
+                        <td>${record.result.scoreName}: ${record.result.primaryScore.toFixed(2)}</td>
                       </tr>`)}
                     </tbody>
                   </table>
@@ -347,7 +436,7 @@ export class StudyConductorApp extends LitElement {
             as the normal study procedure.
           </p>
           <p>
-            Version 0.7 includes a tested Qualtrics parent bridge. The participant page sends a complete record only to the
+            Version ${PROTOTYPE_VERSION} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
             exact HTTPS origin stored by the conductor; Qualtrics writes the fields into the current response and returns a
             matching receipt before advancing. A failed save leaves the answers on Review for retry. Platform selection,
             consent, retention and access must still match the approved ethics and data-management documents.
@@ -366,8 +455,10 @@ export class StudyConductorApp extends LitElement {
 
   private currentSupportConfig(): StudySupportConfig {
     return {
-      showSimpleLanguage: this.showSimpleLanguage,
-      answerMode: this.answerMode,
+      showSimpleLanguage:
+        this.definition.supports.simplerExplanations && this.showSimpleLanguage,
+      answerMode:
+        this.definition.supports.smileyLandmarks ? this.answerMode : 'standard',
       largeText: this.largeText,
       audioGuidance: this.audioGuidance,
       recoveryEnabled: this.recoveryEnabled,
@@ -391,6 +482,7 @@ export class StudyConductorApp extends LitElement {
 
   private useConfiguration(config: StudyConfig) {
     this.generatedConfig = config;
+    this.instrumentId = config.instrumentId;
     this.studyId = config.studyId;
     this.studyTitle = config.studyTitle;
     this.taskLabel = config.taskLabel;
@@ -415,6 +507,9 @@ export class StudyConductorApp extends LitElement {
 
   private renderQualtricsSetup() {
     const questionHtml = this.qualtricsIframeHtml();
+    const endMessage = buildQualtricsEndOfSurveyMessage(
+      this.generatedConfig?.showScoreToParticipant === true,
+    );
     return html`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
@@ -451,11 +546,13 @@ export class StudyConductorApp extends LitElement {
           <li>
             <h4>Survey Flow: Embedded Data field names</h4>
             <p>
-              Before the NASA-TLX block, add one Embedded Data element. Add every non-empty line below as a separate
+              Before the questionnaire block, add one Embedded Data element. Add every non-empty line below as a separate
               field name, including the <code>__js_</code> prefix, and leave each value unset. This list does not go
               into the question body.
             </p>
-            <label for="qualtrics-embedded-fields"><strong>63 Embedded Data field names</strong></label>
+            <label for="qualtrics-embedded-fields">
+              <strong>${qualtricsEmbeddedDataFieldCount} Embedded Data field names</strong>
+            </label>
             <textarea
               id="qualtrics-embedded-fields"
               data-qualtrics-asset="embedded-data"
@@ -506,12 +603,12 @@ export class StudyConductorApp extends LitElement {
               data-qualtrics-asset="end-message"
               readonly
               rows="8"
-              .value=${endOfSurveyMessage.trim()}
+              .value=${endMessage}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${() => this.copySetupAsset(endOfSurveyMessage.trim(), 'End of Survey message')}
+              @click=${() => this.copySetupAsset(endMessage, 'End of Survey message')}
             >
               Copy End of Survey message
             </button>
@@ -519,7 +616,7 @@ export class StudyConductorApp extends LitElement {
         </ol>
         <p class="support-boundary">
           The Qualtrics editing canvas may show piped-text tokens such as
-          <code>\${e://Field/__js_ANTLX_PARTICIPANT_CODE}</code>. That canvas is not the participant test. In Preview,
+          <code>\${e://Field/__js_AQP_PARTICIPANT_CODE}</code>. That canvas is not the participant test. In Preview,
           before a response is recorded, the summary must be hidden and the configured participant iframe must be
           visible. If it is not, clear the question body and repeat step 1 in HTML or source view.
         </p>
@@ -534,6 +631,7 @@ export class StudyConductorApp extends LitElement {
     this.errorMessage = '';
     try {
       const config = createStudyConfig({
+        instrumentId: this.instrumentId,
         studyId: this.studyId,
         studyTitle: this.studyTitle,
         taskLabel: this.taskLabel,
@@ -579,15 +677,16 @@ export class StudyConductorApp extends LitElement {
     this.errorMessage = '';
     try {
       const candidate = JSON.parse(await file.text()) as unknown;
-      if (!isStudyConfig(candidate)) {
+      const config = normaliseStudyConfig(candidate);
+      if (!config) {
         if (looksLikeCompletedResult(candidate)) {
           throw new Error(
             'This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready.',
           );
         }
-        throw new Error('This is not a valid Version 0.7 study configuration.');
+        throw new Error('This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.');
       }
-      this.useConfiguration(candidate);
+      this.useConfiguration(config);
       this.message = 'Configuration imported and participant link regenerated.';
     } catch (error) {
       this.showError(error instanceof Error ? error.message : 'The configuration file could not be read.');
@@ -601,8 +700,7 @@ export class StudyConductorApp extends LitElement {
     void this.updateComplete.then(() => {
       const summary = this.querySelector<HTMLElement>('#conductor-error');
       if (!summary) return;
-      summary.focus();
-      summary.scrollIntoView?.({ block: 'start' });
+      focusAndReveal(summary);
     });
   }
 
@@ -613,7 +711,7 @@ export class StudyConductorApp extends LitElement {
   private exportResultsJson = () => {
     if (!this.completedResults.length) return;
     downloadTextFile(
-      `accessible-nasa-tlx-results-${new Date().toISOString().slice(0, 10)}.json`,
+      `accessible-questionnaire-results-${new Date().toISOString().slice(0, 10)}.json`,
       JSON.stringify(this.completedResults, null, 2),
       'application/json',
     );
@@ -622,7 +720,7 @@ export class StudyConductorApp extends LitElement {
   private exportResultsCsv = () => {
     if (!this.completedResults.length) return;
     downloadTextFile(
-      `accessible-nasa-tlx-results-${new Date().toISOString().slice(0, 10)}.csv`,
+      `accessible-questionnaire-results-${new Date().toISOString().slice(0, 10)}.csv`,
       `\uFEFF${resultsToCsv(this.completedResults)}`,
       'text/csv',
     );
@@ -630,7 +728,7 @@ export class StudyConductorApp extends LitElement {
 
   private eraseResults = () => {
     const confirmed = window.confirm(
-      'Erase every completed NASA-TLX record stored by this site in this browser? Confirm only after checking the exported files.',
+      'Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.',
     );
     if (!confirmed) return;
     clearCompletedResults();

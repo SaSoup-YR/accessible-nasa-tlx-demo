@@ -1,8 +1,8 @@
 # Non-text contrast and use-of-colour audit
 
-Prototype: Accessible NASA-TLX Version 0.7 release candidate
+Prototype: Accessible Questionnaire Platform Version 0.8
 
-Audit date: 27 July 2026
+Audit date: 28 July 2026
 
 ## Criteria and claim boundary
 
@@ -37,10 +37,20 @@ combination. Those remain manual verification items.
 | Gaze dwell progress | `#725b00` | white `#ffffff` | 6.54:1 |
 | Gaze dwell progress | `#725b00` | panel `#f6f8fa` | 6.14:1 |
 | Primary/secondary button boundary | `#003b68` | white `#ffffff` | 11.50:1 |
+| Primary action and recovery boundary | `#005ea5` | white `#ffffff` | 6.68:1 |
+| Recovery boundary | `#005ea5` | recovery surface `#f2f8fc` | 6.24:1 |
 | Error boundary | `#b10e1e` | error surface `#fff7f7` | 6.74:1 |
+| Authored link text | `#004f87` | white `#ffffff` | 8.51:1 |
+| Authored link text | `#004f87` | panel `#f6f8fa` | 7.99:1 |
 
 Ratios use the WCAG relative-luminance formula. Automated regression tests repeat
-the selected, focus and gaze calculations from the source colour tokens.
+the selected, focus, gaze, error, action and recovery calculations from the source
+colour tokens.
+
+Authored text also has a separate AA regression set: body text is 15.11:1 on white
+and 13.43:1 on the page; secondary text is 6.48:1 on white and 6.09:1 on the light
+panel; error text is 8.93:1 on its error surface; and white primary-button text is
+6.68:1 on blue. These are measured against 4.5:1 for normal text.
 
 ## State design
 
@@ -54,8 +64,17 @@ the selected, focus and gaze calculations from the source colour tokens.
   conformance-bearing edge.
 - Validation and submission failures include explicit text, headings and focus
   movement; red is not the only error signal.
+- The Saved questionnaire found region uses a heading, saved-count text and named
+  Resume/Erase actions. Its blue border is a high-contrast grouping cue, not the
+  only information that recovery is available.
 - Forced-colours mode retains a system `Highlight` outline and a `CanvasText`
   selected marker boundary.
+- Unselected text-size and answer-format choices now retain an authored
+  `#6f8092` boundary instead of depending on a device's radio rendering.
+- Conductor selects and Qualtrics table cells use the same tested control boundary.
+- The light `#c7d1dc` card separator is decorative where headings, spacing and
+  content already identify a non-interactive region. It is not used as the sole
+  boundary of an input, selection or focus state.
 
 ## Manual verification required before recruitment
 
@@ -67,3 +86,8 @@ the selected, focus and gaze calculations from the source colour tokens.
    theme is outside this repository's CSS.
 5. Record screenshots and Pass, Partial or Fail against the frozen commit rather
    than claiming complete WCAG conformance from automated tests alone.
+
+The palette is not described as a uniquely optimal colour scheme. WCAG defines
+testable minima and use-of-colour requirements, not one preferred aesthetic.
+Version 0.8 selects a restrained palette whose authored states exceed those minima,
+uses text or shape in addition to colour, and preserves forced-colours behavior.

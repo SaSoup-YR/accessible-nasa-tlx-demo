@@ -44,7 +44,8 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('closer too high', dimensions[0])).toBe(75);
     expect(parseRatingTranscript('closer to hi', dimensions[0])).toBe(75);
     expect(parseRatingTranscript('closer to high 75', dimensions[0])).toBe(75);
-    expect(parseRatingTranscript('hello', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('hello', dimensions[0])).toBe(0);
+    expect(parseRatingTranscript('say hello', dimensions[0])).toBeNull();
   });
 
   it('respects the reversed Performance anchors without accepting a negation', () => {
@@ -70,7 +71,7 @@ describe('voice-answer parsing', () => {
 
   it('uses a consistent lower-ranked hypothesis without guessing across conflicts or negation', () => {
     expect(parseRatingAlternatives(['hello', 'low'], dimensions[0])).toEqual({
-      transcript: 'low',
+      transcript: 'hello',
       value: 0,
     });
     expect(parseRatingAlternatives(['high', 'high rating'], dimensions[0])).toEqual({

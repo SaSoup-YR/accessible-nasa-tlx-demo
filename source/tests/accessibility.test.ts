@@ -4,7 +4,16 @@ import axe from 'axe-core';
 import '../src/accessible-nasa-tlx';
 import '../src/study-conductor';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
-import { buildParticipantUrl, createStudyConfig } from '../src/study';
+import {
+  DEFAULT_QUESTIONNAIRE_ID,
+  buildQuestionnairePairs,
+  getQuestionnaireDefinition,
+} from '../src/questionnaire-definition';
+import {
+  buildParticipantUrl,
+  createStudyConfig,
+  progressStorageKey,
+} from '../src/study';
 
 async function renderComponent() {
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
@@ -95,6 +104,67 @@ describe('automated structural accessibility scan', () => {
     const url = new URL(buildParticipantUrl(window.location.href, config));
     window.history.replaceState({}, '', url.pathname + url.hash);
     const component = await renderComponent();
+    const result = await scan(component);
+    expect(result.violations).toEqual([]);
+  });
+
+  it('finds no detectable violations in the structurally different SUS introduction', async () => {
+    const config = createStudyConfig({
+      instrumentId: 'system-usability-scale',
+      studyId: 'A11Y-SUS-01',
+      studyTitle: 'SUS accessibility route check',
+      taskLabel: 'using the test system',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const url = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', url.pathname + url.hash);
+    const component = await renderComponent();
+    expect(component.textContent).toContain('System Usability Scale');
+    expect(component.textContent).not.toContain('Smiley landmarks');
+    const result = await scan(component);
+    expect(result.violations).toEqual([]);
+  });
+
+  it('finds no detectable violations in the saved-session recovery offer', async () => {
+    const definition = getQuestionnaireDefinition(DEFAULT_QUESTIONNAIRE_ID)!;
+    localStorage.setItem(progressStorageKey('demo-config', 'DEMO'), JSON.stringify({
+      version: 4,
+      instrumentId: definition.id,
+      savedAt: Date.now(),
+      startedAt: '2026-07-28T00:00:00.000Z',
+      configId: 'demo-config',
+      participantCode: 'DEMO',
+      stage: 'ratings',
+      ratingIndex: 1,
+      pairIndex: 0,
+      pairOrder: buildQuestionnairePairs(definition),
+      pairResponses: {},
+      ratings: { mental: 50 },
+      ratingInputRoutes: { mental: 'standard-scale' },
+      pairInputRoutes: {},
+      supportChanges: [],
+      support: {
+        answerMode: 'standard',
+        showSimpleLanguage: false,
+        largeText: false,
+        audioGuidance: false,
+      },
+    }));
+
+    const component = await renderComponent();
+    await component.updateComplete;
+    expect(component.querySelector('#resume-saved-questionnaire')).not.toBeNull();
     const result = await scan(component);
     expect(result.violations).toEqual([]);
   });

@@ -1,24 +1,42 @@
 # Tests
 
-Run the automated suite with:
+Run:
 
 ```bash
 npm test
 ```
 
-Current checkpoint: **77 tests pass across twelve files.**
+The exact checkpoint count is recorded in the root `BUILD-INFO.json` after each
+verified release build.
 
-- **content.test.ts** — six dimensions, fifteen unique pairs, 0–100 increments, Performance direction and valid smiley mappings.
-- **scoring.test.ts** — weight invariants, deterministic score calculation and rejection of incomplete or invalid responses.
-- **voice-input.test.ts** — valid rating and digit-sequence parsing, five-value smiley labels, Performance anchors, consistent ranked-alternative recovery, conflicting label/value rejection, pair-factor matching and rejection of negated, ambiguous or invalid answers.
-- **webgazer-adapter.test.ts** — secure-context boundary and uninterrupted/reset dwell behaviour.
-- **standalone.test.ts** — Version 0.7 single-document structure, no Vite asset dependency, executable inline JavaScript syntax and compiled-component boot rendering.
-- **result-sink.test.ts** — explicit host installation, same-submission receipt validation, exact-origin Qualtrics messaging, complete 63-field staging, bounded automatic advance and failed-advance watchdog, direct-opening rejection, false-success rejection and restored parent navigation after staging failure or a missing iframe.
-- **component.test.ts** — ratings-before-pairs flow, pair-task clarity, definition non-duplication, adjustable text, one primary Smiley presentation, precision refinement, interruption recovery, Smiley-aware audio, proposal/error/recovery/completion speech, exact voice-proposal announcement/focus, conservative alternative handling, fallback synchronisation, error focus, non-duplicated review numbering and confirmed gaze entry.
-- **conductor-component.test.ts** — researcher/participant separation, participant-choice default, local and origin-bound Qualtrics configuration, the four-part installation package, placeholder rejection, configuration/result file distinction and conductor error focus.
-- **study.test.ts** — validated UTF-8 configuration links, identifier rejection, complete pseudonymous record storage, duplicate/stale-backup control, full-storage failure handling and stable CSV/support-change fields.
-- **study-component.test.ts** — configured participant-code gate, adjustment policies, support provenance, configured-task spoken summary, pre-host local backup, same-device post-close discovery, storage-full and network-failure paths, recovery controls, score-display policy and host-event emission.
-- **accessibility.test.ts** — axe-core structural scans of the demonstration introduction, supported rating screen, study-conductor setup and configured presentation-only route.
-- **focus-style.test.ts** — explicit 3:1-or-better non-text contrast calculation for the dark focus outline across the prototype's light surfaces, with a retained yellow visual halo.
+- `questionnaire-definition.test.ts` — discovery, two structurally different
+  definitions, semantic rejection and SUS scoring.
+- `platform-component.test.ts` — complete SUS participant flow and conductor link
+  generation through the shared components.
+- `content.test.ts` and `scoring.test.ts` — NASA content, pair invariants and
+  weighted scoring compatibility.
+- `voice-input.test.ts` — displayed values/labels, conservative ranked alternatives,
+  mobile Low homophone, Performance anchors, negation, ambiguity and invalid values.
+- `accessibility-utils.test.ts` — immediate, post-layout and delayed mobile error
+  reveal plus visual-viewport coordinate fallback.
+- `saved-session-announcement.test.ts` — recovery-action focus, accessible
+  descriptions, delayed live-region change, prior-opt-in speech and replay.
+- `component.test.ts` — participant navigation, support, recovery, speech, voice and
+  gaze state.
+- `study-component.test.ts` — configured participant gate, adjustment policies,
+  provenance, backups, storage/network failures and host events.
+- `study.test.ts` — v0.7 migration, strict Version 4 records, NASA/SUS CSV union,
+  storage behavior and corruption rejection.
+- `result-sink.test.ts` — exact-origin receipts and parent-viewport reveal, generic
+  60-field SUS staging, bounded handoff, watchdog and failure navigation.
+- `conductor-component.test.ts` — role separation, two-instrument configuration,
+  generated Qualtrics package, score-display-aware completion text and error focus.
+- `accessibility.test.ts` — five axe structural scans including SUS.
+- `focus-style.test.ts` — authored focus, control, selected, gaze and link contrast.
+- `standalone.test.ts` — Version 0.8 single-file packaging and component boot.
+- `webgazer-adapter.test.ts` — secure-context and dwell-state boundaries.
 
-The jsdom accessibility scan excludes rendered colour contrast and cannot validate assistive-technology or webcam-model behaviour. The WebGazer integration test uses a mock engine; real camera accuracy still requires an HTTPS browser/manual test. The standalone test prevents packaging corruption but does not replace a browser walkthrough. A passing suite is not an accessibility, aMCI-benefit, gaze-accuracy or psychometric-equivalence claim.
+jsdom cannot validate the mobile visual viewport, rendered contrast,
+assistive-technology/browser combinations, speech-service accuracy or webcam gaze
+accuracy. Passing automation is technical evidence and does not establish complete
+WCAG conformance, accessibility benefit or psychometric equivalence.

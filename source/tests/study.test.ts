@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { dimensions, pairs, type DimensionId } from '../src/nasa-tlx';
-import { calculateResult } from '../src/scoring';
+import { getQuestionnaireDefinition } from '../src/questionnaire-definition';
+import { calculateResult, scoreQuestionnaire } from '../src/scoring';
 import {
   buildParticipantUrl,
   clearCompletedResults,
@@ -11,6 +12,7 @@ import {
   decodeStudyConfig,
   encodeStudyConfig,
   loadCompletedResults,
+  normaliseStudyConfig,
   removeCompletedResult,
   resultsToCsv,
   saveCompletedResult,
@@ -107,6 +109,33 @@ describe('study configuration', () => {
       collection: { mode: 'local' },
     })).toThrow(/Study ID/);
   });
+
+  it('migrates a valid Version 0.7 configuration to the weighted NASA definition', () => {
+    const current = config();
+    const legacy = {
+      ...current,
+      schemaVersion: 3,
+      prototypeVersion: '0.7.0',
+    } as Record<string, unknown>;
+    delete legacy.instrumentId;
+    const migrated = normaliseStudyConfig(legacy);
+    expect(migrated?.schemaVersion).toBe(4);
+    expect(migrated?.prototypeVersion).toBe('0.8.0');
+    expect(migrated?.instrumentId).toBe('nasa-tlx-weighted');
+    expect(migrated?.configId).toBe(current.configId);
+  });
+
+  it('refuses instrument-incompatible support instead of silently changing SUS', () => {
+    expect(() => createStudyConfig({
+      instrumentId: 'system-usability-scale',
+      studyId: 'SUS-01',
+      studyTitle: 'SUS study',
+      taskLabel: 'using the test system',
+      showScoreToParticipant: false,
+      support,
+      collection: { mode: 'local' },
+    })).toThrow(/not compatible/i);
+  });
 });
 
 describe('completed result records', () => {
@@ -118,7 +147,7 @@ describe('completed result records', () => {
     expect(stored).toHaveLength(1);
     expect(stored[0].participantCode).toBe('P-001');
     expect(Object.keys(stored[0].responses.pairwiseChoices)).toHaveLength(15);
-    expect(stored[0].result.weightedScore).toBe(50);
+    expect(stored[0].result.primaryScore).toBe(50);
     clearCompletedResults();
     expect(loadCompletedResults()).toEqual([]);
   });
@@ -147,7 +176,15 @@ describe('completed result records', () => {
 
   it('rejects a structurally plausible record when its calculated result was altered', () => {
     const altered = record();
-    altered.result = { ...altered.result, weightedScore: 99 };
+    altered.result = { ...altered.result, primaryScore: 99 };
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('rejects undeclared answer keys rather than hiding them in a plausible record', () => {
+    const altered = record();
+    altered.responses.ratings.unregistered_item = 50;
+    altered.result.ratings.unregistered_item = 50;
     localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
     expect(loadCompletedResults()).toEqual([]);
   });
@@ -170,5 +207,52 @@ describe('completed result records', () => {
     expect(header).toContain('configured_gazeInputAvailable');
     expect(header).toContain('support_change_count');
     expect(row).toContain('P-001');
+  });
+
+  it('exports a union of NASA and SUS fields without dropping either instrument', () => {
+    const definition = getQuestionnaireDefinition('system-usability-scale')!;
+    const susRatings = Object.fromEntries(
+      definition.items.map((item, index) => [item.id, index % 2 === 0 ? 5 : 1]),
+    );
+    const susConfig = createStudyConfig({
+      instrumentId: definition.id,
+      studyId: 'SUS-CSV-01',
+      studyTitle: 'SUS CSV study',
+      taskLabel: 'using the test system',
+      showScoreToParticipant: false,
+      support: {
+        ...support,
+        showSimpleLanguage: false,
+        largeText: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const susRecord = createStudyResultRecord({
+      config: susConfig,
+      participantCode: 'P-SUS-01',
+      startedAt: '2026-07-27T12:00:00.000Z',
+      completedAt: '2026-07-27T12:03:00.000Z',
+      pairPresentationOrder: [],
+      pairwiseChoices: {},
+      result: scoreQuestionnaire(definition, susRatings),
+      supportMetadata: {
+        ...record().supportMetadata,
+        simplerExplanationsShownAtSubmission: false,
+        largeTextUsedAtSubmission: false,
+        ratingInputRoutes: Object.fromEntries(
+          definition.items.map(({ id }) => [id, 'standard-scale']),
+        ),
+        pairInputRoutes: {},
+        supportChanges: [],
+      },
+    });
+    const csv = resultsToCsv([record(), susRecord]);
+    const [header, nasaRow, susRow] = csv.split('\r\n');
+    expect(header).toContain('rating_mental');
+    expect(header).toContain('weight_mental');
+    expect(header).toContain('rating_sus01');
+    expect(header).toContain('score_contribution_sus01');
+    expect(nasaRow).toContain('nasa-tlx-weighted');
+    expect(susRow).toContain('system-usability-scale');
   });
 });

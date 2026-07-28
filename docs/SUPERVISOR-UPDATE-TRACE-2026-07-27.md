@@ -9,8 +9,9 @@ The supervisor's commit is:
 - commit message: `update`
 - merged into the project through pull request 22
 
-The commit remains an ancestor of the current Version 0.7 work. It has not been
-deleted or reverted. Later commits extend its recovery controls and tests.
+The commit remains an ancestor of the current Version 0.8 work. It has not been
+deleted or reverted. Later commits retain and generalise its recovery controls and
+tests.
 
 ## What the update changed
 
@@ -72,3 +73,18 @@ Later source changes:
 These are extensions of the supervisor's safety model. They do not weaken the
 distinction between a value staged in the browser survey session and a response row
 recorded by Qualtrics.
+
+## 28 July integration correction
+
+The later saved-session patch contributed two useful ideas: a delayed live-region
+change and a user-activated replay button. The final Version 0.8 integration retains
+both but removes the temporary NASA-only test and fixed 21-response dependency.
+Recovery now uses the active questionnaire definition, focuses a Resume button whose
+accessible description includes the saved count and choices, and attempts automatic
+built-in speech only when the participant had previously opted in.
+
+The mobile error path was also strengthened beyond an iframe-local focus call. It
+now uses immediate and bounded delayed reveals, a visual-viewport fallback and an
+exact-origin message that lets the Qualtrics parent reveal the same target. These
+changes preserve the supervisor's source commit and replace only brittle follow-up
+integration code.
