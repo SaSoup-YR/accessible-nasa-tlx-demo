@@ -16,7 +16,8 @@ observed result and Pass, Partial, Fail or Not supported.
    presentation, audio, recovery, voice and gaze controls.
 5. Generate, download and re-import one configuration for each instrument.
 6. Import a result in the configuration input. Confirm `There is a problem` receives
-   focus and is vertically centred on desktop, iPhone and iPad.
+   focus and is moved to the start of the visible viewport on desktop, iPhone and
+   iPad.
 
 ## 2. Participant workflows
 
@@ -39,14 +40,15 @@ observed result and Pass, Partial, Fail or Not supported.
 ## 3. Errors, focus and recovery
 
 1. Leave an item unanswered and press Next. Confirm an explicit error, programmatic
-   focus and centred visual position on desktop, phone and tablet. Test both the
+   focus and immediate movement to the start of the visible viewport on desktop,
+   phone and tablet. Test both the
    direct participant page and the participant iframe inside the Qualtrics Preview;
    the latter must move the parent survey viewport as well as the iframe content.
 2. Reload a recovery-enabled questionnaire midway. Re-enter or recover the
    pseudonymous code according to the shared-device procedure. Confirm focus moves
-   to Resume saved questionnaire and that its accessible description states the
-   completed count and Resume/Erase choice. With automatic audio previously enabled,
-   confirm the page attempts the same message; also test the explicit Hear
+   to the saved-questionnaire region and its accessible description states the
+   exact completed count and Resume/Erase choices. With automatic audio previously
+   enabled, confirm the page attempts the same exact message; also test the explicit Hear
    saved-progress message fallback because mobile browsers may block speech after
    reload.
 3. Test storage disabled/full. Confirm no crash or false local-save claim and retain

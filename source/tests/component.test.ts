@@ -81,6 +81,29 @@ describe('corrected NASA-TLX task flow', () => {
     expect(component.querySelector('.choice-fieldset')).toBeNull();
   });
 
+  it('moves focus and forces a page scroll to a newly rendered missing-answer error', async () => {
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    const component = await renderComponent();
+    await startRatings(component);
+    await Promise.resolve();
+    scrollTo.mockClear();
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    await Promise.resolve();
+
+    const error = component.querySelector<HTMLElement>('#error-summary');
+    expect(error?.textContent).toContain('There is a problem');
+    expect(document.activeElement).toBe(error);
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({
+      top: expect.any(Number),
+      behavior: 'auto',
+    }));
+  });
+
   it('moves to a clearly explained comparison after all six ratings', async () => {
     const component = await renderComponent();
     await startRatings(component);

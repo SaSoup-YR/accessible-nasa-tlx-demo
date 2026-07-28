@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '../src/accessible-nasa-tlx';
-import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
+import { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
+import {
+  buildQuestionnairePairs,
+  getQuestionnaireDefinition,
+} from '../src/questionnaire-definition';
+import { progressStorageKey } from '../src/study';
 
+const nasaTlx = getQuestionnaireDefinition('nasa-tlx-weighted')!;
 const savedSession = {
   version: 4,
   instrumentId: 'nasa-tlx-weighted',
@@ -13,7 +18,7 @@ const savedSession = {
   stage: 'ratings',
   ratingIndex: 2,
   pairIndex: 0,
-  pairOrder: [],
+  pairOrder: buildQuestionnairePairs(nasaTlx),
   pairResponses: {},
   ratings: { mental: 40, physical: 25 },
   ratingInputRoutes: {},
@@ -53,21 +58,46 @@ afterEach(() => {
 });
 
 describe('saved questionnaire recovery announcement', () => {
-  it('focuses the resume action and gives it the saved count and choice as descriptions', async () => {
+  it('loads a real saved session after refresh and automatically sends the exact message to opted-in audio', async () => {
+    localStorage.setItem(
+      progressStorageKey('demo-config', 'DEMO'),
+      JSON.stringify(savedSession),
+    );
+    const speakText = vi
+      .spyOn(AccessibleNasaTlx.prototype as any, 'speakText')
+      .mockImplementation(() => undefined);
+
+    const component = await renderComponent();
+    await Promise.resolve();
+    await component.updateComplete;
+    await vi.advanceTimersByTimeAsync(650);
+
+    expect(component.querySelector('#saved-session-offer')).not.toBeNull();
+    expect(document.activeElement).toBe(component.querySelector('#saved-session-offer'));
+    expect(speakText).toHaveBeenCalledWith(
+      'Saved questionnaire found. 2 of 21 responses are saved in this browser. Resume saved questionnaire. Erase saved answers.',
+    );
+  });
+
+  it('focuses the saved-session region and exposes the exact saved count and choices', async () => {
     const component = await renderComponent();
     component.savedSession = savedSession;
     component.announceSavedSessionOffer(savedSession);
     await component.updateComplete;
     await Promise.resolve();
 
+    const offer = component.querySelector('#saved-session-offer') as HTMLElement;
     const resume = component.querySelector('#resume-saved-questionnaire') as HTMLButtonElement;
-    expect(document.activeElement).toBe(resume);
+    expect(document.activeElement).toBe(offer);
+    expect(offer.getAttribute('aria-describedby')).toBe(
+      'saved-session-count saved-session-actions',
+    );
     expect(resume.getAttribute('aria-describedby')).toBe(
-      'saved-session-count saved-session-instructions',
+      'saved-session-count saved-session-actions',
     );
     expect(component.querySelector('#saved-session-count')?.textContent).toContain('2 of 21');
-    expect(component.querySelector('#saved-session-instructions')?.textContent).toContain(
-      'erase the saved copy',
+    expect(component.querySelector('#saved-session-actions')?.textContent?.trim()).toBe(
+      'Resume saved questionnaire. Erase saved answers.',
     );
   });
 
@@ -79,10 +109,11 @@ describe('saved questionnaire recovery announcement', () => {
 
     component.announceSavedSessionOffer(savedSession);
     await component.updateComplete;
-    await vi.advanceTimersByTimeAsync(400);
+    await vi.advanceTimersByTimeAsync(650);
 
-    expect(component.statusMessage).toContain('Saved questionnaire found.');
-    expect(component.statusMessage).toContain('2 of 21 responses');
+    expect(component.statusMessage).toBe(
+      'Saved questionnaire found. 2 of 21 responses are saved in this browser. Resume saved questionnaire. Erase saved answers.',
+    );
     expect(speakText).toHaveBeenCalledWith(component.statusMessage);
   });
 

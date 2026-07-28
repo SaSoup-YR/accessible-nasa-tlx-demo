@@ -151,9 +151,9 @@ describe('study-conductor and participant separation', () => {
       'restored for this tab',
     );
     expect(restored.querySelector('.saved-session')?.textContent).toContain('1 of 21');
-    expect(document.activeElement).toBe(restored.querySelector('#resume-saved-questionnaire'));
+    expect(document.activeElement).toBe(restored.querySelector('#saved-session-offer'));
     expect(restored.querySelector('#resume-saved-questionnaire')?.getAttribute('aria-describedby')).toBe(
-      'saved-session-count saved-session-instructions',
+      'saved-session-count saved-session-actions',
     );
   });
 

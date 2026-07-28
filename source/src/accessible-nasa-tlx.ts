@@ -1425,11 +1425,12 @@ export class AccessibleNasaTlx extends LitElement {
         return;
       }
 
-      const resumeButton = this.querySelector<HTMLElement>('#resume-saved-questionnaire');
-      if (resumeButton) {
-        focusAndReveal(resumeButton, {
+      const savedSessionOffer = this.querySelector<HTMLElement>('#saved-session-offer');
+      if (savedSessionOffer) {
+        focusAndReveal(savedSessionOffer, {
           block: 'center',
-          onReveal: () => this.requestParentReveal(resumeButton),
+          forceCoordinateScroll: true,
+          onReveal: () => this.requestParentReveal(savedSessionOffer),
         });
       }
 
@@ -1445,13 +1446,12 @@ export class AccessibleNasaTlx extends LitElement {
           return;
         }
 
-        // Updating the existing live region after rendering gives external screen
-        // readers a genuine content change to announce. Built-in audio uses the
-        // same speakText pathway as the rest of the questionnaire, but is delayed
-        // slightly so a page refresh does not race the browser speech engine.
+        // Updating the existing empty live region after rendering gives external
+        // screen readers a genuine content change to announce. Built-in audio is
+        // attempted only when it was already enabled in the saved session.
         this.statusMessage = message;
         if (this.audioGuidance) this.speakText(message);
-      }, 400);
+      }, 650);
     });
   }
 
@@ -1463,27 +1463,34 @@ export class AccessibleNasaTlx extends LitElement {
 
   private savedSessionOfferSpeech(session: SavedSession) {
     const count = Object.keys(session.ratings).length + Object.keys(session.pairResponses).length;
-    return `Saved questionnaire found. ${count} of ${this.dimensions.length + this.pairs.length} responses are saved in this browser. Select Resume saved questionnaire to continue, or Erase saved answers to remove the saved copy.`;
+    return `Saved questionnaire found. ${count} of ${this.dimensions.length + this.pairs.length} responses are saved in this browser. Resume saved questionnaire. Erase saved answers.`;
   }
 
   private renderSavedSessionOffer() {
     if (!this.savedSession) return nothing;
     const count = Object.keys(this.savedSession.ratings).length + Object.keys(this.savedSession.pairResponses).length;
     return html`
-      <aside class="saved-session" role="region" aria-labelledby="saved-session-heading">
+      <aside
+        id="saved-session-offer"
+        class="saved-session"
+        role="region"
+        tabindex="-1"
+        aria-labelledby="saved-session-heading"
+        aria-describedby="saved-session-count saved-session-actions"
+      >
         <h3 id="saved-session-heading">Saved questionnaire found</h3>
         <p id="saved-session-count">
           ${count} of ${this.dimensions.length + this.pairs.length} responses are saved in this browser.
         </p>
-        <p id="saved-session-instructions">
-          Resume to continue from the saved position, or erase the saved copy and start again.
+        <p id="saved-session-actions">
+          Resume saved questionnaire. Erase saved answers.
         </p>
         <div class="button-row compact">
           <button
             id="resume-saved-questionnaire"
             class="primary-button large-answer-button"
             type="button"
-            aria-describedby="saved-session-count saved-session-instructions"
+            aria-describedby="saved-session-count saved-session-actions"
             @click=${this.restoreSavedSession}
           >
             Resume saved questionnaire
@@ -2793,7 +2800,8 @@ export class AccessibleNasaTlx extends LitElement {
       const summary = this.querySelector<HTMLElement>('#error-summary');
       if (!summary) return;
       focusAndReveal(summary, {
-        block: 'center',
+        block: 'start',
+        forceCoordinateScroll: true,
         onReveal: () => this.requestParentReveal(summary),
       });
     });

@@ -883,6 +883,12 @@ figcaption {
   border: 3px solid #005ea5;
 }
 
+.saved-session:focus {
+  outline: 3px solid var(--focus-outline);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
+}
+
 .resume-details {
   display: grid;
   gap: 0.5rem;

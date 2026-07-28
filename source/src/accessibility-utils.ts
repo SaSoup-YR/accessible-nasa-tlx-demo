@@ -1,6 +1,7 @@
 export interface FocusAndRevealOptions {
   block?: ScrollLogicalPosition;
   retryDelayMs?: number;
+  forceCoordinateScroll?: boolean;
   onReveal?: () => void;
 }
 
@@ -48,7 +49,7 @@ export function focusAndReveal(
         viewportHeight > 0 &&
         (rect.top < viewportTop || rect.bottom > viewportBottom);
 
-      if (outsideViewport) {
+      if (options.forceCoordinateScroll || outsideViewport) {
         const documentTop = (view.scrollY || view.pageYOffset || 0) + rect.top;
         let top = documentTop - viewportTop;
         if (block === 'center' && rect.height < viewportHeight) {
@@ -56,11 +57,18 @@ export function focusAndReveal(
         } else if (block === 'end') {
           top -= viewportHeight - rect.height;
         }
-        view.scrollTo({
-          top: Math.max(0, Math.round(top)),
-          left: view.scrollX || view.pageXOffset || 0,
-          behavior: 'auto',
-        });
+        const resolvedTop = Math.max(0, Math.round(top));
+        const resolvedLeft = view.scrollX || view.pageXOffset || 0;
+        try {
+          view.scrollTo({
+            top: resolvedTop,
+            left: resolvedLeft,
+            behavior: 'auto',
+          });
+        } catch {
+          // Older mobile WebKit accepts only the numeric overload.
+          view.scrollTo(resolvedLeft, resolvedTop);
+        }
       }
     }
 

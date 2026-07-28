@@ -5,10 +5,10 @@
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
-  "builtAt": "2026-07-28T02:07:20Z",
+  "builtAt": "2026-07-28T02:46:48Z",
   "verification": {
     "testFilesPassed": 16,
-    "testsPassed": 100,
+    "testsPassed": 103,
     "axeStructuralScansPassed": 6,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
@@ -18,8 +18,8 @@
     "questionnaireDefinitionValidation": "passed",
     "nasaTlxAndSusEndToEndTests": "passed",
     "genericQualtricsBridgeAndAdversePathTests": "passed",
-    "mobileErrorFocusAndQualtricsParentRevealTests": "passed",
-    "savedSessionFocusLiveRegionAndSpeechRouteTests": "passed",
+    "mobileErrorFocusForcedCoordinateScrollAndQualtricsParentRevealTests": "passed",
+    "savedSessionReloadFocusExactLiveRegionAndPriorOptInSpeechTests": "passed",
     "conservativeVoiceParsingTests": "passed",
     "authoredContrastTokenTests": "passed",
     "highLevelDependencyAudit": "0 vulnerabilities"
