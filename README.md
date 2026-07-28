@@ -4,7 +4,7 @@ A public research prototype that separates questionnaire definitions from a shar
 study-conductor, participant, accessibility-support, result and UCL Qualtrics
 workflow.
 
-- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html)**
+- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.2-q2)**
 - **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
 Use synthetic codes only. Recruitment remains blocked until the supervisor has
