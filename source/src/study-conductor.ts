@@ -32,6 +32,9 @@ import {
 
 const qualtricsEmbeddedDataFieldCount =
   embeddedDataFields.trim().split(/\r?\n/).filter(Boolean).length;
+const qualtricsBridgeBuild =
+  qualtricsQuestionJavaScript.match(/var bridgeBuild = '([^']+)'/)?.[1] ??
+  'unidentified';
 
 function looksLikeCompletedResult(value: unknown) {
   const records = Array.isArray(value) ? value : [value];
@@ -178,7 +181,8 @@ export class StudyConductorApp extends LitElement {
               <strong>${this.definition.shortName}</strong>
               <span>
                 ${this.definition.items.length} items,
-                ${buildRatingValues(this.definition).length} response values,
+                ${buildRatingValues(this.definition).length}
+                ${this.definition.scale.type.replace('-', ' ')} response values,
                 ${buildQuestionnairePairs(this.definition).length} comparisons,
                 ${this.definition.scoring.scoreName}.
               </span>
@@ -519,6 +523,11 @@ export class StudyConductorApp extends LitElement {
           The generated HTML contains this configuration and questionnaire ID. The JavaScript and Embedded Data
           manifest are intentionally shared by every registered questionnaire.
         </p>
+        <p>
+          <strong>Installation fingerprint:</strong>
+          platform ${PROTOTYPE_VERSION}; Qualtrics bridge ${qualtricsBridgeBuild}.
+          Replace both the complete HTML and complete JavaScript together whenever this fingerprint changes.
+        </p>
         <aside class="boundary-note important-boundary">
           <p>
             <strong>Do not upload these repository files to Qualtrics and do not paste the static HTML template unchanged.</strong>
@@ -533,6 +542,17 @@ export class StudyConductorApp extends LitElement {
             questionnaire-independent <code>__js_AQP_*</code> columns and does not rewrite old rows. Keep the old
             fields until those rows have been exported and verified. Use a copied synthetic survey for the first
             Version 0.8 installation test.
+          </p>
+        </aside>
+        <aside class="boundary-note important-boundary">
+          <p>
+            <strong>A rendered iframe is not a data-collection pass.</strong>
+            In Preview, the status above the questionnaire must name bridge
+            ${qualtricsBridgeBuild} and say that diagnostic fields were staged. Then complete one
+            <em>new</em> synthetic response and confirm that its newly dated row contains
+            <code>__js_AQP_ACCEPTED = 1</code>, <code>__js_AQP_SCHEMA = 4</code> and the selected
+            instrument ID. Rows collected before these fields were installed remain blank and are
+            not a valid test of this package.
           </p>
         </aside>
         <ol class="qualtrics-install-steps">
@@ -634,6 +654,12 @@ export class StudyConductorApp extends LitElement {
           <code>\${e://Field/__js_AQP_PARTICIPANT_CODE}</code>. That canvas is not the participant test. In Preview,
           before a response is recorded, the summary must be hidden and the configured participant iframe must be
           visible. If it is not, clear the question body and repeat step 1 in HTML or source view.
+        </p>
+        <p class="support-boundary">
+          On the live questionnaire page, the configured application must use the available Qualtrics
+          content width and the outer Qualtrics page must be the only vertical scrollbar. A narrow nested
+          viewport or a second scrollbar means that the HTML and JavaScript are not both from this
+          installation fingerprint; do not collect data from that survey.
         </p>
         <p>
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>

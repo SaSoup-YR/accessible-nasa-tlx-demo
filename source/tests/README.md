@@ -9,10 +9,10 @@ npm test
 The exact checkpoint count is recorded in the root `BUILD-INFO.json` after each
 verified release build.
 
-- `questionnaire-definition.test.ts` — discovery, two structurally different
-  definitions, semantic rejection and SUS scoring.
-- `platform-component.test.ts` — complete SUS participant flow and conductor link
-  generation through the shared components.
+- `questionnaire-definition.test.ts` — discovery, four definitions, semantic
+  rejection, and weighted NASA-TLX, Raw TLX, SUS and UEQ-S scoring.
+- `platform-component.test.ts` — complete SUS, Raw TLX and UEQ-S participant flows
+  plus conductor link generation through the shared components.
 - `content.test.ts` and `scoring.test.ts` — NASA content, pair invariants and
   weighted scoring compatibility.
 - `voice-input.test.ts` — displayed values/labels, conservative ranked alternatives,
@@ -25,7 +25,7 @@ verified release build.
   gaze state.
 - `study-component.test.ts` — configured participant gate, adjustment policies,
   provenance, backups, storage/network failures and host events.
-- `study.test.ts` — v0.7 migration, strict Version 4 records, NASA/SUS CSV union,
+- `study.test.ts` — v0.7 migration, strict Version 4 records, cross-instrument CSV union,
   storage behavior and corruption rejection.
 - `result-sink.test.ts` — exact-origin receipts and parent-viewport reveal, generic
   60-field SUS staging, bounded handoff, watchdog and failure navigation.

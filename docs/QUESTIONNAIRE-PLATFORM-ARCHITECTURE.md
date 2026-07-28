@@ -10,30 +10,35 @@ Version 0.8 is questionnaire-independent within an explicitly supported
 declarative profile. It is not described as supporting every questionnaire.
 
 The same conductor, participant runner, support controls, interruption recovery,
-input-route provenance, result schema and Qualtrics bridge now run two registered
+input-route provenance, result schema and Qualtrics bridge now run four registered
 instruments:
 
 | Definition | Response structure | Scoring strategy | Pairwise stage |
 | --- | --- | --- | --- |
 | Weighted NASA-TLX | six integer ratings, 0–100 in steps of 5 | weighted pairwise NASA-TLX | all 15 pairs |
+| Raw TLX | six integer ratings, 0–100 in steps of 5 | unweighted arithmetic mean | none |
 | System Usability Scale | ten integer ratings, 1–5 | standard alternating SUS rule | none |
+| UEQ-S | eight 1–7 semantic differentials | centred overall, pragmatic and hedonic means | none |
 
 This contrast is deliberate. Re-running the same six-item workflow under another
-title would not demonstrate separation. SUS changes the item count, response range,
-navigation length and scoring rule, and it removes the pairwise stage.
+title would not demonstrate separation. Raw TLX isolates a scoring/workflow change
+while preserving the six TLX items. SUS changes item count, agreement range,
+navigation length and scoring rule. UEQ-S adds semantic-differential anchors and
+two reported subscales. All three omit the pairwise stage.
 
 ## Why the scope is constrained
 
 The phrase any questionnaire is not technically or methodologically defensible.
 Questionnaires may use free text, dates, multiple selection, ranking, matrices,
 branching, adaptive logic, semantic differentials, repeated groups, multimedia,
-clinical safety rules and proprietary scoring. A runner that supports two numeric
+clinical safety rules and proprietary scoring. A runner that supports four bounded
 rating profiles cannot claim those capabilities.
 
 Version 0.8 therefore supports:
 
 - one required integer single-choice response per page;
-- a uniform bounded scale defined by minimum, maximum and step;
+- a uniform bounded magnitude, agreement or semantic-differential scale defined by
+  minimum, maximum and step;
 - optional five-landmark presentation where the definition explicitly permits it;
 - optional all-pairs comparisons;
 - an allowlisted and tested scoring strategy;
@@ -97,8 +102,12 @@ strategy but cannot provide code.
 
 - `nasa-tlx-weighted-v1` requires six 0–100 items, 5-point increments and all
   pairs.
-- `sus-standard-v1` requires the ordered `sus01`–`sus10` items, a 1–5 scale and no
+- `nasa-tlx-raw-v1` requires the six ordered TLX items, a 0–100 scale and no
+  comparisons;
+- `sus-standard-v1` requires the ordered `sus01`–`sus10` items, a 1–5 agreement scale and no
   pairs.
+- `ueqs-standard-v1` requires the ordered `ueqs01`–`ueqs08` semantic
+  differentials, a 1–7 scale and no pairs.
 
 A genuinely new scoring rule requires reviewed code and tests. This is intentional:
 scoring is part of instrument validity, not ordinary presentation configuration.
@@ -139,14 +148,17 @@ the architectural separation, not a claim of feature parity.
 
 Automated evidence must show more than successful rendering:
 
-1. both JSON definitions pass structural and semantic validation;
+1. all four JSON definitions pass structural and semantic validation;
 2. executable fields and incompatible scorer/scale combinations are rejected;
-3. NASA-TLX produces 21 rating values, 15 pairs and its weighted result;
-4. SUS produces five response values, no pair page and its alternating result;
-5. the same conductor creates a participant configuration for either instrument;
-6. the same participant element completes both workflows;
-7. the same Version 4 record and Qualtrics bridge preserve either result;
-8. accessibility checks run on both representative workflows.
+3. weighted NASA-TLX produces 21 rating values, 15 pairs and its weighted result;
+4. Raw TLX produces the same six ratings, no pair page and their unweighted mean;
+5. SUS produces five response values, no pair page and its alternating result;
+6. UEQ-S produces seven response positions, no pair page, centred item values and
+   pragmatic/hedonic means;
+7. the same conductor creates a participant configuration for every registered instrument;
+8. the same participant element completes all four workflows;
+9. the same Version 4 record and Qualtrics bridge preserve every result;
+10. accessibility checks run on representative workflows.
 
 These tests establish architectural reuse and data integrity. They do not establish
 that either optional support improves accessibility or preserves psychometric
@@ -154,12 +166,9 @@ properties. Those are evaluation questions.
 
 ## Extension path
 
-UEQ-S is a useful next case because its bipolar semantic-differential response
-type is not represented by the current low/high numeric profile. Implementing it
-should begin by adding an explicit semantic-differential item type and a reviewed
-UEQ-S scorer, not by forcing its items into the current schema.
-
-Raw TLX could reuse the NASA item definition with a different approved scoring
-strategy and without pairwise weighting. A custom scale should be accepted only
-after its response type and scorer are represented explicitly. This incremental
-extension policy gives each new capability a testable boundary.
+Raw TLX and UEQ-S now exercise the two previously identified extension paths. A
+custom scale should still be accepted only when its response type and scorer are
+represented explicitly and reviewed. The public build does not execute a formula
+or script supplied by a definition and does not claim that any arbitrary
+questionnaire is supported. This incremental policy gives each added capability a
+testable boundary and preserves scoring provenance.

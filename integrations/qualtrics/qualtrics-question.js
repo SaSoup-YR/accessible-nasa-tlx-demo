@@ -14,6 +14,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var revealType = 'accessible-questionnaire:qualtrics-reveal:v2';
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
+  var bridgeBuild = '0.8.1-q1';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var acceptedSubmissionId = null;
@@ -23,6 +24,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var advanceWatchdogTimerId = null;
   var connectionTimerId = null;
   var parentReadyTimerIds = [];
+  var relaxedLayoutStyles = [];
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
   // setJSEmbeddedData only writes into the in-browser survey session; the values reach
@@ -47,11 +49,80 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
   function prepareFrameLayout() {
     if (typeof iframe.setAttribute === 'function') iframe.setAttribute('scrolling', 'no');
+    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('aria-hidden', 'true');
     setFrameStyle('display', 'block');
     setFrameStyle('width', '100%');
     setFrameStyle('max-width', 'none');
     setFrameStyle('overflow', 'hidden');
     setFrameStyle('border', '0');
+    setFrameStyle('visibility', 'hidden');
+  }
+
+  function revealConnectedFrame() {
+    if (typeof iframe.removeAttribute === 'function') iframe.removeAttribute('aria-hidden');
+    setFrameStyle('visibility', 'visible');
+  }
+
+  function relaxStyle(element, property, value) {
+    if (!element || !element.style) return;
+    var previousValue = typeof element.style.getPropertyValue === 'function'
+      ? element.style.getPropertyValue(property)
+      : element.style[property];
+    var previousPriority = typeof element.style.getPropertyPriority === 'function'
+      ? element.style.getPropertyPriority(property)
+      : '';
+    relaxedLayoutStyles.push({
+      element: element,
+      property: property,
+      value: previousValue || '',
+      priority: previousPriority || ''
+    });
+    if (typeof element.style.setProperty === 'function') {
+      element.style.setProperty(property, value, 'important');
+    } else {
+      element.style[property] = value;
+    }
+  }
+
+  function expandQualtricsQuestionLayout() {
+    /*
+     * Qualtrics themes use different wrapper names.  Walking the actual ancestor
+     * chain is more reliable than assuming one theme and affects only the page
+     * that contains this single bridge question.
+     */
+    var element = iframe && iframe.parentElement;
+    var visited = 0;
+    while (element && element !== document.documentElement && visited < 20) {
+      relaxStyle(element, 'width', '100%');
+      relaxStyle(element, 'max-width', 'none');
+      relaxStyle(element, 'min-width', '0');
+      relaxStyle(element, 'box-sizing', 'border-box');
+      relaxStyle(element, 'overflow-x', 'visible');
+      element = element.parentElement;
+      visited += 1;
+    }
+    if (document.body) {
+      relaxStyle(document.body, 'width', '100%');
+      relaxStyle(document.body, 'max-width', 'none');
+      relaxStyle(document.body, 'overflow-x', 'hidden');
+    }
+  }
+
+  function restoreQualtricsQuestionLayout() {
+    for (var index = relaxedLayoutStyles.length - 1; index >= 0; index -= 1) {
+      var entry = relaxedLayoutStyles[index];
+      if (!entry.element || !entry.element.style) continue;
+      if (typeof entry.element.style.setProperty === 'function') {
+        entry.element.style.setProperty(
+          entry.property,
+          entry.value,
+          entry.priority
+        );
+      } else {
+        entry.element.style[entry.property] = entry.value;
+      }
+    }
+    relaxedLayoutStyles = [];
   }
 
   function sendParentReady() {
@@ -77,6 +148,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       name,
       value === null || value === undefined ? '' : String(value)
     );
+  }
+
+  function stageConnectionDiagnostic() {
+    /*
+     * These values are overwritten by the completed record.  Staging them when
+     * the verified child connects means a synthetic response can distinguish a
+     * working question script from an iframe that merely rendered.  They reach
+     * Data & Analysis only when Qualtrics submits the page.
+     */
+    setField('AQP_ACCEPTED', 0);
+    setField('AQP_SCHEMA', 4);
+    setField('AQP_PROTOTYPE_VERSION', bridgeBuild);
+    setField('AQP_COLLECTION_MODE', 'qualtrics');
   }
 
   function requireRecord(record) {
@@ -211,6 +295,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (!iframe || event.source !== iframe.contentWindow || event.origin !== childOrigin) return;
     var message = event.data;
     if (message && message.type === childReadyType) {
+      try {
+        stageConnectionDiagnostic();
+      } catch (error) {
+        var diagnosticDetail = error && error.message
+          ? error.message
+          : 'Qualtrics could not stage the connection diagnostic.';
+        setStatus(
+          diagnosticDetail +
+          ' Do not collect a response. Check the Survey Flow fields and question JavaScript.'
+        );
+        question.showNextButton();
+        return;
+      }
       childConnected = true;
       if (connectionTimerId !== null) {
         window.clearTimeout(connectionTimerId);
@@ -220,7 +317,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         window.clearTimeout(timerId);
       });
       parentReadyTimerIds = [];
-      setStatus('The questionnaire is connected. Completed answers will save into this Qualtrics response.');
+      revealConnectedFrame();
+      setStatus(
+        'The questionnaire is connected. Bridge ' + bridgeBuild +
+        ' staged its Qualtrics diagnostic fields. Completed answers will save into this response.'
+      );
       return;
     }
     if (message && message.type === resizeType) {
@@ -298,6 +399,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   }
 
   prepareFrameLayout();
+  expandQualtricsQuestionLayout();
   question.hideNextButton();
   window.addEventListener('message', receiveResult);
   setStatus('Connecting the questionnaire to this Qualtrics response.');
@@ -337,6 +439,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (typeof iframe.removeEventListener === 'function') {
       iframe.removeEventListener('load', sendParentReady);
     }
+    restoreQualtricsQuestionLayout();
     window.removeEventListener('message', receiveResult);
   });
 });

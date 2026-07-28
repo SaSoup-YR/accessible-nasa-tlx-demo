@@ -1,5 +1,10 @@
 export type ItemId = string;
-export type ScoringStrategy = 'nasa-tlx-weighted-v1' | 'sus-standard-v1';
+export type ScoringStrategy =
+  | 'nasa-tlx-weighted-v1'
+  | 'nasa-tlx-raw-v1'
+  | 'sus-standard-v1'
+  | 'ueqs-standard-v1';
+export type ResponseScaleType = 'magnitude' | 'agreement' | 'semantic-differential';
 export type LandmarkPosition = 'low' | 'closer-low' | 'middle' | 'closer-high' | 'high';
 
 export interface QuestionnaireItem {
@@ -40,6 +45,7 @@ export interface QuestionnaireDefinition {
     url: string;
   };
   scale: {
+    type: ResponseScaleType;
     minimum: number;
     maximum: number;
     step: number;
@@ -159,7 +165,14 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
   }
 
   const scale = record(root.scale, 'scale');
-  onlyKeys(scale, ['minimum', 'maximum', 'step'], 'scale');
+  onlyKeys(scale, ['type', 'minimum', 'maximum', 'step'], 'scale');
+  if (
+    scale.type !== 'magnitude' &&
+    scale.type !== 'agreement' &&
+    scale.type !== 'semantic-differential'
+  ) {
+    throw new Error('scale.type is not supported.');
+  }
   const minimum = integer(scale.minimum, 'scale.minimum');
   const maximum = integer(scale.maximum, 'scale.maximum');
   const step = integer(scale.step, 'scale.step');
@@ -262,20 +275,46 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
 
   const scoring = record(root.scoring, 'scoring');
   onlyKeys(scoring, ['strategy', 'scoreName', 'minimum', 'maximum'], 'scoring');
-  if (scoring.strategy !== 'nasa-tlx-weighted-v1' && scoring.strategy !== 'sus-standard-v1') {
+  if (
+    scoring.strategy !== 'nasa-tlx-weighted-v1' &&
+    scoring.strategy !== 'nasa-tlx-raw-v1' &&
+    scoring.strategy !== 'sus-standard-v1' &&
+    scoring.strategy !== 'ueqs-standard-v1'
+  ) {
     throw new Error('scoring.strategy is not in the executable scorer allowlist.');
   }
   const scoringMinimum = integer(scoring.minimum, 'scoring.minimum');
   const scoringMaximum = integer(scoring.maximum, 'scoring.maximum');
   if (scoringMinimum >= scoringMaximum) throw new Error('scoring score range must increase.');
   if (scoring.strategy === 'nasa-tlx-weighted-v1') {
-    if (!pairwise || items.length !== 6 || minimum !== 0 || maximum !== 100 || step !== 5) {
+    if (
+      scale.type !== 'magnitude' ||
+      !pairwise ||
+      items.length !== 6 ||
+      minimum !== 0 ||
+      maximum !== 100 ||
+      step !== 5
+    ) {
       throw new Error('The NASA-TLX scorer requires six 0–100 items, step 5, and all-pairs comparisons.');
+    }
+  }
+  if (scoring.strategy === 'nasa-tlx-raw-v1') {
+    const expectedIds = ['mental', 'physical', 'temporal', 'performance', 'effort', 'frustration'];
+    if (
+      scale.type !== 'magnitude' ||
+      pairwise ||
+      minimum !== 0 ||
+      maximum !== 100 ||
+      step !== 5 ||
+      items.map((item) => item.id).join('|') !== expectedIds.join('|')
+    ) {
+      throw new Error('The Raw TLX scorer requires the six ordered TLX items on a 0–100 scale without comparisons.');
     }
   }
   if (scoring.strategy === 'sus-standard-v1') {
     const expectedIds = Array.from({ length: 10 }, (_, index) => `sus${String(index + 1).padStart(2, '0')}`);
     if (
+      scale.type !== 'agreement' ||
       pairwise ||
       minimum !== 1 ||
       maximum !== 5 ||
@@ -283,6 +322,22 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
       items.map((item) => item.id).join('|') !== expectedIds.join('|')
     ) {
       throw new Error('The SUS scorer requires the ordered sus01–sus10 items on a 1–5 scale without comparisons.');
+    }
+  }
+  if (scoring.strategy === 'ueqs-standard-v1') {
+    const expectedIds = Array.from(
+      { length: 8 },
+      (_, index) => `ueqs${String(index + 1).padStart(2, '0')}`,
+    );
+    if (
+      scale.type !== 'semantic-differential' ||
+      pairwise ||
+      minimum !== 1 ||
+      maximum !== 7 ||
+      step !== 1 ||
+      items.map((item) => item.id).join('|') !== expectedIds.join('|')
+    ) {
+      throw new Error('The UEQ-S scorer requires the ordered ueqs01–ueqs08 items on a 1–7 semantic-differential scale without comparisons.');
     }
   }
 
@@ -314,7 +369,7 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
       label: text(source.label, 'source.label', 240),
       url: sourceUrl,
     },
-    scale: { minimum, maximum, step },
+    scale: { type: scale.type, minimum, maximum, step },
     items,
     ...(landmarks ? { landmarks } : {}),
     ...(pairwise ? { pairwise } : {}),

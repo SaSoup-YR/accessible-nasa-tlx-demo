@@ -7,7 +7,7 @@ This directory builds the public Accessible Questionnaire Platform candidate.
 - `instruments/*.questionnaire.json` — versioned registered definitions.
 - `instruments/questionnaire-definition.schema.json` — published structural schema.
 - `src/questionnaire-definition.ts` — discovery and strict semantic validation.
-- `src/scoring.ts` — allowlisted NASA-TLX and SUS scorers.
+- `src/scoring.ts` — allowlisted weighted NASA-TLX, Raw TLX, SUS and UEQ-S scorers.
 - `src/study.ts` — Version 4 configuration/result schemas and exports.
 - `src/result-sink.ts` — exact-origin Qualtrics child sink and parent-viewport
   reveal request.

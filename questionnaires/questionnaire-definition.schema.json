@@ -41,8 +41,11 @@
     "scale": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["minimum", "maximum", "step"],
+      "required": ["type", "minimum", "maximum", "step"],
       "properties": {
+        "type": {
+          "enum": ["magnitude", "agreement", "semantic-differential"]
+        },
         "minimum": { "type": "integer" },
         "maximum": { "type": "integer" },
         "step": { "type": "integer", "minimum": 1 }
@@ -125,7 +128,29 @@
           "additionalProperties": false,
           "required": ["strategy", "scoreName", "minimum", "maximum"],
           "properties": {
+            "strategy": { "const": "nasa-tlx-raw-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
             "strategy": { "const": "sus-standard-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "ueqs-standard-v1" },
             "scoreName": { "type": "string" },
             "minimum": { "type": "integer" },
             "maximum": { "type": "integer" }

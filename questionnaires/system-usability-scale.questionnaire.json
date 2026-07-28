@@ -13,6 +13,7 @@
     "url": "https://digital.ahrq.gov/sites/default/files/docs/survey/systemusabilityscale%2528sus%2529_comp%255B1%255D.pdf"
   },
   "scale": {
+    "type": "agreement",
     "minimum": 1,
     "maximum": 5,
     "step": 1

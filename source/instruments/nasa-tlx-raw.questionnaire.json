@@ -1,16 +1,16 @@
 {
   "$schema": "./questionnaire-definition.schema.json",
   "schemaVersion": 1,
-  "id": "nasa-tlx-weighted",
+  "id": "nasa-tlx-raw",
   "version": "1.0.0",
-  "name": "NASA Task Load Index",
-  "shortName": "NASA-TLX",
-  "description": "Full weighted NASA-TLX with six magnitude ratings and fifteen pairwise source-of-workload comparisons.",
+  "name": "Raw NASA Task Load Index",
+  "shortName": "Raw TLX",
+  "description": "The six NASA-TLX magnitude ratings scored as an unweighted arithmetic mean, without pairwise weighting.",
   "introPrompt": "Think about the task that you have just completed.",
-  "officialContentNotice": "The official NASA-TLX dimensions, values, direction and scoring remain authoritative.",
+  "officialContentNotice": "The six NASA-TLX dimensions, values and direction remain authoritative. This definition uses the explicitly identified unweighted Raw TLX scoring method.",
   "source": {
-    "label": "NASA Human Systems Integration Division, NASA Task Load Index",
-    "url": "https://www.nasa.gov/human-systems-integration-division/nasa-task-load-index-tlx/"
+    "label": "NASA Technical Reports Server, Raw TLX description",
+    "url": "https://ntrs.nasa.gov/api/citations/20200002718/downloads/20200002718.pdf"
   },
   "scale": {
     "type": "magnitude",
@@ -86,27 +86,14 @@
       "voiceHighAliases": ["high", "hi"]
     }
   ],
-  "landmarks": [
-    { "value": 0, "cue": "😀", "position": "low" },
-    { "value": 25, "cue": "🙂", "position": "closer-low" },
-    { "value": 50, "cue": "😐", "position": "middle" },
-    { "value": 75, "cue": "🙁", "position": "closer-high" },
-    { "value": 100, "cue": "☹️", "position": "high" }
-  ],
-  "pairwise": {
-    "mode": "all-pairs",
-    "prompt": "Which factor contributed more to the workload you experienced?",
-    "instruction": "This is not a Low-to-High rating. Choose the factor that was the more important source of workload in the task.",
-    "simplePrompt": "Which one added more to the work you had to do?"
-  },
   "scoring": {
-    "strategy": "nasa-tlx-weighted-v1",
-    "scoreName": "Weighted workload score",
+    "strategy": "nasa-tlx-raw-v1",
+    "scoreName": "Raw workload score",
     "minimum": 0,
     "maximum": 100
   },
   "supports": {
     "simplerExplanations": true,
-    "smileyLandmarks": true
+    "smileyLandmarks": false
   }
 }
