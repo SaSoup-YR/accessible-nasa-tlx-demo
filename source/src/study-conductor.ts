@@ -513,11 +513,26 @@ export class StudyConductorApp extends LitElement {
     return html`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
+        <p>
+          <strong>Selected questionnaire:</strong> ${this.definition.name}
+          (${this.definition.version}).
+          The generated HTML contains this configuration and questionnaire ID. The JavaScript and Embedded Data
+          manifest are intentionally shared by every registered questionnaire.
+        </p>
         <aside class="boundary-note important-boundary">
           <p>
             <strong>Do not upload these repository files to Qualtrics and do not paste the static HTML template unchanged.</strong>
             They are four different installation inputs. Only the first block below contains this study's generated
             participant URL.
+          </p>
+        </aside>
+        <aside class="boundary-note">
+          <p>
+            <strong>Version 0.7 records have not been deleted.</strong>
+            They remain in the existing <code>__js_ANTLX_*</code> columns. Version 0.8 writes new records to the
+            questionnaire-independent <code>__js_AQP_*</code> columns and does not rewrite old rows. Keep the old
+            fields until those rows have been exported and verified. Use a copied synthetic survey for the first
+            Version 0.8 installation test.
           </p>
         </aside>
         <ol class="qualtrics-install-steps">

@@ -4,6 +4,8 @@ export const QUALTRICS_SUBMIT_MESSAGE = 'accessible-questionnaire:qualtrics-subm
 export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-questionnaire:qualtrics-receipt:v2';
 export const QUALTRICS_RESIZE_MESSAGE = 'accessible-questionnaire:qualtrics-resize:v2';
 export const QUALTRICS_REVEAL_MESSAGE = 'accessible-questionnaire:qualtrics-reveal:v2';
+export const QUALTRICS_PARENT_READY_MESSAGE = 'accessible-questionnaire:qualtrics-parent-ready:v2';
+export const QUALTRICS_CHILD_READY_MESSAGE = 'accessible-questionnaire:qualtrics-child-ready:v2';
 
 export interface ResultSinkReceipt {
   accepted: true;
@@ -55,7 +57,13 @@ export function installQualtricsAutoResize(parentOrigin: string, windowRef: Wind
   const ResizeObserverConstructor = (
     windowRef as unknown as { ResizeObserver?: typeof ResizeObserver }
   ).ResizeObserver;
-  if (windowRef.parent === windowRef || typeof ResizeObserverConstructor !== 'function') return null;
+  const MutationObserverConstructor = (
+    windowRef as unknown as { MutationObserver?: typeof MutationObserver }
+  ).MutationObserver;
+  if (windowRef.parent === windowRef) return null;
+  let animationFrameId: number | null = null;
+  let heightScheduled = false;
+
   const sendHeight = () => {
     const documentElement = windowRef.document.documentElement;
     const body = windowRef.document.body;
@@ -69,11 +77,72 @@ export function installQualtricsAutoResize(parentOrigin: string, windowRef: Wind
       windowRef.parent.postMessage({ type: QUALTRICS_RESIZE_MESSAGE, height }, parentOrigin);
     }
   };
-  const observer = new ResizeObserverConstructor(sendHeight);
-  if (windowRef.document.documentElement) observer.observe(windowRef.document.documentElement);
-  if (windowRef.document.body) observer.observe(windowRef.document.body);
-  windowRef.requestAnimationFrame(sendHeight);
-  return observer;
+  const scheduleHeight = () => {
+    if (heightScheduled) return;
+    heightScheduled = true;
+    animationFrameId = windowRef.requestAnimationFrame(() => {
+      heightScheduled = false;
+      animationFrameId = null;
+      sendHeight();
+    });
+  };
+  const announceReady = () => {
+    windowRef.parent.postMessage({
+      type: QUALTRICS_CHILD_READY_MESSAGE,
+      protocolVersion: 2,
+    }, parentOrigin);
+    scheduleHeight();
+  };
+  const receiveParentReady = (event: MessageEvent<unknown>) => {
+    if (event.source !== windowRef.parent || event.origin !== parentOrigin) return;
+    const message = event.data as { type?: unknown } | null;
+    if (message?.type === QUALTRICS_PARENT_READY_MESSAGE) announceReady();
+  };
+
+  windowRef.addEventListener('message', receiveParentReady);
+  windowRef.addEventListener('load', announceReady);
+  windowRef.addEventListener('resize', scheduleHeight);
+
+  const resizeObserver = typeof ResizeObserverConstructor === 'function'
+    ? new ResizeObserverConstructor(scheduleHeight)
+    : null;
+  if (resizeObserver && windowRef.document.documentElement) {
+    resizeObserver.observe(windowRef.document.documentElement);
+  }
+  if (resizeObserver && windowRef.document.body) {
+    resizeObserver.observe(windowRef.document.body);
+  }
+
+  // Descendant rendering can increase scrollHeight without changing the observed
+  // body's content box. Mutation observation and bounded retries cover the Lit
+  // render, font/layout settlement and a parent listener that starts after the
+  // iframe's first animation frame.
+  const mutationObserver = typeof MutationObserverConstructor === 'function'
+    ? new MutationObserverConstructor(scheduleHeight)
+    : null;
+  if (mutationObserver && windowRef.document.documentElement) {
+    mutationObserver.observe(windowRef.document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
+  }
+  const retryTimerIds = [0, 100, 500, 1500, 4000].map((delay) =>
+    windowRef.setTimeout(announceReady, delay));
+  announceReady();
+
+  return {
+    disconnect() {
+      if (animationFrameId !== null) windowRef.cancelAnimationFrame(animationFrameId);
+      heightScheduled = false;
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+      retryTimerIds.forEach((timerId) => windowRef.clearTimeout(timerId));
+      windowRef.removeEventListener('message', receiveParentReady);
+      windowRef.removeEventListener('load', announceReady);
+      windowRef.removeEventListener('resize', scheduleHeight);
+    },
+  };
 }
 
 /**
