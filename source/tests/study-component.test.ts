@@ -12,6 +12,7 @@ import {
 
 async function renderConfiguredComponent(
   participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'locked',
+  audioGuidance = false,
 ) {
   const config = createStudyConfig(
     {
@@ -23,7 +24,7 @@ async function renderConfiguredComponent(
         showSimpleLanguage: true,
         answerMode: 'standard',
         largeText: true,
-        audioGuidance: false,
+        audioGuidance,
         recoveryEnabled: true,
         participantAdjustmentPolicy,
         voiceInputAvailable: false,
@@ -125,7 +126,32 @@ describe('study-conductor and participant separation', () => {
   });
 
   it('restores the pseudonymous code in the same tab before offering interrupted answers', async () => {
-    const component = await renderConfiguredComponent();
+    const spoken: FakeUtterance[] = [];
+    const cancel = vi.fn();
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      pitch = 1;
+      volume = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speaking: false,
+        pending: false,
+        paused: false,
+        cancel,
+        speak: (utterance: FakeUtterance) => spoken.push(utterance),
+        getVoices: () => [],
+      },
+    });
+    (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
+
+    const component = await renderConfiguredComponent('locked', true);
     const code = component.querySelector<HTMLInputElement>('#participant-code')!;
     code.value = 'P-007';
     code.dispatchEvent(new Event('input', { bubbles: true }));
@@ -142,8 +168,8 @@ describe('study-conductor and participant separation', () => {
     await component.updateComplete;
     component.remove();
 
-    const restored = await renderConfiguredComponent();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    const restored = await renderConfiguredComponent('locked', true);
+    await new Promise((resolve) => setTimeout(resolve, 450));
     await restored.updateComplete;
 
     expect(restored.querySelector<HTMLInputElement>('#participant-code')?.value).toBe('P-007');
@@ -152,6 +178,19 @@ describe('study-conductor and participant separation', () => {
     );
     expect(restored.querySelector('.saved-session')?.textContent).toContain('1 of 21');
     expect(document.activeElement).toBe(restored.querySelector('#saved-session-heading'));
+    expect(restored.querySelector('.sr-only')?.textContent).toContain('Saved questionnaire found.');
+    expect(spoken.at(-1)?.text).toContain('Saved questionnaire found.');
+    expect(spoken.at(-1)?.text).toContain('1 of 21 responses');
+
+    const stop = [...restored.querySelectorAll<HTMLButtonElement>('.saved-session button')].find(
+      (button) => button.textContent?.includes('Stop speech'),
+    );
+    expect(stop).toBeDefined();
+    const cancelCount = cancel.mock.calls.length;
+    stop!.click();
+    await restored.updateComplete;
+    expect(cancel).toHaveBeenCalledTimes(cancelCount + 1);
+    expect(restored.querySelector('.saved-session')?.textContent).toContain('Hear saved-progress message');
   });
 
   it('applies a locked configuration and requires a pseudonymous participant code', async () => {

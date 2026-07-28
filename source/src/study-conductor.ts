@@ -601,8 +601,10 @@ export class StudyConductorApp extends LitElement {
     void this.updateComplete.then(() => {
       const summary = this.querySelector<HTMLElement>('#conductor-error');
       if (!summary) return;
-      summary.focus();
-      summary.scrollIntoView?.({ block: 'start' });
+      summary.focus({ preventScroll: true });
+      window.requestAnimationFrame(() => {
+        summary.scrollIntoView?.({ behavior: 'auto', block: 'start', inline: 'nearest' });
+      });
     });
   }
 

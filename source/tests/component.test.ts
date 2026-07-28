@@ -614,7 +614,18 @@ describe('speech support integration', () => {
 });
 
 describe('error location', () => {
-  it('moves focus to the visible error summary when an answer is missing', async () => {
+  it('moves focus and the mobile viewport to the visible error summary when an answer is missing', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    const requestAnimationFrame = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback: FrameRequestCallback) => {
+        callback(0);
+        return 1;
+      });
     const component = await renderComponent();
     await startRatings(component);
     [...component.querySelectorAll<HTMLButtonElement>('button')]
@@ -624,6 +635,12 @@ describe('error location', () => {
 
     expect(component.querySelector('#error-summary')?.textContent).toContain('Choose a rating for Mental Demand');
     expect(document.activeElement).toBe(component.querySelector('#error-summary'));
+    expect(requestAnimationFrame).toHaveBeenCalled();
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'auto',
+      block: 'start',
+      inline: 'nearest',
+    });
   });
 });
 

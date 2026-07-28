@@ -98,4 +98,44 @@ describe('automated structural accessibility scan', () => {
     const result = await scan(component);
     expect(result.violations).toEqual([]);
   });
+
+  it('finds no detectable violations when a missing answer error is revealed', async () => {
+    const component = await renderComponent();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+
+    const result = await scan(component);
+    expect(result.violations).toEqual([]);
+    expect(document.activeElement).toBe(component.querySelector('#error-summary'));
+  });
+
+  it('finds no detectable violations on the saved-questionnaire recovery state after reload', async () => {
+    const component = await renderComponent();
+    checkbox(component, 'Save progress and show a return summary')!.click();
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+    component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+    component.remove();
+
+    const restored = await renderComponent();
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    await restored.updateComplete;
+    const result = await scan(restored);
+
+    expect(restored.querySelector('.saved-session')?.textContent).toContain('1 of 21');
+    expect(result.violations).toEqual([]);
+  });
 });

@@ -201,6 +201,8 @@ export class AccessibleNasaTlx extends LitElement {
   private gazeActivationInProgress = false;
   private speechRequestId = 0;
   private savedSessionAnnouncementKey = '';
+  private savedSessionAnnouncementTimer: number | null = null;
+  private errorRevealFrame: number | null = null;
   private configurationApplied = false;
   private readonly gazeCandidateTracker = new DwellTracker(1000);
   private readonly gazeConfirmationTracker = new DwellTracker(1200);
@@ -227,6 +229,14 @@ export class AccessibleNasaTlx extends LitElement {
 
   disconnectedCallback() {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    if (this.savedSessionAnnouncementTimer !== null) {
+      window.clearTimeout(this.savedSessionAnnouncementTimer);
+      this.savedSessionAnnouncementTimer = null;
+    }
+    if (this.errorRevealFrame !== null) {
+      window.cancelAnimationFrame(this.errorRevealFrame);
+      this.errorRevealFrame = null;
+    }
     this.stopReading(false);
     this.releaseRecognition();
     this.stopGazeInput();
@@ -1336,9 +1346,14 @@ export class AccessibleNasaTlx extends LitElement {
     const message = this.savedSessionOfferSpeech(session);
     this.statusMessage = '';
     void this.updateComplete.then(() => {
-      window.setTimeout(() => {
+      if (this.savedSessionAnnouncementTimer !== null) {
+        window.clearTimeout(this.savedSessionAnnouncementTimer);
+      }
+      this.savedSessionAnnouncementTimer = window.setTimeout(() => {
+        this.savedSessionAnnouncementTimer = null;
         const current = this.savedSession;
         if (
+          !this.isConnected ||
           !current ||
           current.savedAt !== session.savedAt ||
           current.configId !== session.configId ||
@@ -1357,7 +1372,11 @@ export class AccessibleNasaTlx extends LitElement {
     });
   }
 
-  private repeatSavedSessionOffer = () => {
+  private toggleSavedSessionOfferSpeech = () => {
+    if (this.readingAloud) {
+      this.stopReading(true);
+      return;
+    }
     if (!this.savedSession) return;
     this.speakText(this.savedSessionOfferSpeech(this.savedSession));
   };
@@ -1378,8 +1397,8 @@ export class AccessibleNasaTlx extends LitElement {
           <button class="primary-button large-answer-button" type="button" @click=${this.restoreSavedSession}>
             Resume saved questionnaire
           </button>
-          <button class="secondary-button" type="button" @click=${this.repeatSavedSessionOffer}>
-            Hear saved-progress message
+          <button class="secondary-button" type="button" @click=${this.toggleSavedSessionOfferSpeech}>
+            ${this.readingAloud ? 'Stop speech' : 'Hear saved-progress message'}
           </button>
           <button class="secondary-button" type="button" @click=${this.eraseSavedSession}>Erase saved answers</button>
         </div>
@@ -2643,8 +2662,17 @@ export class AccessibleNasaTlx extends LitElement {
     void this.updateComplete.then(() => {
       const summary = this.querySelector<HTMLElement>('#error-summary');
       if (!summary) return;
-      summary.focus();
-      summary.scrollIntoView?.({ block: 'start' });
+      summary.focus({ preventScroll: true });
+      if (this.errorRevealFrame !== null) {
+        window.cancelAnimationFrame(this.errorRevealFrame);
+      }
+      // Mobile Safari and tablet browsers can restore the previous scroll anchor
+      // after Lit inserts the summary. Reveal it on the next painted frame, after
+      // the new layout is stable, rather than relying on focus-induced scrolling.
+      this.errorRevealFrame = window.requestAnimationFrame(() => {
+        this.errorRevealFrame = null;
+        summary.scrollIntoView?.({ behavior: 'auto', block: 'start', inline: 'nearest' });
+      });
     });
   }
 

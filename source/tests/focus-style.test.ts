@@ -24,12 +24,44 @@ describe('visible keyboard focus', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toContain('--focus-outline: #0b0c0c');
     expect(css).toContain('--focus-halo: #ffdd00');
-    expect(css.match(/outline: 3px solid var\(--focus-outline\)/g)).toHaveLength(4);
-    expect(css.match(/box-shadow: 0 0 0 6px var\(--focus-halo\)/g)).toHaveLength(3);
+    expect(css.match(/outline: 3px solid var\(--focus-outline\)/g)).toHaveLength(5);
+    expect(css.match(/box-shadow: 0 0 0 6px var\(--focus-halo\)/g)).toHaveLength(4);
     expect(css).toContain('box-shadow: 0 0 0 7px var(--focus-halo)');
 
     for (const surface of ['#ffffff', '#eef2f6', '#e8f3fb', '#fff9dc']) {
       expect(contrastRatio('#0b0c0c', surface)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('keeps the complete authored text and control palette at WCAG 2.2 AA contrast', () => {
+    const textPairs = [
+      ['#1d2733', '#ffffff'],
+      ['#1d2733', '#eef2f6'],
+      ['#1d2733', '#f6f8fa'],
+      ['#1d2733', '#fff9dc'],
+      ['#1d2733', '#fff3b0'],
+      ['#4b5f73', '#eef2f6'],
+      ['#435467', '#ffffff'],
+      ['#4e6072', '#f6f8fa'],
+      ['#ffffff', '#005ea5'],
+      ['#003b68', '#ffffff'],
+      ['#8f0b18', '#fff7f7'],
+      ['#f7f9fa', '#17202a'],
+    ] as const;
+    for (const [foreground, background] of textPairs) {
+      expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(4.5);
+    }
+
+    const nonTextPairs = [
+      ['#6f8092', '#ffffff'],
+      ['#005ea5', '#ffffff'],
+      ['#005ea5', '#f2f8fc'],
+      ['#b10e1e', '#ffffff'],
+      ['#725b00', '#fff9dc'],
+      ['#6b5200', '#fff3b0'],
+    ] as const;
+    for (const [componentColour, adjacentColour] of nonTextPairs) {
+      expect(contrastRatio(componentColour, adjacentColour)).toBeGreaterThanOrEqual(3);
     }
   });
 
@@ -50,5 +82,20 @@ describe('visible keyboard focus', () => {
     expect(contrastRatio('#0b0c0c', '#fff3b0')).toBeGreaterThanOrEqual(3);
     expect(contrastRatio('#725b00', '#ffffff')).toBeGreaterThanOrEqual(3);
     expect(contrastRatio('#725b00', '#f6f8fa')).toBeGreaterThanOrEqual(3);
+  });
+
+  it('provides mobile reflow, touch-target and programmatic-focus safeguards', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+
+    expect(css).toContain('min-width: 320px');
+    expect(css).toContain('@media (max-width: 700px)');
+    expect(css).toContain('.button-row > *');
+    expect(css).toContain('width: 100%');
+    expect(css).toContain('min-height: 3rem');
+    expect(css).toContain('min-height: 3.5rem');
+    expect(css).toContain('min-height: 4rem');
+    expect(css).toContain('scroll-margin-top: max(1rem, env(safe-area-inset-top))');
+    expect(css).toContain('.error-summary:focus');
+    expect(css).toContain('.saved-session h3:focus');
   });
 });

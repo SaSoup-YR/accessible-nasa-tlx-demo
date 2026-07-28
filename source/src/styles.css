@@ -65,6 +65,14 @@ summary:focus-visible {
   box-shadow: 0 0 0 6px var(--focus-halo);
 }
 
+.error-summary:focus,
+.resume-summary h2:focus,
+.saved-session h3:focus {
+  outline: 3px solid var(--focus-outline);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
+}
+
 .app-shell {
   width: min(980px, calc(100% - 2rem));
   margin: 0 auto;
@@ -140,6 +148,7 @@ progress {
 }
 
 .error-summary {
+  scroll-margin-top: max(1rem, env(safe-area-inset-top));
   border: 3px solid #b10e1e;
 }
 
