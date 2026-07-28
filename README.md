@@ -65,15 +65,15 @@ complete WCAG conformance or disability-group benefit. See
 
 The generic Qualtrics bridge:
 
-- uses a two-way readiness handshake and automatic height updates so the outer
-  Qualtrics page remains the only scrollbar;
+- uses an exact-version two-way handshake and blocks starting when generated HTML,
+  parent JavaScript and participant code do not match;
+- presents the participant application as a full-browser viewport with one visible
+  scrollbar instead of a clipped nested question panel;
 - sends only to the exact configured HTTPS parent origin;
 - accepts only a matching submission receipt;
 - attempts a complete local backup before host contact;
 - retains JSON/CSV recovery controls;
 - restores navigation after staging or native-advance failure;
-- moves the outer Qualtrics viewport for validated error/recovery reveal requests
-  from its own iframe;
 - records instrument identity, generic answers, scoring details, support provenance
   and lossless raw JSON chunks;
 - contains no API token or secret.

@@ -1,4 +1,4 @@
-import{a as s,t as b,i as v,D as A,g as y,u as w,l as p,w as T,q as S,n as P,x as I,P as h,A as d,k as o,y as E,j as m,h as R,z as Q,B as C,f as q}from"./shared-BcpyGktZ.js";const g=`__js_AQP_ACCEPTED
+import{a as s,t as b,i as v,D as A,g as y,u as S,l as p,w,q as I,n as P,x as T,P as h,A as d,k as o,y as E,j as m,h as R,z as Q,B as C,f as N}from"./shared-BcpyGktZ.js";const g=`__js_AQP_ACCEPTED
 __js_AQP_SCHEMA
 __js_AQP_SUBMISSION_ID
 __js_AQP_STUDY_ID
@@ -58,7 +58,7 @@ __js_AQP_RAW_21
 __js_AQP_RAW_22
 __js_AQP_RAW_23
 __js_AQP_RAW_24
-`,O=`Questionnaire complete
+`,q=`Questionnaire complete
 
 {{OPTIONAL_SCORE_BLOCK}}
 
@@ -80,13 +80,15 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var childOrigin = 'https://sasoup-yr.github.io';
   var submitType = 'accessible-questionnaire:qualtrics-submit:v2';
   var receiptType = 'accessible-questionnaire:qualtrics-receipt:v2';
-  var resizeType = 'accessible-questionnaire:qualtrics-resize:v2';
-  var revealType = 'accessible-questionnaire:qualtrics-reveal:v2';
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
-  var bridgeBuild = '0.8.1-q1';
+  var bridgeBuild = '0.8.2-q2';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
+  var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
+  var recordedSummary = document.getElementById('accessible-questionnaire-recorded-summary');
+  var originalLiveParent = liveQuestion && liveQuestion.parentNode;
+  var originalLiveNextSibling = liveQuestion && liveQuestion.nextSibling;
   var acceptedSubmissionId = null;
   var advancing = false;
   var childConnected = false;
@@ -104,33 +106,59 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   // allows rather than being used as a reading pause.
   var completionDelayMs = 1500;
 
-  function setStatus(message) {
-    if (status) status.textContent = message;
+  function setStatus(message, quiet) {
+    if (!status) return;
+    status.textContent = message;
+    if (typeof status.setAttribute === 'function') {
+      status.setAttribute('data-quiet', quiet ? 'true' : 'false');
+    }
   }
 
-  function setFrameStyle(name, value) {
-    if (!iframe || !iframe.style) return;
-    if (typeof iframe.style.setProperty === 'function') {
-      iframe.style.setProperty(name, value, 'important');
+  function setImportantStyle(element, name, value) {
+    if (!element || !element.style) return;
+    if (typeof element.style.setProperty === 'function') {
+      element.style.setProperty(name, value, 'important');
       return;
     }
-    iframe.style[name] = value;
+    element.style[name] = value;
   }
 
   function prepareFrameLayout() {
-    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('scrolling', 'no');
+    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('scrolling', 'yes');
     if (typeof iframe.setAttribute === 'function') iframe.setAttribute('aria-hidden', 'true');
-    setFrameStyle('display', 'block');
-    setFrameStyle('width', '100%');
-    setFrameStyle('max-width', 'none');
-    setFrameStyle('overflow', 'hidden');
-    setFrameStyle('border', '0');
-    setFrameStyle('visibility', 'hidden');
+    if (document.body && liveQuestion && liveQuestion.parentNode !== document.body) {
+      document.body.appendChild(liveQuestion);
+    }
+    setImportantStyle(liveQuestion, 'position', 'fixed');
+    setImportantStyle(liveQuestion, 'inset', '0');
+    setImportantStyle(liveQuestion, 'width', '100vw');
+    setImportantStyle(liveQuestion, 'height', '100vh');
+    if (
+      window.CSS &&
+      typeof window.CSS.supports === 'function' &&
+      window.CSS.supports('height', '100dvh')
+    ) {
+      setImportantStyle(liveQuestion, 'height', '100dvh');
+    }
+    setImportantStyle(liveQuestion, 'margin', '0');
+    setImportantStyle(liveQuestion, 'padding', '0');
+    setImportantStyle(liveQuestion, 'overflow', 'hidden');
+    setImportantStyle(liveQuestion, 'background', '#eef2f6');
+    setImportantStyle(liveQuestion, 'z-index', '2147483000');
+    setImportantStyle(iframe, 'display', 'block');
+    setImportantStyle(iframe, 'position', 'absolute');
+    setImportantStyle(iframe, 'inset', '0');
+    setImportantStyle(iframe, 'width', '100%');
+    setImportantStyle(iframe, 'max-width', 'none');
+    setImportantStyle(iframe, 'height', '100%');
+    setImportantStyle(iframe, 'overflow', 'auto');
+    setImportantStyle(iframe, 'border', '0');
+    setImportantStyle(iframe, 'visibility', 'hidden');
   }
 
   function revealConnectedFrame() {
     if (typeof iframe.removeAttribute === 'function') iframe.removeAttribute('aria-hidden');
-    setFrameStyle('visibility', 'visible');
+    setImportantStyle(iframe, 'visibility', 'visible');
   }
 
   function relaxStyle(element, property, value) {
@@ -154,27 +182,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  function expandQualtricsQuestionLayout() {
-    /*
-     * Qualtrics themes use different wrapper names.  Walking the actual ancestor
-     * chain is more reliable than assuming one theme and affects only the page
-     * that contains this single bridge question.
-     */
-    var element = iframe && iframe.parentElement;
-    var visited = 0;
-    while (element && element !== document.documentElement && visited < 20) {
-      relaxStyle(element, 'width', '100%');
-      relaxStyle(element, 'max-width', 'none');
-      relaxStyle(element, 'min-width', '0');
-      relaxStyle(element, 'box-sizing', 'border-box');
-      relaxStyle(element, 'overflow-x', 'visible');
-      element = element.parentElement;
-      visited += 1;
+  function lockOuterQualtricsViewport() {
+    if (document.documentElement) {
+      relaxStyle(document.documentElement, 'overflow', 'hidden');
     }
     if (document.body) {
-      relaxStyle(document.body, 'width', '100%');
-      relaxStyle(document.body, 'max-width', 'none');
-      relaxStyle(document.body, 'overflow-x', 'hidden');
+      relaxStyle(document.body, 'overflow', 'hidden');
     }
   }
 
@@ -193,13 +206,48 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       }
     }
     relaxedLayoutStyles = [];
+    if (liveQuestion && originalLiveParent && liveQuestion.parentNode !== originalLiveParent) {
+      if (
+        originalLiveNextSibling &&
+        originalLiveNextSibling.parentNode === originalLiveParent &&
+        typeof originalLiveParent.insertBefore === 'function'
+      ) {
+        originalLiveParent.insertBefore(liveQuestion, originalLiveNextSibling);
+      } else if (typeof originalLiveParent.appendChild === 'function') {
+        originalLiveParent.appendChild(liveQuestion);
+      }
+    }
+  }
+
+  function releaseFullscreenForNativeNavigation() {
+    restoreQualtricsQuestionLayout();
+    setImportantStyle(liveQuestion, 'position', 'relative');
+    setImportantStyle(liveQuestion, 'inset', 'auto');
+    setImportantStyle(liveQuestion, 'width', '100%');
+    setImportantStyle(liveQuestion, 'height', 'auto');
+    setImportantStyle(liveQuestion, 'margin', '0');
+    setImportantStyle(liveQuestion, 'overflow', 'visible');
+    setImportantStyle(liveQuestion, 'z-index', 'auto');
+    setImportantStyle(iframe, 'position', 'relative');
+    setImportantStyle(iframe, 'inset', 'auto');
+    setImportantStyle(iframe, 'width', '100%');
+    setImportantStyle(iframe, 'height', '70vh');
+    setImportantStyle(iframe, 'min-height', '600px');
+    setImportantStyle(iframe, 'overflow', 'auto');
+    setImportantStyle(status, 'position', 'relative');
+    setImportantStyle(status, 'top', 'auto');
+    setImportantStyle(status, 'left', 'auto');
+    setImportantStyle(status, 'width', '100%');
+    setImportantStyle(status, 'transform', 'none');
+    setImportantStyle(status, 'margin', '0 0 0.75rem');
   }
 
   function sendParentReady() {
     if (!iframe || !iframe.contentWindow) return;
     iframe.contentWindow.postMessage({
       type: parentReadyType,
-      protocolVersion: 2
+      protocolVersion: 2,
+      bridgeBuild: bridgeBuild
     }, childOrigin);
   }
 
@@ -209,7 +257,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       accepted: accepted,
       submissionId: submissionId,
       receiptId: accepted ? 'qualtrics-accepted-' + submissionId : undefined,
-      error: error || undefined
+      error: error || undefined,
+      bridgeBuild: bridgeBuild
     }, childOrigin);
   }
 
@@ -316,55 +365,20 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  function revealQuestionnaireTarget(message) {
-    var requestedOffset = Number(message.offsetTop);
-    var requestedHeight = Number(message.targetHeight);
-    if (
-      !Number.isFinite(requestedOffset) ||
-      !Number.isFinite(requestedHeight) ||
-      requestedOffset < 0 ||
-      requestedOffset > 10000 ||
-      requestedHeight < 1 ||
-      requestedHeight > 5000 ||
-      typeof iframe.getBoundingClientRect !== 'function' ||
-      typeof window.scrollTo !== 'function'
-    ) {
-      return;
-    }
-
-    function reveal() {
-      var frameRect = iframe.getBoundingClientRect();
-      var visualViewport = window.visualViewport;
-      var viewportOffset = visualViewport ? visualViewport.offsetTop : 0;
-      var viewportHeight = visualViewport ? visualViewport.height : window.innerHeight;
-      var parentScrollTop = window.scrollY || window.pageYOffset || 0;
-      var absoluteTargetTop = parentScrollTop + frameRect.top + requestedOffset;
-      var top = absoluteTargetTop - viewportOffset;
-      if (viewportHeight > requestedHeight) {
-        top -= (viewportHeight - requestedHeight) / 2;
-      }
-      window.scrollTo({
-        top: Math.max(0, Math.round(top)),
-        left: window.scrollX || window.pageXOffset || 0,
-        behavior: 'auto'
-      });
-    }
-
-    // Repeat after responsive layout settles. This mirrors the bounded child
-    // reveal and avoids relying on focus propagation across an iframe boundary.
-    reveal();
-    if (typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(function waitForFirstFrame() {
-        window.requestAnimationFrame(reveal);
-      });
-    }
-    window.setTimeout(reveal, 160);
-  }
-
   function receiveResult(event) {
     if (!iframe || event.source !== iframe.contentWindow || event.origin !== childOrigin) return;
     var message = event.data;
     if (message && message.type === childReadyType) {
+      if (message.protocolVersion !== 2 || message.bridgeBuild !== bridgeBuild) {
+        setStatus(
+          'The generated questionnaire HTML, JavaScript and participant page do not use the same bridge version. ' +
+          'Do not collect a response. Regenerate and replace the complete package.',
+          false
+        );
+        releaseFullscreenForNativeNavigation();
+        question.showNextButton();
+        return;
+      }
       try {
         stageConnectionDiagnostic();
       } catch (error) {
@@ -373,8 +387,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           : 'Qualtrics could not stage the connection diagnostic.';
         setStatus(
           diagnosticDetail +
-          ' Do not collect a response. Check the Survey Flow fields and question JavaScript.'
+          ' Do not collect a response. Check the Survey Flow fields and question JavaScript.',
+          false
         );
+        releaseFullscreenForNativeNavigation();
         question.showNextButton();
         return;
       }
@@ -390,23 +406,31 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       revealConnectedFrame();
       setStatus(
         'The questionnaire is connected. Bridge ' + bridgeBuild +
-        ' staged its Qualtrics diagnostic fields. Completed answers will save into this response.'
+        ' staged its Qualtrics diagnostic fields. Completed answers will save into this response.',
+        true
       );
-      return;
-    }
-    if (message && message.type === resizeType) {
-      var requestedHeight = Number(message.height);
-      if (Number.isFinite(requestedHeight)) {
-        setFrameStyle('height', Math.max(600, Math.min(10000, Math.ceil(requestedHeight))) + 'px');
-      }
-      return;
-    }
-    if (message && message.type === revealType) {
-      revealQuestionnaireTarget(message);
       return;
     }
     if (!message || message.type !== submitType) return;
     var submissionId = message.record && message.record.submissionId;
+    if (!childConnected) {
+      sendReceipt(
+        event.source,
+        false,
+        submissionId || '',
+        'The verified Qualtrics bridge connection is not ready.'
+      );
+      return;
+    }
+    if (message.bridgeBuild !== bridgeBuild) {
+      sendReceipt(
+        event.source,
+        false,
+        submissionId || '',
+        'The questionnaire and Qualtrics bridge versions do not match.'
+      );
+      return;
+    }
 
     if (acceptedSubmissionId === submissionId) {
       sendReceipt(event.source, true, submissionId);
@@ -417,6 +441,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       return;
     }
 
+    if (document.body && liveQuestion.parentNode !== document.body) {
+      prepareFrameLayout();
+      lockOuterQualtricsViewport();
+    }
     try {
       requireRecord(message.record);
       storeRecord(message.record);
@@ -425,7 +453,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       setStatus(
         'Your answers have been accepted and Qualtrics is saving your response now. ' +
         'Please keep this page open until the next page appears by itself. ' +
-        'No backup download is required during this automatic transition.'
+        'No backup download is required during this automatic transition.',
+        true
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
       completionTimerId = window.setTimeout(function completeAcceptedResponse() {
@@ -439,8 +468,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           advancing = false;
           setStatus(
             'Qualtrics did not open the recorded result page. Use one backup button ' +
-            'in the questionnaire and tell the study conductor, or use the restored Next button.'
+            'in the questionnaire and tell the study conductor, or use the restored Next button.',
+            false
           );
+          releaseFullscreenForNativeNavigation();
           question.showNextButton();
         }, 6000);
       }, completionDelayMs);
@@ -449,8 +480,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       setStatus(
         detail +
         ' Return to the questionnaire and try again. If it keeps failing, use the download' +
-        ' button on the questionnaire and tell the study conductor.'
+        ' button on the questionnaire and tell the study conductor.',
+        false
       );
+      releaseFullscreenForNativeNavigation();
       sendReceipt(event.source, false, submissionId || '', detail);
       // Staging can fail deterministically — an oversized record fails identically on every
       // retry — so the navigation control is restored. Without it the participant is left on
@@ -459,20 +492,43 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  if (!iframe || !iframe.contentWindow) {
-    setStatus('The accessible questionnaire iframe is missing. The study conductor must correct this Qualtrics question.');
+  if (
+    recordedSummary &&
+    typeof recordedSummary.getAttribute === 'function' &&
+    recordedSummary.getAttribute('data-recorded') === '1'
+  ) {
+    return;
+  }
+  if (!iframe || !iframe.contentWindow || !liveQuestion) {
+    setStatus(
+      'The accessible questionnaire package is incomplete. The study conductor must replace the complete generated HTML and JavaScript.',
+      false
+    );
     // Keep the native navigation available on a misconfigured test page instead of
     // trapping the researcher or participant. This path must fail the synthetic
     // preflight and must never be used to collect a participant response.
     question.showNextButton();
     return;
   }
+  if (
+    typeof liveQuestion.getAttribute !== 'function' ||
+    liveQuestion.getAttribute('data-aqp-package-build') !== bridgeBuild
+  ) {
+    setStatus(
+      'The questionnaire HTML and JavaScript versions do not match. Expected package ' +
+      bridgeBuild + '. Do not collect a response. Replace both generated blocks together.',
+      false
+    );
+    releaseFullscreenForNativeNavigation();
+    question.showNextButton();
+    return;
+  }
 
   prepareFrameLayout();
-  expandQualtricsQuestionLayout();
+  lockOuterQualtricsViewport();
   question.hideNextButton();
   window.addEventListener('message', receiveResult);
-  setStatus('Connecting the questionnaire to this Qualtrics response.');
+  setStatus('Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.', false);
   if (typeof iframe.addEventListener === 'function') {
     iframe.addEventListener('load', sendParentReady);
   }
@@ -485,8 +541,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (childConnected) return;
     setStatus(
       'The questionnaire connection did not start. Do not collect a real response. ' +
-      'Regenerate and replace the complete HTML and JavaScript, then test again.'
+      'Regenerate and replace the complete HTML and JavaScript, then test again.',
+      false
     );
+    releaseFullscreenForNativeNavigation();
     question.showNextButton();
   }, 8000);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
@@ -513,7 +571,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     window.removeEventListener('message', receiveResult);
   });
 });
-`,N=`<!--
+`,O=`<!--
   REFERENCE TEMPLATE ONLY.
   Do not paste this file into Qualtrics unchanged. Use the complete generated
   question HTML from study.html so the iframe has the configured participant URL.
@@ -547,39 +605,51 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     white-space: pre-wrap;
   }
   #accessible-questionnaire-live-question {
-    width: 100%;
-    max-width: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
     margin: 0;
     padding: 0;
-  }
-  /*
-   * This bridge question is placed on its own Qualtrics page.  The UCL theme
-   * constrains ordinary question text to a reading column, but that same
-   * constraint turns the participant application into a small nested viewport.
-   * These selectors remove only width caps on the live bridge page.  The
-   * JavaScript also relaxes the actual iframe ancestor chain because current
-   * and legacy Qualtrics layouts do not expose identical class names.
-   */
-  #Questions,
-  #Questions .QuestionOuter,
-  #Questions .QuestionBody,
-  #Questions .QuestionText,
-  #SkinContent,
-  .SkinInner,
-  [data-runtime-survey-root],
-  [data-runtime-question-root] {
-    width: 100% !important;
-    max-width: none !important;
-    box-sizing: border-box !important;
+    overflow: hidden;
+    background: #eef2f6;
   }
   #accessible-questionnaire-frame {
     display: block;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    max-width: none;
-    min-height: 1200px;
+    height: 100%;
     border: 0;
-    overflow: hidden;
+    overflow: auto;
     background: #eef2f6;
+  }
+  #accessible-questionnaire-collection-status {
+    position: fixed;
+    z-index: 2147483001;
+    top: 1rem;
+    left: 50%;
+    width: min(44rem, calc(100vw - 2rem));
+    box-sizing: border-box;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 2px solid #315b7d;
+    background: #edf4f8;
+    color: #172235;
+    font: 600 1rem/1.5 Arial, Helvetica, sans-serif;
+  }
+  #accessible-questionnaire-collection-status[data-quiet="true"] {
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
   }
 </style>
 <section
@@ -633,13 +703,13 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 </section>
 <div
   id="accessible-questionnaire-live-question"
-  data-aqp-package-build="0.8.1-q1"
+  data-aqp-package-build="0.8.2-q2"
 >
   <p
     id="accessible-questionnaire-collection-status"
     role="status"
     aria-live="polite"
-    style="margin:0 0 0.75rem;padding:0.75rem 1rem;border:2px solid #315b7d;background:#edf4f8;color:#172235;font:600 1rem/1.5 Arial,Helvetica,sans-serif"
+    data-quiet="false"
   >
     Connecting this questionnaire to the current Qualtrics response.
   </p>
@@ -649,15 +719,15 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     title="Accessible questionnaire participant page"
     allow="camera; microphone"
     referrerpolicy="origin"
-    scrolling="no"
+    scrolling="yes"
     aria-hidden="true"
-    style="display:block;width:100%;max-width:none;min-height:1200px;border:0;overflow:hidden;visibility:hidden;background:#eef2f6"
+    style="display:block;position:absolute;inset:0;width:100%;height:100%;border:0;overflow:auto;visibility:hidden;background:#eef2f6"
   ></iframe>
 </div>
-`;var x=Object.defineProperty,$=Object.getOwnPropertyDescriptor,i=(e,t,r,a)=>{for(var l=a>1?void 0:a?$(t,r):t,c=e.length-1,u;c>=0;c--)(u=e[c])&&(l=(a?u(t,r,l):u(l))||l);return a&&l&&x(t,r,l),l};const M=g.trim().split(/\r?\n/).filter(Boolean).length,f=_.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function F(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(r=>{if(!r||typeof r!="object")return!1;const a=r;return"study"in a&&"responses"in a&&"result"in a})}function j(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const r=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return N.trim().replace(t,r)}function L(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
-`):"";return O.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
+`;var x=Object.defineProperty,L=Object.getOwnPropertyDescriptor,i=(e,t,r,a)=>{for(var l=a>1?void 0:a?L(t,r):t,c=e.length-1,u;c>=0;c--)(u=e[c])&&(l=(a?u(t,r,l):u(l))||l);return a&&l&&x(t,r,l),l};const $=g.trim().split(/\r?\n/).filter(Boolean).length,f=_.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function M(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(r=>{if(!r||typeof r!="object")return!1;const a=r;return"study"in a&&"responses"in a&&"result"in a})}function k(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const r=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return O.trim().replace(t,r)}function j(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
+`):"";return q.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
 
-`).trim()}let n=class extends v{constructor(){super(...arguments),this.instrumentId=A,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,r=y(t);r&&(this.instrumentId=t,r.supports.simplerExplanations||(this.showSimpleLanguage=!1),r.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.message=`${r.name} selected. Generate a new configuration before testing.`)},this.generateParticipantLink=()=>{this.errorMessage="";try{const e=w({instrumentId:this.instrumentId,studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&p(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,r=t.files?.[0];if(r){this.errorMessage="";try{const a=JSON.parse(await r.text()),l=T(a);if(!l)throw F(a)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.message="Configuration imported and participant link regenerated."}catch(a){this.showError(a instanceof Error?a.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=S()},this.exportResultsJson=()=>{this.completedResults.length&&p(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&p(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${P(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(I(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return y(this.instrumentId)}render(){return o`
+`).trim()}let n=class extends v{constructor(){super(...arguments),this.instrumentId=A,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,r=y(t);r&&(this.instrumentId=t,r.supports.simplerExplanations||(this.showSimpleLanguage=!1),r.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.message=`${r.name} selected. Generate a new configuration before testing.`)},this.generateParticipantLink=()=>{this.errorMessage="";try{const e=S({instrumentId:this.instrumentId,studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&p(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,r=t.files?.[0];if(r){this.errorMessage="";try{const a=JSON.parse(await r.text()),l=w(a);if(!l)throw M(a)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.message="Configuration imported and participant link regenerated."}catch(a){this.showError(a instanceof Error?a.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=I()},this.exportResultsJson=()=>{this.completedResults.length&&p(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&p(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${P(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(T(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return y(this.instrumentId)}render(){return o`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
@@ -962,7 +1032,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     `}booleanOption(e,t,r,a=""){return o`<label class="toggle-card conductor-toggle">
       <input type="checkbox" .checked=${t} @change=${l=>r(l.currentTarget.checked)} />
       <span><strong>${e}</strong>${a?o`<small>${a}</small>`:d}</span>
-    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=Q(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=C(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":j(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=L(this.generatedConfig?.showScoreToParticipant===!0);return o`
+    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=Q(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=C(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":k(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=j(this.generatedConfig?.showScoreToParticipant===!0);return o`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
         <p>
@@ -1034,7 +1104,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               into the question body.
             </p>
             <label for="qualtrics-embedded-fields">
-              <strong>${M} Embedded Data field names</strong>
+              <strong>${$} Embedded Data field names</strong>
             </label>
             <textarea
               id="qualtrics-embedded-fields"
@@ -1104,13 +1174,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           visible. If it is not, clear the question body and repeat step 1 in HTML or source view.
         </p>
         <p class="support-boundary">
-          On the live questionnaire page, the configured application must use the available Qualtrics
-          content width and the outer Qualtrics page must be the only vertical scrollbar. A narrow nested
-          viewport or a second scrollbar means that the HTML and JavaScript are not both from this
-          installation fingerprint; do not collect data from that survey.
+          In Preview, the participant application must fill the browser viewport and expose one visible
+          vertical scrollbar at the browser edge. A narrow inner panel, clipped content or two visible
+          scrollbars means that the HTML and JavaScript are not both from this installation fingerprint;
+          do not collect data from that survey.
+        </p>
+        <p class="support-boundary">
+          After replacing the HTML, JavaScript, Survey Flow fields or End of Survey message, select
+          <strong>Review and Publish</strong>. Preview one new synthetic response after publishing. Draft
+          changes do not update an already active distribution link, and older recorded rows are not
+          backfilled with new <code>__js_AQP_*</code> values.
         </p>
         <p>
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
         </p>
       </div>
-    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&q(t)})}};i([s()],n.prototype,"instrumentId",2);i([s()],n.prototype,"studyId",2);i([s()],n.prototype,"studyTitle",2);i([s()],n.prototype,"taskLabel",2);i([s()],n.prototype,"showScoreToParticipant",2);i([s()],n.prototype,"showSimpleLanguage",2);i([s()],n.prototype,"answerMode",2);i([s()],n.prototype,"largeText",2);i([s()],n.prototype,"audioGuidance",2);i([s()],n.prototype,"recoveryEnabled",2);i([s()],n.prototype,"participantAdjustmentPolicy",2);i([s()],n.prototype,"voiceInputAvailable",2);i([s()],n.prototype,"gazeInputAvailable",2);i([s()],n.prototype,"collectionMode",2);i([s()],n.prototype,"qualtricsSurveyUrl",2);i([s()],n.prototype,"generatedConfig",2);i([s()],n.prototype,"participantUrl",2);i([s()],n.prototype,"message",2);i([s()],n.prototype,"errorMessage",2);i([s()],n.prototype,"completedResults",2);n=i([b("study-conductor-app")],n);
+    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&N(t)})}};i([s()],n.prototype,"instrumentId",2);i([s()],n.prototype,"studyId",2);i([s()],n.prototype,"studyTitle",2);i([s()],n.prototype,"taskLabel",2);i([s()],n.prototype,"showScoreToParticipant",2);i([s()],n.prototype,"showSimpleLanguage",2);i([s()],n.prototype,"answerMode",2);i([s()],n.prototype,"largeText",2);i([s()],n.prototype,"audioGuidance",2);i([s()],n.prototype,"recoveryEnabled",2);i([s()],n.prototype,"participantAdjustmentPolicy",2);i([s()],n.prototype,"voiceInputAvailable",2);i([s()],n.prototype,"gazeInputAvailable",2);i([s()],n.prototype,"collectionMode",2);i([s()],n.prototype,"qualtricsSurveyUrl",2);i([s()],n.prototype,"generatedConfig",2);i([s()],n.prototype,"participantUrl",2);i([s()],n.prototype,"message",2);i([s()],n.prototype,"errorMessage",2);i([s()],n.prototype,"completedResults",2);n=i([b("study-conductor-app")],n);

@@ -56,7 +56,8 @@ configuration. Use those blocks rather than uploading repository files.
 9. Configure the custom End of Survey message from
    `end-of-survey-message.txt`. Do not add a redirect. If a Survey Flow End of
    Survey element overrides survey options, configure the same message there.
-10. Save and Preview. Publish only after all checks below pass.
+10. Save and Preview. After the synthetic checks pass, select **Review and
+    Publish**. Draft changes do not update an already active distribution link.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
 them to the prefixed Survey Flow fields. Do not remove the prefix in Survey Flow.
@@ -75,8 +76,10 @@ In Preview before submission:
 - the iframe remains hidden until the exact-origin child handshake succeeds, then
   the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`, names bridge `0.8.1-q1` and says the diagnostic fields were staged;
-- the questionnaire uses the outer Qualtrics page as the only vertical scrollbar.
+  connected`, names bridge `0.8.2-q2` and says the diagnostic fields were staged;
+- the participant application fills the browser viewport and exposes one visible
+  vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
+  create a second scrolling region.
 
 If the raw summary is visible, repeat the HTML/source-view step. If the iframe is
 blank, regenerate the complete HTML and confirm that the placeholder is absent.
@@ -93,9 +96,11 @@ preflight. Older rows are not backfilled.
 
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Version 0.8 uses a two-way ready handshake, bounded retries,
-mutation/resize observation and a non-scrolling iframe so this timing order cannot
-leave a fixed-height inner scrollbar.
+listener exists. Bridge `0.8.2-q2` uses a two-way ready handshake with an exact
+package fingerprint and bounded parent retries. It moves the live wrapper to the
+document body, fixes it to the visual viewport, disables outer-page scrolling and
+lets the participant document own the single scrollbar. It no longer depends on
+measuring and copying a changing child height through Qualtrics theme wrappers.
 
 ## Handoff and data-loss protection
 
@@ -110,8 +115,8 @@ make them durable until the Qualtrics page is submitted. Version 0.8 therefore:
 6. starts native Qualtrics advancement after a 1.5-second technical handoff;
 7. restores native navigation after a missing connection, staging error or a
    failed-advance watchdog;
-8. accepts only an exact-origin reveal request from its own iframe and moves the
-   outer Qualtrics viewport to a newly focused error or recovery control.
+8. requires the generated HTML, parent JavaScript and child application to report
+   the same bridge fingerprint before enabling participation or accepting a record.
 
 The 1.5 seconds is not participant reading time. Increasing it enlarges the window
 in which a participant can close the tab after seeing an acknowledgement but before
@@ -184,8 +189,8 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
    completed local backup is discoverable. Check Data & Analysis separately.
 8. Disconnect the network at submission. Confirm that the questionnaire remains on
    Review, focuses the error summary and retains retry, answer-editing and backup
-   routes. On a phone and tablet, confirm that both the iframe and outer Qualtrics
-   viewport reveal the error rather than leaving it above the visible area.
+   routes. On a phone and tablet, confirm that the single participant viewport
+   reveals the error rather than leaving it above the visible area.
 9. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
    session restores the exact next step after the pseudonymous code is re-entered.
    The Resume control must receive focus and expose the saved count and Resume/Erase
@@ -206,6 +211,10 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
 
 Record the survey ID, distribution URL, frozen Git commit, configuration JSON, date,
 browser/device and exported rows in the study log.
+
+After any installation change, publish it and create a newly dated synthetic
+response. Rows recorded before the `AQP_*` package was installed are expected to
+remain blank in the new columns; they are not evidence that the new package failed.
 
 ## Migration warning
 

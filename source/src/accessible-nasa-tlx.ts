@@ -20,8 +20,9 @@ import {
 import {
   configuredResultSink,
   installStudyResultSink,
-  requestQualtricsParentReveal,
   submitToApprovedResultSink,
+  type InstalledStudyResultSink,
+  type QualtricsBridgeState,
   type ResultSinkReceipt,
 } from './result-sink';
 import {
@@ -200,6 +201,8 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private hostSinkName = '';
   @state() private hostReceipt: ResultSinkReceipt | null = null;
   @state() private submittingResult = false;
+  @state() private hostBridgeState: QualtricsBridgeState | 'not-required' = 'not-required';
+  @state() private hostBridgeMessage = '';
 
   private hiddenAt: number | null = null;
   private recognition: SpeechRecognitionLike | null = null;
@@ -210,6 +213,7 @@ export class AccessibleNasaTlx extends LitElement {
   private speechRequestId = 0;
   private savedSessionAnnouncementKey = '';
   private configurationApplied = false;
+  private installedResultSink: InstalledStudyResultSink | null = null;
   private readonly gazeCandidateTracker = new DwellTracker(1000);
   private readonly gazeConfirmationTracker = new DwellTracker(1200);
 
@@ -237,6 +241,8 @@ export class AccessibleNasaTlx extends LitElement {
 
   disconnectedCallback() {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    this.installedResultSink?.bridge.disconnect();
+    this.installedResultSink = null;
     this.stopReading(false);
     this.releaseRecognition();
     this.stopGazeInput();
@@ -279,7 +285,15 @@ export class AccessibleNasaTlx extends LitElement {
           return;
         }
       }
-      installStudyResultSink(config);
+      this.hostBridgeState = 'connecting';
+      this.installedResultSink = installStudyResultSink(
+        config,
+        window,
+        ({ state, message }) => {
+          this.hostBridgeState = state;
+          this.hostBridgeMessage = message;
+        },
+      );
     }
   }
 
@@ -425,6 +439,18 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.configurationError
           ? html`<div class="error-summary" role="alert"><h3>Study link problem</h3><p>${this.configurationError}</p></div>`
           : nothing}
+        ${this.studyConfig?.collection.mode === 'qualtrics' && this.hostBridgeState !== 'connected'
+          ? html`<div
+              class=${this.hostBridgeState === 'failed' ? 'error-summary' : 'study-context'}
+              role=${this.hostBridgeState === 'failed' ? 'alert' : 'status'}
+            >
+              <h3>${this.hostBridgeState === 'failed'
+                ? 'Qualtrics connection problem'
+                : 'Checking secure result collection'}</h3>
+              <p>${this.hostBridgeMessage}</p>
+              <p>The questionnaire cannot start until the matching collection bridge is connected.</p>
+            </div>`
+          : nothing}
         ${this.renderStudyContext()}
         ${this.savedSession ? this.renderSavedSessionOffer() : nothing}
         ${this.recoveredCompletedRecord ? this.renderCompletedBackupOffer() : nothing}
@@ -500,7 +526,8 @@ export class AccessibleNasaTlx extends LitElement {
           type="button"
           data-gaze-target
           data-gaze-label=${startLabel}
-          ?disabled=${Boolean(this.configurationError)}
+          ?disabled=${Boolean(this.configurationError) ||
+            (this.studyConfig?.collection.mode === 'qualtrics' && this.hostBridgeState !== 'connected')}
           @click=${this.startQuestionnaire}
         >
           ${startLabel}
@@ -1740,6 +1767,16 @@ export class AccessibleNasaTlx extends LitElement {
       this.showError(this.configurationError);
       return;
     }
+    if (
+      this.studyConfig?.collection.mode === 'qualtrics' &&
+      this.hostBridgeState !== 'connected'
+    ) {
+      this.showError(
+        this.hostBridgeMessage ||
+        'The secure Qualtrics result connection is not ready. Do not start this questionnaire.',
+      );
+      return;
+    }
     if (this.studyConfig) {
       this.participantCode = this.participantCode.trim();
       if (!validParticipantCode(this.participantCode)) {
@@ -2807,10 +2844,11 @@ export class AccessibleNasaTlx extends LitElement {
     });
   }
 
-  private requestParentReveal(element: HTMLElement) {
-    const collection = this.studyConfig?.collection;
-    if (collection?.mode !== 'qualtrics') return;
-    requestQualtricsParentReveal(element, collection.parentOrigin);
+  private requestParentReveal(_element: HTMLElement) {
+    // Qualtrics bridge 0.8.2-q2 gives the participant page the only visible
+    // viewport and scrollbar. focusAndReveal therefore scrolls this document
+    // directly; a second parent-window scroll request would reintroduce the
+    // nested-scroll failure that the full-viewport bridge removes.
   }
 
   private clearError() {

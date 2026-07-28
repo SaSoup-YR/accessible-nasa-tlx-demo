@@ -27,8 +27,9 @@ verified release build.
   provenance, backups, storage/network failures and host events.
 - `study.test.ts` — v0.7 migration, strict Version 4 records, cross-instrument CSV union,
   storage behavior and corruption rejection.
-- `result-sink.test.ts` — exact-origin receipts and parent-viewport reveal, generic
-  60-field SUS staging, bounded handoff, watchdog and failure navigation.
+- `result-sink.test.ts` — exact-origin and exact-build handshakes, full-viewport
+  one-scroll presentation, generic 60-field SUS staging, bounded handoff, watchdog
+  and failure navigation.
 - `conductor-component.test.ts` — role separation, two-instrument configuration,
   generated Qualtrics package, score-display-aware completion text and error focus.
 - `accessibility.test.ts` — five axe structural scans including SUS.
