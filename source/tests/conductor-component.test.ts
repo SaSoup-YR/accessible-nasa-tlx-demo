@@ -2,7 +2,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildQualtricsQuestionHtml } from '../src/study-conductor';
+import {
+  buildQualtricsEndOfSurveyMessage,
+  buildQualtricsQuestionHtml,
+} from '../src/study-conductor';
 import { readStudyConfigFromHash } from '../src/study';
 
 async function renderConductor() {
@@ -36,8 +39,8 @@ describe('study conductor defaults and guidance', () => {
     const component = await renderConductor();
     expect(component.textContent).toContain('This researcher page generates a separate participant page');
     expect(component.textContent).toContain('P-001');
-    expect(inputFor(component, 'Study ID').placeholder).toBe('TLX-TECH-01');
-    expect(inputFor(component, 'Study title').placeholder).toBe('Route-planning workload study');
+    expect(inputFor(component, 'Study ID').placeholder).toBe('ACCESS-TECH-01');
+    expect(inputFor(component, 'Study title').placeholder).toBe('Route-planning interface study');
     expect(inputFor(component, 'Task label').placeholder).toContain('planning a route');
 
     const participantChoice = inputFor(component, 'Prepared defaults with optional participant choice');
@@ -106,15 +109,15 @@ describe('study conductor defaults and guidance', () => {
     ];
     expect(setupAssets).toHaveLength(4);
     const questionHtml = component.querySelector<HTMLTextAreaElement>('[data-qualtrics-asset="question-html"]')!.value;
-    expect(questionHtml).toContain('id="accessible-nasa-tlx-frame"');
-    expect(questionHtml).toContain('id="accessible-nasa-tlx-recorded-summary"');
+    expect(questionHtml).toContain('id="accessible-questionnaire-frame"');
+    expect(questionHtml).toContain('id="accessible-questionnaire-recorded-summary"');
     expect(questionHtml).toContain('style="display:none"');
-    expect(questionHtml).toContain('data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"');
+    expect(questionHtml).toContain('data-recorded="${e://Field/__js_AQP_ACCEPTED}"');
     expect(questionHtml).toContain(
-      '#accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question',
+      '#accessible-questionnaire-recorded-summary[data-recorded="1"] + #accessible-questionnaire-live-question',
     );
-    expect(questionHtml).toContain('${e://Field/__js_ANTLX_PARTICIPANT_CODE}');
-    expect(questionHtml).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
+    expect(questionHtml).toContain('${e://Field/__js_AQP_PARTICIPANT_CODE}');
+    expect(questionHtml).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
     expect(questionHtml).toContain(participantUrl);
     expect(questionHtml).not.toContain('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE');
     expect(questionHtml).toBe(buildQualtricsQuestionHtml(participantUrl));
@@ -129,8 +132,8 @@ describe('study conductor defaults and guidance', () => {
     const embeddedFields = component.querySelector<HTMLTextAreaElement>(
       '[data-qualtrics-asset="embedded-data"]',
     )!.value;
-    expect(embeddedFields.trim().split(/\r?\n/)).toHaveLength(63);
-    expect(embeddedFields).toContain('__js_ANTLX_ACCEPTED');
+    expect(embeddedFields.trim().split(/\r?\n/)).toHaveLength(60);
+    expect(embeddedFields).toContain('__js_AQP_ACCEPTED');
     expect(component.querySelector<HTMLTextAreaElement>(
       '[data-qualtrics-asset="question-javascript"]',
     )!.value).toContain('Qualtrics.SurveyEngine.addOnReady');
@@ -164,6 +167,19 @@ describe('study conductor defaults and guidance', () => {
     expect(() =>
       buildQualtricsQuestionHtml('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE'),
     ).toThrow(/generated participant URL/i);
+  });
+
+  it('keeps the persistent Qualtrics completion message aligned with score-display policy', () => {
+    const hidden = buildQualtricsEndOfSurveyMessage(false);
+    expect(hidden).toContain('Your questionnaire responses have been recorded successfully.');
+    expect(hidden).not.toContain('__js_AQP_PRIMARY_SCORE');
+    expect(hidden).not.toContain('{{OPTIONAL_SCORE_BLOCK}}');
+
+    const shown = buildQualtricsEndOfSurveyMessage(true);
+    expect(shown).toContain('${e://Field/__js_AQP_INSTRUMENT_NAME}');
+    expect(shown).toContain('${e://Field/__js_AQP_SCORE_NAME}');
+    expect(shown).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
+    expect(shown).not.toContain('{{OPTIONAL_SCORE_BLOCK}}');
   });
 
   it('identifies a result export as the wrong file type and moves focus to the import error', async () => {

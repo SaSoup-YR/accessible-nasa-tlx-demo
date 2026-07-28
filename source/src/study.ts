@@ -1,8 +1,17 @@
-import { dimensions, pairs, type DimensionId } from './nasa-tlx';
-import { calculateResult, type PairResponses, type TlxResult } from './scoring';
+import {
+  DEFAULT_QUESTIONNAIRE_ID,
+  buildQuestionnairePairs,
+  buildRatingValues,
+  getQuestionnaireDefinition,
+} from './questionnaire-definition';
+import {
+  scoreQuestionnaire,
+  type PairResponses,
+  type QuestionnaireScore,
+} from './scoring';
 
-export const PROTOTYPE_VERSION = '0.7.0';
-export const COMPLETED_RESULTS_KEY = 'accessible-nasa-tlx-v0.7-completed-results';
+export const PROTOTYPE_VERSION = '0.8.0';
+export const COMPLETED_RESULTS_KEY = 'accessible-questionnaire-v0.8-completed-results';
 
 export type AnswerMode = 'standard' | 'smiley';
 export type ParticipantAdjustmentPolicy = 'locked' | 'presentation-only' | 'participant-choice';
@@ -37,10 +46,11 @@ export interface StudySupportConfig {
 }
 
 export interface StudyConfig {
-  schemaVersion: 3;
+  schemaVersion: 4;
   configId: string;
   createdAt: string;
   prototypeVersion: typeof PROTOTYPE_VERSION;
+  instrumentId: string;
   studyId: string;
   studyTitle: string;
   taskLabel: string;
@@ -60,13 +70,13 @@ export interface SupportMetadata {
   gazeUsed: boolean;
   gazeActionCount: number;
   gazeEngine: string | null;
-  ratingInputRoutes: Partial<Record<DimensionId, string>>;
+  ratingInputRoutes: Partial<Record<string, string>>;
   pairInputRoutes: Record<string, string>;
   supportChanges: SupportChange[];
 }
 
 export interface StudyResultRecord {
-  schemaVersion: 3;
+  schemaVersion: 4;
   submissionId: string;
   study: {
     studyId: string;
@@ -80,25 +90,29 @@ export interface StudyResultRecord {
     completedAt: string;
   };
   prototype: {
-    name: 'Accessible NASA-TLX';
+    name: 'Accessible Questionnaire Platform';
     version: typeof PROTOTYPE_VERSION;
   };
   instrument: {
-    name: 'NASA Task Load Index';
-    version: 'full weighted';
+    id: string;
+    name: string;
+    version: string;
+    definitionSchemaVersion: 1;
+    scoringStrategy: QuestionnaireScore['strategy'];
   };
   collection: StudyCollectionConfig;
   configuration: StudySupportConfig;
   responses: {
-    ratings: Record<DimensionId, number>;
+    ratings: Record<string, number>;
     pairwiseChoices: PairResponses;
     pairPresentationOrder: string[];
   };
-  result: TlxResult;
+  result: QuestionnaireScore;
   supportMetadata: SupportMetadata;
 }
 
 export interface StudyConfigDraft {
+  instrumentId?: string;
   studyId: string;
   studyTitle: string;
   taskLabel: string;
@@ -114,7 +128,7 @@ export interface StudyResultInput {
   completedAt?: string;
   pairPresentationOrder: string[];
   pairwiseChoices: PairResponses;
-  result: TlxResult;
+  result: QuestionnaireScore;
   supportMetadata: SupportMetadata;
   submissionId?: string;
 }
@@ -169,6 +183,14 @@ function validSupportConfig(value: unknown): value is StudySupportConfig {
   );
 }
 
+function supportMatchesInstrument(instrumentId: string, support: StudySupportConfig) {
+  const definition = getQuestionnaireDefinition(instrumentId);
+  if (!definition) return false;
+  if (support.showSimpleLanguage && !definition.supports.simplerExplanations) return false;
+  if (support.answerMode === 'smiley' && !definition.supports.smileyLandmarks) return false;
+  return true;
+}
+
 export function normaliseHttpsOrigin(value: string) {
   try {
     const url = new URL(value.trim());
@@ -192,16 +214,24 @@ function validCollectionConfig(value: unknown): value is StudyCollectionConfig {
 
 export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pick<StudyConfig, 'configId' | 'createdAt'>> = {}): StudyConfig {
   const studyId = draft.studyId.trim();
+  const instrumentId = draft.instrumentId ?? DEFAULT_QUESTIONNAIRE_ID;
   if (!validStudyId(studyId)) {
     throw new Error('Study ID must use 1–64 letters, numbers, hyphens or underscores, and start with a letter or number.');
   }
   if (!validSupportConfig(draft.support)) throw new Error('The support configuration is incomplete.');
+  if (!getQuestionnaireDefinition(instrumentId)) {
+    throw new Error('Choose a supported questionnaire definition.');
+  }
+  if (!supportMatchesInstrument(instrumentId, draft.support)) {
+    throw new Error('The selected support settings are not compatible with this questionnaire definition.');
+  }
   if (!validCollectionConfig(draft.collection)) throw new Error('The result-collection configuration is incomplete.');
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     configId: overrides.configId ?? randomId('config'),
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     prototypeVersion: PROTOTYPE_VERSION,
+    instrumentId,
     studyId,
     studyTitle: cleanText(draft.studyTitle, 'Study title', 120),
     taskLabel: cleanText(draft.taskLabel, 'Task label', 160),
@@ -215,8 +245,10 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
   if (!value || typeof value !== 'object') return false;
   const config = value as Record<string, unknown>;
   return (
-    config.schemaVersion === 3 &&
+    config.schemaVersion === 4 &&
     config.prototypeVersion === PROTOTYPE_VERSION &&
+    typeof config.instrumentId === 'string' &&
+    getQuestionnaireDefinition(config.instrumentId) !== null &&
     typeof config.configId === 'string' &&
     config.configId.length > 0 &&
     typeof config.createdAt === 'string' &&
@@ -230,8 +262,61 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
     config.taskLabel.length <= 160 &&
     isBoolean(config.showScoreToParticipant) &&
     validSupportConfig(config.support) &&
+    supportMatchesInstrument(config.instrumentId, config.support) &&
     validCollectionConfig(config.collection)
   );
+}
+
+interface LegacyStudyConfigV3 {
+  schemaVersion: 3;
+  prototypeVersion: '0.7.0';
+  configId: string;
+  createdAt: string;
+  studyId: string;
+  studyTitle: string;
+  taskLabel: string;
+  showScoreToParticipant: boolean;
+  support: StudySupportConfig;
+  collection: StudyCollectionConfig;
+}
+
+function isLegacyStudyConfigV3(value: unknown): value is LegacyStudyConfigV3 {
+  if (!value || typeof value !== 'object') return false;
+  const config = value as Record<string, unknown>;
+  return (
+    config.schemaVersion === 3 &&
+    config.prototypeVersion === '0.7.0' &&
+    typeof config.configId === 'string' &&
+    Boolean(config.configId) &&
+    typeof config.createdAt === 'string' &&
+    typeof config.studyId === 'string' &&
+    validStudyId(config.studyId) &&
+    typeof config.studyTitle === 'string' &&
+    Boolean(config.studyTitle) &&
+    typeof config.taskLabel === 'string' &&
+    Boolean(config.taskLabel) &&
+    isBoolean(config.showScoreToParticipant) &&
+    validSupportConfig(config.support) &&
+    validCollectionConfig(config.collection)
+  );
+}
+
+export function normaliseStudyConfig(value: unknown): StudyConfig | null {
+  if (isStudyConfig(value)) return value;
+  if (!isLegacyStudyConfigV3(value)) return null;
+  return {
+    schemaVersion: 4,
+    configId: value.configId,
+    createdAt: value.createdAt,
+    prototypeVersion: PROTOTYPE_VERSION,
+    instrumentId: DEFAULT_QUESTIONNAIRE_ID,
+    studyId: value.studyId,
+    studyTitle: value.studyTitle,
+    taskLabel: value.taskLabel,
+    showScoreToParticipant: value.showScoreToParticipant,
+    support: { ...value.support },
+    collection: { ...value.collection },
+  };
 }
 
 function encodeUtf8(value: string) {
@@ -256,7 +341,7 @@ export function encodeStudyConfig(config: StudyConfig) {
 export function decodeStudyConfig(encoded: string): StudyConfig | null {
   try {
     const decoded = JSON.parse(decodeUtf8(encoded)) as unknown;
-    return isStudyConfig(decoded) ? decoded : null;
+    return normaliseStudyConfig(decoded);
   } catch {
     return null;
   }
@@ -279,13 +364,18 @@ export function buildParticipantUrl(baseUrl: string, config: StudyConfig) {
 
 export function progressStorageKey(configId: string, participantCode: string) {
   if (!validParticipantCode(participantCode)) throw new Error('Invalid participant code.');
-  return `accessible-nasa-tlx-v0.7-progress:${configId}:${participantCode}`;
+  return `accessible-questionnaire-v0.8-progress:${configId}:${participantCode}`;
 }
 
 export function createStudyResultRecord(input: StudyResultInput): StudyResultRecord {
   if (!validParticipantCode(input.participantCode)) throw new Error('A valid pseudonymous participant code is required.');
+  const definition = getQuestionnaireDefinition(input.config.instrumentId);
+  if (!definition) throw new Error('The study questionnaire definition is unavailable.');
+  if (input.result.strategy !== definition.scoring.strategy) {
+    throw new Error('The calculated result does not match the configured questionnaire.');
+  }
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     submissionId: input.submissionId ?? randomId('submission'),
     study: {
       studyId: input.config.studyId,
@@ -298,8 +388,14 @@ export function createStudyResultRecord(input: StudyResultInput): StudyResultRec
       startedAt: input.startedAt,
       completedAt: input.completedAt ?? new Date().toISOString(),
     },
-    prototype: { name: 'Accessible NASA-TLX', version: PROTOTYPE_VERSION },
-    instrument: { name: 'NASA Task Load Index', version: 'full weighted' },
+    prototype: { name: 'Accessible Questionnaire Platform', version: PROTOTYPE_VERSION },
+    instrument: {
+      id: definition.id,
+      name: definition.name,
+      version: definition.version,
+      definitionSchemaVersion: definition.schemaVersion,
+      scoringStrategy: definition.scoring.strategy,
+    },
     collection: { ...input.config.collection },
     configuration: { ...input.config.support },
     responses: {
@@ -319,8 +415,9 @@ function sameNumber(left: number, right: number) {
 export function isStudyResultRecord(value: unknown): value is StudyResultRecord {
   if (!value || typeof value !== 'object') return false;
   const record = value as StudyResultRecord;
+  const definition = getQuestionnaireDefinition(record.instrument?.id ?? '');
   if (
-    record.schemaVersion !== 3 ||
+    record.schemaVersion !== 4 ||
     typeof record.submissionId !== 'string' ||
     !record.submissionId ||
     !validParticipantCode(record.participantCode) ||
@@ -333,12 +430,16 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
     !record.timing ||
     typeof record.timing.startedAt !== 'string' ||
     typeof record.timing.completedAt !== 'string' ||
-    record.prototype?.name !== 'Accessible NASA-TLX' ||
+    record.prototype?.name !== 'Accessible Questionnaire Platform' ||
     record.prototype?.version !== PROTOTYPE_VERSION ||
-    record.instrument?.name !== 'NASA Task Load Index' ||
-    record.instrument?.version !== 'full weighted' ||
+    !definition ||
+    record.instrument?.name !== definition.name ||
+    record.instrument?.version !== definition.version ||
+    record.instrument?.definitionSchemaVersion !== definition.schemaVersion ||
+    record.instrument?.scoringStrategy !== definition.scoring.strategy ||
     !validCollectionConfig(record.collection) ||
     !validSupportConfig(record.configuration) ||
+    !supportMatchesInstrument(definition.id, record.configuration) ||
     !record.responses ||
     !record.result ||
     !record.supportMetadata
@@ -346,10 +447,17 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
     return false;
   }
 
-  const ratingValuesValid = dimensions.every(({ id }) => {
+  const ratingValues = buildRatingValues(definition);
+  const itemIds = new Set(definition.items.map(({ id }) => id));
+  const responseRatingIds = Object.keys(record.responses.ratings ?? {});
+  const resultRatingIds = Object.keys(record.result.ratings ?? {});
+  const ratingValuesValid = definition.items.every(({ id }) => {
     const rating = record.responses.ratings?.[id];
-    return Number.isInteger(rating) && rating >= 0 && rating <= 100 && rating % 5 === 0;
+    return Number.isInteger(rating) && ratingValues.includes(rating);
   });
+  const pairs = buildQuestionnairePairs(definition);
+  const pairIds = new Set(pairs.map(({ id }) => id));
+  const responsePairIds = Object.keys(record.responses.pairwiseChoices ?? {});
   const pairResponsesValid = pairs.every(({ id, left, right }) => {
     const choice = record.responses.pairwiseChoices?.[id];
     return choice === left || choice === right;
@@ -388,7 +496,13 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
   const pairOrder = record.responses.pairPresentationOrder;
   if (
     !ratingValuesValid ||
+    responseRatingIds.length !== itemIds.size ||
+    resultRatingIds.length !== itemIds.size ||
+    responseRatingIds.some((id) => !itemIds.has(id)) ||
+    resultRatingIds.some((id) => !itemIds.has(id)) ||
     !pairResponsesValid ||
+    responsePairIds.length !== pairIds.size ||
+    responsePairIds.some((id) => !pairIds.has(id)) ||
     !supportChangesValid ||
     !Array.isArray(pairOrder) ||
     pairOrder.length !== pairs.length ||
@@ -398,21 +512,23 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
   }
 
   const pairById = new Map(pairs.map((pair) => [pair.id, pair]));
-  const orderedPairs = pairOrder.map((id) => pairById.get(id));
-  if (orderedPairs.some((pair) => !pair)) return false;
+  if (pairOrder.some((id) => !pairById.has(id))) return false;
 
   try {
-    const expected = calculateResult(
-      orderedPairs as Array<(typeof pairs)[number]>,
-      record.responses.pairwiseChoices,
+    const expected = scoreQuestionnaire(
+      definition,
       record.responses.ratings,
+      record.responses.pairwiseChoices,
     );
     return (
-      dimensions.every(({ id }) =>
-        sameNumber(record.result.ratings[id], expected.ratings[id]) &&
-        sameNumber(record.result.weights[id], expected.weights[id]) &&
-        sameNumber(record.result.adjustedRatings[id], expected.adjustedRatings[id])) &&
-      sameNumber(record.result.weightedScore, expected.weightedScore)
+      record.result.strategy === expected.strategy &&
+      record.result.scoreName === expected.scoreName &&
+      sameNumber(record.result.primaryScore, expected.primaryScore) &&
+      sameNumber(record.result.scoreMinimum, expected.scoreMinimum) &&
+      sameNumber(record.result.scoreMaximum, expected.scoreMaximum) &&
+      definition.items.every(({ id }) =>
+        sameNumber(record.result.ratings[id], expected.ratings[id])) &&
+      JSON.stringify(record.result.details) === JSON.stringify(expected.details)
     );
   } catch {
     return false;
@@ -465,6 +581,9 @@ function csvCell(value: unknown) {
 }
 
 function resultRow(record: StudyResultRecord): Record<string, unknown> {
+  const definition = getQuestionnaireDefinition(record.instrument.id);
+  if (!definition) throw new Error(`Unknown questionnaire definition ${record.instrument.id}.`);
+  const pairs = buildQuestionnairePairs(definition);
   const row: Record<string, unknown> = {
     schema_version: record.schemaVersion,
     submission_id: record.submissionId,
@@ -476,14 +595,24 @@ function resultRow(record: StudyResultRecord): Record<string, unknown> {
     started_at: record.timing.startedAt,
     completed_at: record.timing.completedAt,
     prototype_version: record.prototype.version,
+    instrument_id: record.instrument.id,
+    instrument_version: record.instrument.version,
+    scoring_strategy: record.instrument.scoringStrategy,
     collection_mode: record.collection.mode,
-    weighted_score: record.result.weightedScore,
+    score_name: record.result.scoreName,
+    primary_score: record.result.primaryScore,
+    score_minimum: record.result.scoreMinimum,
+    score_maximum: record.result.scoreMaximum,
   };
-  dimensions.forEach(({ id }) => {
+  definition.items.forEach(({ id }) => {
     row[`rating_${id}`] = record.result.ratings[id];
-    row[`weight_${id}`] = record.result.weights[id];
-    row[`weighted_rating_${id}`] = record.result.adjustedRatings[id];
     row[`rating_route_${id}`] = record.supportMetadata.ratingInputRoutes[id] ?? '';
+    if (record.result.details.kind === 'weighted-pairwise') {
+      row[`weight_${id}`] = record.result.details.weights[id];
+      row[`weighted_rating_${id}`] = record.result.details.adjustedRatings[id];
+    } else {
+      row[`score_contribution_${id}`] = record.result.details.contributions[id];
+    }
   });
   pairs.forEach(({ id }) => {
     row[`pair_${id}`] = record.responses.pairwiseChoices[id] ?? '';
@@ -509,7 +638,7 @@ function resultRow(record: StudyResultRecord): Record<string, unknown> {
 export function resultsToCsv(records: StudyResultRecord[]) {
   if (records.length === 0) return '';
   const rows = records.map(resultRow);
-  const headers = Object.keys(rows[0]);
+  const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
   return [
     headers.map(csvCell).join(','),
     ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(',')),
@@ -517,7 +646,7 @@ export function resultsToCsv(records: StudyResultRecord[]) {
 }
 
 function safeFilePart(value: string) {
-  return value.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'nasa-tlx';
+  return value.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'questionnaire';
 }
 
 export function resultFileBase(record: StudyResultRecord) {

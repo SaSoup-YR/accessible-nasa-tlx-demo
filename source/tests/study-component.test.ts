@@ -151,7 +151,10 @@ describe('study-conductor and participant separation', () => {
       'restored for this tab',
     );
     expect(restored.querySelector('.saved-session')?.textContent).toContain('1 of 21');
-    expect(document.activeElement).toBe(restored.querySelector('#saved-session-heading'));
+    expect(document.activeElement).toBe(restored.querySelector('#saved-session-offer'));
+    expect(restored.querySelector('#resume-saved-questionnaire')?.getAttribute('aria-describedby')).toBe(
+      'saved-session-count saved-session-actions',
+    );
   });
 
   it('applies a locked configuration and requires a pseudonymous participant code', async () => {

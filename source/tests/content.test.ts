@@ -5,9 +5,9 @@ describe('NASA-TLX instrument content', () => {
   it('contains six dimensions with separate official and optional text', () => {
     expect(dimensions).toHaveLength(6);
     for (const dimension of dimensions) {
-      expect(dimension.officialDefinition.length).toBeGreaterThan(40);
-      expect(dimension.simpleExplanation.length).toBeGreaterThan(20);
-      expect(dimension.simpleExplanation).not.toBe(dimension.officialDefinition);
+      expect(dimension.prompt.length).toBeGreaterThan(40);
+      expect(dimension.simpleExplanation?.length).toBeGreaterThan(20);
+      expect(dimension.simpleExplanation).not.toBe(dimension.prompt);
     }
   });
 
@@ -34,4 +34,3 @@ describe('NASA-TLX instrument content', () => {
     expect(smileyLandmarks.every(({ value }) => ratingValues.includes(value))).toBe(true);
   });
 });
-

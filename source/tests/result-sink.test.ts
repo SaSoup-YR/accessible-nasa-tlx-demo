@@ -4,9 +4,11 @@ import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   QUALTRICS_RECEIPT_MESSAGE,
+  QUALTRICS_REVEAL_MESSAGE,
   QUALTRICS_SUBMIT_MESSAGE,
   configuredResultSink,
   createQualtricsParentResultSink,
+  requestQualtricsParentReveal,
   submitToApprovedResultSink,
 } from '../src/result-sink';
 import type { StudyResultRecord } from '../src/study';
@@ -16,6 +18,7 @@ const record = {
 } as StudyResultRecord;
 
 afterEach(() => {
+  delete window.accessibleQuestionnaireResultSink;
   delete window.accessibleNasaTlxResultSink;
 });
 
@@ -115,6 +118,42 @@ describe('approved host result sink', () => {
     await expect(sink.submit(record)).rejects.toThrow(/opened through its Qualtrics survey/i);
   });
 
+  it('requests parent-level visual reveal only from an embedded questionnaire and uses the exact origin', () => {
+    const parent = { postMessage: vi.fn() };
+    const windowRef = {
+      parent,
+      scrollY: 25,
+      pageYOffset: 25,
+    } as unknown as Window;
+    const element = {
+      getBoundingClientRect: () => ({
+        top: 175,
+        height: 80,
+      }),
+    } as unknown as HTMLElement;
+
+    expect(requestQualtricsParentReveal(
+      element,
+      'https://ucl-example.eu.qualtrics.com',
+      windowRef,
+    )).toBe(true);
+    expect(parent.postMessage).toHaveBeenCalledWith(
+      {
+        type: QUALTRICS_REVEAL_MESSAGE,
+        offsetTop: 200,
+        targetHeight: 80,
+      },
+      'https://ucl-example.eu.qualtrics.com',
+    );
+
+    Object.defineProperty(windowRef, 'parent', { value: windowRef });
+    expect(requestQualtricsParentReveal(
+      element,
+      'https://ucl-example.eu.qualtrics.com',
+      windowRef,
+    )).toBe(false);
+  });
+
   it('ships a syntactically valid Qualtrics parent bridge with exact-origin messaging and bounded raw fields', () => {
     const bridge = readFileSync(
       resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
@@ -136,8 +175,9 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('window.clearTimeout(advanceWatchdogTimerId);');
     expect(bridge).toContain('Qualtrics.SurveyEngine.setJSEmbeddedData(');
     expect(bridge).toContain(
-      "setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));",
+      "setField('AQP_PRIMARY_SCORE', Number(record.result.primaryScore).toFixed(2));",
     );
+    expect(bridge).toContain("setField('AQP_INSTRUMENT_ID', record.instrument.id);");
     expect(bridge).not.toContain('Qualtrics.SurveyEngine.setEmbeddedData(');
     expect(bridge).not.toMatch(/postMessage\([^)]*,\s*['"]\*['"]\s*\)/);
 
@@ -147,25 +187,26 @@ describe('approved host result sink', () => {
     )
       .trim()
       .split(/\r?\n/);
-    expect(embeddedDataFields).toHaveLength(63);
-    expect(embeddedDataFields.every((field) => field.startsWith('__js_ANTLX_'))).toBe(true);
+    expect(embeddedDataFields).toHaveLength(60);
+    expect(embeddedDataFields.every((field) => field.startsWith('__js_AQP_'))).toBe(true);
 
     const questionHtml = readFileSync(
       resolve(process.cwd(), '../integrations/qualtrics/question-html-template.html'),
       'utf8',
     );
-    expect(questionHtml).toContain('id="accessible-nasa-tlx-recorded-summary"');
+    expect(questionHtml).toContain('id="accessible-questionnaire-recorded-summary"');
     expect(questionHtml).toContain('REFERENCE TEMPLATE ONLY');
     expect(questionHtml).toContain('style="display:none"');
     expect(questionHtml).toContain('display: block !important');
-    expect(questionHtml).toContain('data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"');
+    expect(questionHtml).toContain('data-recorded="${e://Field/__js_AQP_ACCEPTED}"');
     expect(questionHtml).toContain(
-      '#accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question',
+      '#accessible-questionnaire-recorded-summary[data-recorded="1"] + #accessible-questionnaire-live-question',
     );
-    expect(questionHtml).toContain('${e://Field/__js_ANTLX_PARTICIPANT_CODE}');
-    expect(questionHtml).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
-    expect(questionHtml).not.toContain('__js_ANTLX_RAW_01');
-    const summaryFields = [...questionHtml.matchAll(/\$\{e:\/\/Field\/(__js_ANTLX_[A-Z0-9_]+)\}/g)]
+    expect(questionHtml).toContain('${e://Field/__js_AQP_PARTICIPANT_CODE}');
+    expect(questionHtml).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
+    expect(questionHtml).toContain('${e://Field/__js_AQP_INSTRUMENT_NAME}');
+    expect(questionHtml).not.toContain('__js_AQP_RAW_01');
+    const summaryFields = [...questionHtml.matchAll(/\$\{e:\/\/Field\/(__js_AQP_[A-Z0-9_]+)\}/g)]
       .map((match) => match[1]);
     expect(summaryFields.length).toBeGreaterThan(20);
     expect(summaryFields.every((field) => embeddedDataFields.includes(field))).toBe(true);
@@ -175,8 +216,7 @@ describe('approved host result sink', () => {
       'utf8',
     );
     expect(endOfSurveyMessage).toContain('Questionnaire complete');
-    expect(endOfSurveyMessage).toContain('${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100');
-    expect(endOfSurveyMessage).toContain('It is not a measure of your ability or a clinical assessment.');
+    expect(endOfSurveyMessage).toContain('{{OPTIONAL_SCORE_BLOCK}}');
     expect(endOfSurveyMessage).toContain('Your questionnaire responses have been recorded successfully.');
     expect(endOfSurveyMessage).toContain(
       'accessibility-support choices and input-route information have been saved separately',
@@ -184,38 +224,150 @@ describe('approved host result sink', () => {
     expect(endOfSurveyMessage).not.toMatch(/<[^>]+>/);
   });
 
-  it('stages a complete record, acknowledges it, and advances Qualtrics after the bounded hand-off', () => {
+  it('moves the Qualtrics parent viewport for a validated reveal request from its own iframe', () => {
     const bridge = readFileSync(
       resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
       'utf8',
     );
-    const dimensions = ['mental', 'physical', 'temporal', 'performance', 'effort', 'frustration'];
-    const ratings = Object.fromEntries(dimensions.map((dimension) => [dimension, 50]));
-    const weights = Object.fromEntries(dimensions.map((dimension) => [dimension, 2]));
+    let onReady: (() => void) | undefined;
+    let receiveMessage: ((event: MessageEvent) => void) | undefined;
+    const frameWindow = { postMessage: vi.fn() };
+    const iframe = {
+      contentWindow: frameWindow,
+      style: { height: '' },
+      getBoundingClientRect: () => ({ top: 400 }),
+    };
+    const status = { textContent: '' };
+    const scrollTo = vi.fn();
+    const fakeWindow = {
+      innerHeight: 800,
+      scrollY: 100,
+      scrollX: 0,
+      pageYOffset: 100,
+      pageXOffset: 0,
+      scrollTo,
+      setTimeout: vi.fn(),
+      clearTimeout: vi.fn(),
+      requestAnimationFrame: vi.fn(),
+      addEventListener(type: string, listener: EventListener) {
+        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+      },
+      removeEventListener: vi.fn(),
+    };
+    const fakeDocument = {
+      getElementById(id: string) {
+        if (id === 'accessible-questionnaire-frame') return iframe;
+        if (id === 'accessible-questionnaire-collection-status') return status;
+        return null;
+      },
+    };
+    const fakeQualtrics = {
+      SurveyEngine: {
+        addOnReady(callback: () => void) {
+          onReady = callback;
+        },
+        addOnUnload: vi.fn(),
+        setJSEmbeddedData: vi.fn(),
+      },
+    };
+
+    new Function('Qualtrics', 'document', 'window', bridge)(
+      fakeQualtrics,
+      fakeDocument,
+      fakeWindow,
+    );
+    onReady!.call({
+      hideNextButton: vi.fn(),
+      showNextButton: vi.fn(),
+      clickNextButton: vi.fn(),
+    });
+
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://attacker.example',
+      data: { type: QUALTRICS_REVEAL_MESSAGE, offsetTop: 600, targetHeight: 100 },
+    } as unknown as MessageEvent);
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: { type: QUALTRICS_REVEAL_MESSAGE, offsetTop: 600, targetHeight: 100 },
+    } as unknown as MessageEvent);
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 750,
+      left: 0,
+      behavior: 'auto',
+    });
+
+    const callsAfterValidRequest = scrollTo.mock.calls.length;
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: { type: QUALTRICS_REVEAL_MESSAGE, offsetTop: 1000000, targetHeight: 100 },
+    } as unknown as MessageEvent);
+    expect(scrollTo).toHaveBeenCalledTimes(callsAfterValidRequest);
+  });
+
+  it('stages a complete SUS record through the generic bridge and advances after the bounded hand-off', () => {
+    const bridge = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+      'utf8',
+    );
+    const items = Array.from({ length: 10 }, (_, index) => `sus${String(index + 1).padStart(2, '0')}`);
+    const ratings = Object.fromEntries(items.map((item, index) => [item, index % 2 === 0 ? 5 : 1]));
+    const contributions = Object.fromEntries(items.map((item) => [item, 4]));
     const completeRecord = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       submissionId: 'submission-complete',
-      study: { studyId: 'TLX-TEST', configId: 'config-test' },
+      study: { studyId: 'SUS-TEST', configId: 'config-test' },
       participantCode: 'TEST-001',
       timing: {
         startedAt: '2026-07-27T10:00:00.000Z',
         completedAt: '2026-07-27T10:05:00.000Z',
       },
-      prototype: { version: '0.7' },
+      prototype: { name: 'Accessible Questionnaire Platform', version: '0.8.0' },
+      instrument: {
+        id: 'system-usability-scale',
+        name: 'System Usability Scale',
+        version: 'brooke-1996',
+        definitionSchemaVersion: 1,
+        scoringStrategy: 'sus-standard-v1',
+      },
       collection: { mode: 'qualtrics' },
-      configuration: { answerMode: 'smiley' },
+      configuration: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'presentation-only',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
       responses: {
         ratings,
-        pairwiseChoices: { 'mental-physical': 'mental' },
-        pairPresentationOrder: ['mental-physical'],
+        pairwiseChoices: {},
+        pairPresentationOrder: [],
       },
-      result: { ratings, weights, weightedScore: 50 },
+      result: {
+        strategy: 'sus-standard-v1',
+        scoreName: 'SUS score',
+        primaryScore: 100,
+        scoreMinimum: 0,
+        scoreMaximum: 100,
+        ratings,
+        details: {
+          kind: 'sus-contributions',
+          contributions,
+        },
+      },
       supportMetadata: {
-        ratingInputRoutes: { mental: 'voice' },
-        pairInputRoutes: { 'mental-physical': 'standard-choice' },
+        ratingInputRoutes: { sus01: 'voice' },
+        pairInputRoutes: {},
         supportChanges: [],
         simplerExplanationsShownAtSubmission: false,
-        answerModeAtSubmission: 'smiley',
+        answerModeAtSubmission: 'standard',
         largeTextUsedAtSubmission: false,
         automaticAudioGuidanceEnabledAtSubmission: false,
         recoveryEnabledAtSubmission: true,
@@ -247,8 +399,8 @@ describe('approved host result sink', () => {
     };
     const fakeDocument = {
       getElementById(id: string) {
-        if (id === 'accessible-nasa-tlx-frame') return iframe;
-        if (id === 'accessible-nasa-tlx-collection-status') return status;
+        if (id === 'accessible-questionnaire-frame') return iframe;
+        if (id === 'accessible-questionnaire-collection-status') return status;
         return null;
       },
     };
@@ -282,9 +434,10 @@ describe('approved host result sink', () => {
 
     expect(hideNextButton).toHaveBeenCalledOnce();
     expect(showNextButton).not.toHaveBeenCalled();
-    expect(setJSEmbeddedData).toHaveBeenCalledTimes(63);
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('ANTLX_ACCEPTED', '1');
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('ANTLX_WEIGHTED_SCORE', '50.00');
+    expect(setJSEmbeddedData).toHaveBeenCalledTimes(60);
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '1');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_INSTRUMENT_ID', 'system-usability-scale');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_PRIMARY_SCORE', '100.00');
     expect(frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         accepted: true,
@@ -333,8 +486,8 @@ describe('approved host result sink', () => {
     };
     const fakeDocument = {
       getElementById(id: string) {
-        if (id === 'accessible-nasa-tlx-frame') return iframe;
-        if (id === 'accessible-nasa-tlx-collection-status') return status;
+        if (id === 'accessible-questionnaire-frame') return iframe;
+        if (id === 'accessible-questionnaire-collection-status') return status;
         return null;
       },
     };
@@ -386,7 +539,7 @@ describe('approved host result sink', () => {
     };
     const fakeDocument = {
       getElementById(id: string) {
-        if (id === 'accessible-nasa-tlx-collection-status') return status;
+        if (id === 'accessible-questionnaire-collection-status') return status;
         return null;
       },
     };

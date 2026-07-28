@@ -2,6 +2,9 @@
 
 Decision date: 21 July 2026
 
+Version 0.8 retains these corrections in the shared questionnaire runner and adds
+the mobile-centred error helper and bounded `Low` homophone handling.
+
 ## Trigger
 
 Researcher-led browser testing identified three related failures:

@@ -1,27 +1,38 @@
 {
-  "prototype": "Accessible NASA-TLX",
-  "version": "0.7.0",
-  "releaseStatus": "release candidate; supervisor changes and voice/Qualtrics setup corrections integrated; UCL Qualtrics synthetic re-test pending",
+  "prototype": "Accessible Questionnaire Platform",
+  "version": "0.8.0",
+  "releaseStatus": "candidate; questionnaire-independent supported profile; supervisor review, mobile-device re-test and UCL Qualtrics synthetic re-test pending",
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
-  "builtAt": "2026-07-27T17:07:49Z",
+  "builtAt": "2026-07-28T02:46:48Z",
   "verification": {
-    "testFilesPassed": 12,
-    "testsPassed": 75,
-    "axeStructuralScansPassed": 4,
+    "testFilesPassed": 16,
+    "testsPassed": 103,
+    "axeStructuralScansPassed": 6,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
     "standaloneBuild": "passed",
-    "qualtricsBridgeTests": "passed",
-    "qualtricsSetupPackageTests": "passed",
-    "qualtricsResponsePdfSummary": "passed",
-    "smileyVoiceLandmarkParsing": "passed",
+    "releaseDirectorySynchronization": "passed",
+    "localHttpEntryPointSmokeTest": "passed",
+    "questionnaireDefinitionValidation": "passed",
+    "nasaTlxAndSusEndToEndTests": "passed",
+    "genericQualtricsBridgeAndAdversePathTests": "passed",
+    "mobileErrorFocusForcedCoordinateScrollAndQualtricsParentRevealTests": "passed",
+    "savedSessionReloadFocusExactLiveRegionAndPriorOptInSpeechTests": "passed",
+    "conservativeVoiceParsingTests": "passed",
+    "authoredContrastTokenTests": "passed",
     "highLevelDependencyAudit": "0 vulnerabilities"
   },
   "entryPoints": {
     "participant": "index.html",
     "studyConductor": "study.html"
   },
-  "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification"
+  "supportedDefinitions": [
+    "nasa-tlx-weighted@1.0.0",
+    "system-usability-scale@brooke-1996"
+  ],
+  "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
+  "claimBoundary": "Questionnaire-independent within the published integer single-choice and optional all-pairs profile with allowlisted scorers; not compatible with every questionnaire and not evidence of psychometric equivalence or disability-group benefit.",
+  "supervisorBaseline": "6cd72d7 includes supervisor commit 6e055e2 and remains available as the Version 0.7 baseline."
 }

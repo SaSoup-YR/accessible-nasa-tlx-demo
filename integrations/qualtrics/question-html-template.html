@@ -4,91 +4,90 @@
   question HTML from study.html so the iframe has the configured participant URL.
 -->
 <style>
-  #accessible-nasa-tlx-recorded-summary {
+  #accessible-questionnaire-recorded-summary {
     display: none;
     color: #172235;
     font-family: Arial, Helvetica, sans-serif;
     line-height: 1.5;
   }
-  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] { display: block !important; }
-  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question { display: none; }
-  #accessible-nasa-tlx-recorded-summary h2,
-  #accessible-nasa-tlx-recorded-summary h3 { color: #173f63; }
-  #accessible-nasa-tlx-recorded-summary table {
+  #accessible-questionnaire-recorded-summary[data-recorded="1"] { display: block !important; }
+  #accessible-questionnaire-recorded-summary[data-recorded="1"] + #accessible-questionnaire-live-question { display: none; }
+  #accessible-questionnaire-recorded-summary h2,
+  #accessible-questionnaire-recorded-summary h3 { color: #173f63; }
+  #accessible-questionnaire-recorded-summary table {
     width: 100%;
     border-collapse: collapse;
     margin: 0 0 1.25rem;
   }
-  #accessible-nasa-tlx-recorded-summary th,
-  #accessible-nasa-tlx-recorded-summary td {
-    border: 1px solid #9fb2c3;
+  #accessible-questionnaire-recorded-summary th,
+  #accessible-questionnaire-recorded-summary td {
+    border: 2px solid #6d7f91;
     padding: 0.5rem;
     text-align: left;
     vertical-align: top;
   }
-  #accessible-nasa-tlx-recorded-summary th { background: #edf4f8; }
-  #accessible-nasa-tlx-recorded-summary .antlx-long-value {
+  #accessible-questionnaire-recorded-summary th { background: #edf4f8; }
+  #accessible-questionnaire-recorded-summary .aqp-long-value {
     overflow-wrap: anywhere;
     white-space: pre-wrap;
   }
 </style>
 <section
-  id="accessible-nasa-tlx-recorded-summary"
-  data-recorded="${e://Field/__js_ANTLX_ACCEPTED}"
-  aria-labelledby="accessible-nasa-tlx-recorded-summary-heading"
+  id="accessible-questionnaire-recorded-summary"
+  data-recorded="${e://Field/__js_AQP_ACCEPTED}"
+  aria-labelledby="accessible-questionnaire-recorded-summary-heading"
   style="display:none"
 >
-  <h2 id="accessible-nasa-tlx-recorded-summary-heading">Accessible NASA-TLX recorded response</h2>
+  <h2 id="accessible-questionnaire-recorded-summary-heading">Accessible questionnaire recorded response</h2>
   <p>This read-only summary is generated from the values saved in this Qualtrics response.</p>
   <table>
     <caption>Submission details</caption>
     <tbody>
-      <tr><th scope="row">Participant code</th><td>${e://Field/__js_ANTLX_PARTICIPANT_CODE}</td></tr>
-      <tr><th scope="row">Study ID</th><td>${e://Field/__js_ANTLX_STUDY_ID}</td></tr>
-      <tr><th scope="row">Submission ID</th><td class="antlx-long-value">${e://Field/__js_ANTLX_SUBMISSION_ID}</td></tr>
-      <tr><th scope="row">Started</th><td>${e://Field/__js_ANTLX_STARTED_AT}</td></tr>
-      <tr><th scope="row">Completed</th><td>${e://Field/__js_ANTLX_COMPLETED_AT}</td></tr>
-      <tr><th scope="row">Weighted workload score</th><td>${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100</td></tr>
+      <tr><th scope="row">Participant code</th><td>${e://Field/__js_AQP_PARTICIPANT_CODE}</td></tr>
+      <tr><th scope="row">Study ID</th><td>${e://Field/__js_AQP_STUDY_ID}</td></tr>
+      <tr><th scope="row">Questionnaire</th><td>${e://Field/__js_AQP_INSTRUMENT_NAME}</td></tr>
+      <tr><th scope="row">Questionnaire version</th><td>${e://Field/__js_AQP_INSTRUMENT_VERSION}</td></tr>
+      <tr><th scope="row">Submission ID</th><td class="aqp-long-value">${e://Field/__js_AQP_SUBMISSION_ID}</td></tr>
+      <tr><th scope="row">Started</th><td>${e://Field/__js_AQP_STARTED_AT}</td></tr>
+      <tr><th scope="row">Completed</th><td>${e://Field/__js_AQP_COMPLETED_AT}</td></tr>
+      <tr><th scope="row">Scoring rule</th><td>${e://Field/__js_AQP_SCORING_STRATEGY}</td></tr>
+      <tr>
+        <th scope="row">${e://Field/__js_AQP_SCORE_NAME}</th>
+        <td>
+          ${e://Field/__js_AQP_PRIMARY_SCORE}
+          (defined range ${e://Field/__js_AQP_SCORE_MINIMUM}–${e://Field/__js_AQP_SCORE_MAXIMUM})
+        </td>
+      </tr>
     </tbody>
   </table>
-  <h3>Ratings and weights</h3>
-  <table>
-    <thead><tr><th scope="col">Dimension</th><th scope="col">Rating (0–100)</th><th scope="col">Weight (0–5)</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">Mental Demand</th><td>${e://Field/__js_ANTLX_RATING_MENTAL}</td><td>${e://Field/__js_ANTLX_WEIGHT_MENTAL}</td></tr>
-      <tr><th scope="row">Physical Demand</th><td>${e://Field/__js_ANTLX_RATING_PHYSICAL}</td><td>${e://Field/__js_ANTLX_WEIGHT_PHYSICAL}</td></tr>
-      <tr><th scope="row">Temporal Demand</th><td>${e://Field/__js_ANTLX_RATING_TEMPORAL}</td><td>${e://Field/__js_ANTLX_WEIGHT_TEMPORAL}</td></tr>
-      <tr><th scope="row">Performance</th><td>${e://Field/__js_ANTLX_RATING_PERFORMANCE}</td><td>${e://Field/__js_ANTLX_WEIGHT_PERFORMANCE}</td></tr>
-      <tr><th scope="row">Effort</th><td>${e://Field/__js_ANTLX_RATING_EFFORT}</td><td>${e://Field/__js_ANTLX_WEIGHT_EFFORT}</td></tr>
-      <tr><th scope="row">Frustration</th><td>${e://Field/__js_ANTLX_RATING_FRUSTRATION}</td><td>${e://Field/__js_ANTLX_WEIGHT_FRUSTRATION}</td></tr>
-    </tbody>
-  </table>
-  <h3>Pairwise comparisons</h3>
-  <p class="antlx-long-value">${e://Field/__js_ANTLX_PAIR_CHOICES_JSON}</p>
+  <h3>Item responses</h3>
+  <p class="aqp-long-value">${e://Field/__js_AQP_RATINGS_JSON}</p>
+  <h3>Pairwise responses, when required by the definition</h3>
+  <p class="aqp-long-value">${e://Field/__js_AQP_PAIR_CHOICES_JSON}</p>
   <h3>Accessibility-support record</h3>
   <table>
     <tbody>
-      <tr><th scope="row">Simpler explanations at submission</th><td>${e://Field/__js_ANTLX_FINAL_SIMPLE_LANGUAGE}</td></tr>
-      <tr><th scope="row">Answer presentation at submission</th><td>${e://Field/__js_ANTLX_FINAL_ANSWER_MODE}</td></tr>
-      <tr><th scope="row">Large text at submission</th><td>${e://Field/__js_ANTLX_FINAL_LARGE_TEXT}</td></tr>
-      <tr><th scope="row">Automatic audio at submission</th><td>${e://Field/__js_ANTLX_FINAL_AUDIO}</td></tr>
-      <tr><th scope="row">Recovery at submission</th><td>${e://Field/__js_ANTLX_FINAL_RECOVERY}</td></tr>
-      <tr><th scope="row">Read aloud used</th><td>${e://Field/__js_ANTLX_READ_ALOUD_USED}</td></tr>
-      <tr><th scope="row">Gaze used</th><td>${e://Field/__js_ANTLX_GAZE_USED}</td></tr>
-      <tr><th scope="row">Support changes</th><td>${e://Field/__js_ANTLX_SUPPORT_CHANGE_COUNT}</td></tr>
+      <tr><th scope="row">Simpler explanations at submission</th><td>${e://Field/__js_AQP_FINAL_SIMPLE_LANGUAGE}</td></tr>
+      <tr><th scope="row">Answer presentation at submission</th><td>${e://Field/__js_AQP_FINAL_ANSWER_MODE}</td></tr>
+      <tr><th scope="row">Large text at submission</th><td>${e://Field/__js_AQP_FINAL_LARGE_TEXT}</td></tr>
+      <tr><th scope="row">Automatic audio at submission</th><td>${e://Field/__js_AQP_FINAL_AUDIO}</td></tr>
+      <tr><th scope="row">Recovery at submission</th><td>${e://Field/__js_AQP_FINAL_RECOVERY}</td></tr>
+      <tr><th scope="row">Read aloud used</th><td>${e://Field/__js_AQP_READ_ALOUD_USED}</td></tr>
+      <tr><th scope="row">Gaze used</th><td>${e://Field/__js_AQP_GAZE_USED}</td></tr>
+      <tr><th scope="row">Support changes</th><td>${e://Field/__js_AQP_SUPPORT_CHANGE_COUNT}</td></tr>
     </tbody>
   </table>
-  <p><strong>Rating input routes:</strong> <span class="antlx-long-value">${e://Field/__js_ANTLX_RATING_ROUTES_JSON}</span></p>
-  <p><strong>Pair input routes:</strong> <span class="antlx-long-value">${e://Field/__js_ANTLX_PAIR_ROUTES_JSON}</span></p>
-  <p>The CSV or JSON export remains the lossless research record. This section is a readable response/PDF summary.</p>
+  <p><strong>Rating input routes:</strong> <span class="aqp-long-value">${e://Field/__js_AQP_RATING_ROUTES_JSON}</span></p>
+  <p><strong>Pair input routes:</strong> <span class="aqp-long-value">${e://Field/__js_AQP_PAIR_ROUTES_JSON}</span></p>
+  <p>The reconstructed raw JSON or CSV export is the lossless research record. This section is a readable response/PDF summary.</p>
 </section>
-<div id="accessible-nasa-tlx-live-question">
+<div id="accessible-questionnaire-live-question">
   <iframe
-    id="accessible-nasa-tlx-frame"
+    id="accessible-questionnaire-frame"
     src="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE"
-    title="Accessible NASA Task Load Index participant questionnaire"
+    title="Accessible questionnaire participant page"
     allow="camera; microphone"
     style="width:100%;min-height:1200px;border:0"
   ></iframe>
-  <p id="accessible-nasa-tlx-collection-status" role="status" aria-live="polite"></p>
+  <p id="accessible-questionnaire-collection-status" role="status" aria-live="polite"></p>
 </div>

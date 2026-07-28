@@ -1,94 +1,89 @@
-import{a,t as g,i as T,q as y,j as p,u as A,o as b,l as f,w as v,A as d,g as o,x as N,y as w}from"./study-C4kln3NL.js";const h=`__js_ANTLX_ACCEPTED
-__js_ANTLX_SCHEMA
-__js_ANTLX_SUBMISSION_ID
-__js_ANTLX_STUDY_ID
-__js_ANTLX_CONFIG_ID
-__js_ANTLX_PARTICIPANT_CODE
-__js_ANTLX_STARTED_AT
-__js_ANTLX_COMPLETED_AT
-__js_ANTLX_PROTOTYPE_VERSION
-__js_ANTLX_COLLECTION_MODE
-__js_ANTLX_WEIGHTED_SCORE
-__js_ANTLX_RATING_MENTAL
-__js_ANTLX_WEIGHT_MENTAL
-__js_ANTLX_RATING_PHYSICAL
-__js_ANTLX_WEIGHT_PHYSICAL
-__js_ANTLX_RATING_TEMPORAL
-__js_ANTLX_WEIGHT_TEMPORAL
-__js_ANTLX_RATING_PERFORMANCE
-__js_ANTLX_WEIGHT_PERFORMANCE
-__js_ANTLX_RATING_EFFORT
-__js_ANTLX_WEIGHT_EFFORT
-__js_ANTLX_RATING_FRUSTRATION
-__js_ANTLX_WEIGHT_FRUSTRATION
-__js_ANTLX_PAIR_CHOICES_JSON
-__js_ANTLX_PAIR_ORDER_JSON
-__js_ANTLX_RATING_ROUTES_JSON
-__js_ANTLX_PAIR_ROUTES_JSON
-__js_ANTLX_CONFIGURED_SUPPORT_JSON
-__js_ANTLX_SUPPORT_CHANGE_COUNT
-__js_ANTLX_FINAL_SIMPLE_LANGUAGE
-__js_ANTLX_FINAL_ANSWER_MODE
-__js_ANTLX_FINAL_LARGE_TEXT
-__js_ANTLX_FINAL_AUDIO
-__js_ANTLX_FINAL_RECOVERY
-__js_ANTLX_READ_ALOUD_USED
-__js_ANTLX_INTERRUPTION_SUMMARY
-__js_ANTLX_GAZE_USED
-__js_ANTLX_GAZE_ACTION_COUNT
-__js_ANTLX_RAW_CHUNK_COUNT
-__js_ANTLX_RAW_01
-__js_ANTLX_RAW_02
-__js_ANTLX_RAW_03
-__js_ANTLX_RAW_04
-__js_ANTLX_RAW_05
-__js_ANTLX_RAW_06
-__js_ANTLX_RAW_07
-__js_ANTLX_RAW_08
-__js_ANTLX_RAW_09
-__js_ANTLX_RAW_10
-__js_ANTLX_RAW_11
-__js_ANTLX_RAW_12
-__js_ANTLX_RAW_13
-__js_ANTLX_RAW_14
-__js_ANTLX_RAW_15
-__js_ANTLX_RAW_16
-__js_ANTLX_RAW_17
-__js_ANTLX_RAW_18
-__js_ANTLX_RAW_19
-__js_ANTLX_RAW_20
-__js_ANTLX_RAW_21
-__js_ANTLX_RAW_22
-__js_ANTLX_RAW_23
-__js_ANTLX_RAW_24
-`,_=`Questionnaire complete
+import{a as i,t as y,i as b,D as A,g as _,u as v,l as p,w,q as S,n as T,x as P,P as g,A as d,k as o,y as E,j as h,h as I,z as R,B as C,f as Q}from"./study-DO0I31Q8.js";const m=`__js_AQP_ACCEPTED
+__js_AQP_SCHEMA
+__js_AQP_SUBMISSION_ID
+__js_AQP_STUDY_ID
+__js_AQP_CONFIG_ID
+__js_AQP_PARTICIPANT_CODE
+__js_AQP_STARTED_AT
+__js_AQP_COMPLETED_AT
+__js_AQP_PROTOTYPE_VERSION
+__js_AQP_COLLECTION_MODE
+__js_AQP_INSTRUMENT_ID
+__js_AQP_INSTRUMENT_NAME
+__js_AQP_INSTRUMENT_VERSION
+__js_AQP_SCORING_STRATEGY
+__js_AQP_SCORE_NAME
+__js_AQP_PRIMARY_SCORE
+__js_AQP_SCORE_MINIMUM
+__js_AQP_SCORE_MAXIMUM
+__js_AQP_SCORE_DETAILS_JSON
+__js_AQP_RATINGS_JSON
+__js_AQP_PAIR_CHOICES_JSON
+__js_AQP_PAIR_ORDER_JSON
+__js_AQP_RATING_ROUTES_JSON
+__js_AQP_PAIR_ROUTES_JSON
+__js_AQP_CONFIGURED_SUPPORT_JSON
+__js_AQP_SUPPORT_CHANGE_COUNT
+__js_AQP_FINAL_SIMPLE_LANGUAGE
+__js_AQP_FINAL_ANSWER_MODE
+__js_AQP_FINAL_LARGE_TEXT
+__js_AQP_FINAL_AUDIO
+__js_AQP_FINAL_RECOVERY
+__js_AQP_READ_ALOUD_USED
+__js_AQP_INTERRUPTION_SUMMARY
+__js_AQP_GAZE_USED
+__js_AQP_GAZE_ACTION_COUNT
+__js_AQP_RAW_CHUNK_COUNT
+__js_AQP_RAW_01
+__js_AQP_RAW_02
+__js_AQP_RAW_03
+__js_AQP_RAW_04
+__js_AQP_RAW_05
+__js_AQP_RAW_06
+__js_AQP_RAW_07
+__js_AQP_RAW_08
+__js_AQP_RAW_09
+__js_AQP_RAW_10
+__js_AQP_RAW_11
+__js_AQP_RAW_12
+__js_AQP_RAW_13
+__js_AQP_RAW_14
+__js_AQP_RAW_15
+__js_AQP_RAW_16
+__js_AQP_RAW_17
+__js_AQP_RAW_18
+__js_AQP_RAW_19
+__js_AQP_RAW_20
+__js_AQP_RAW_21
+__js_AQP_RAW_22
+__js_AQP_RAW_23
+__js_AQP_RAW_24
+`,O=`Questionnaire complete
 
-Your weighted NASA-TLX workload score is:
-\${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100
+{{OPTIONAL_SCORE_BLOCK}}
 
 Your questionnaire responses have been recorded successfully.
 
-Any accessibility-support choices and input-route information have been saved separately from your workload score.
-
-This score reflects your perceived workload for the task you completed. It is not a measure of your ability or a clinical assessment.
+Any accessibility-support choices and input-route information have been saved separately from the questionnaire score.
 
 No further action is required.
 You may now close this page.
-`,m=`/*
- * Accessible NASA-TLX Version 0.7 Qualtrics question bridge.
+`,f=`/*
+ * Accessible Questionnaire Platform Version 0.8 Qualtrics question bridge.
  *
  * Paste this complete file into the JavaScript editor of the Qualtrics
  * question that contains the iframe from question-html-template.html.
  * Keep the participant prototype on https://sasoup-yr.github.io.
  */
-Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
+Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBridge() {
   var question = this;
   var childOrigin = 'https://sasoup-yr.github.io';
-  var submitType = 'accessible-nasa-tlx:qualtrics-submit:v1';
-  var receiptType = 'accessible-nasa-tlx:qualtrics-receipt:v1';
-  var resizeType = 'accessible-nasa-tlx:qualtrics-resize:v1';
-  var iframe = document.getElementById('accessible-nasa-tlx-frame');
-  var status = document.getElementById('accessible-nasa-tlx-collection-status');
+  var submitType = 'accessible-questionnaire:qualtrics-submit:v2';
+  var receiptType = 'accessible-questionnaire:qualtrics-receipt:v2';
+  var resizeType = 'accessible-questionnaire:qualtrics-resize:v2';
+  var revealType = 'accessible-questionnaire:qualtrics-reveal:v2';
+  var iframe = document.getElementById('accessible-questionnaire-frame');
+  var status = document.getElementById('accessible-questionnaire-collection-status');
   var acceptedSubmissionId = null;
   var advancing = false;
   var completionTimerId = null;
@@ -125,13 +120,25 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
 
   function requireRecord(record) {
     if (!record || typeof record !== 'object') throw new Error('The questionnaire returned an empty record.');
-    if (record.schemaVersion !== 3) throw new Error('The questionnaire record version is not supported.');
+    if (record.schemaVersion !== 4) throw new Error('The questionnaire record version is not supported.');
     if (!record.submissionId || typeof record.submissionId !== 'string') throw new Error('The submission ID is missing.');
-    if (!record.study || !record.participantCode || !record.timing || !record.result) {
+    if (!record.study || !record.participantCode || !record.timing || !record.instrument || !record.result) {
       throw new Error('The questionnaire record is incomplete.');
     }
-    if (!Number.isFinite(record.result.weightedScore)) {
-      throw new Error('The weighted NASA-TLX score is missing or invalid.');
+    if (
+      !record.instrument.id ||
+      !record.instrument.name ||
+      !record.instrument.scoringStrategy
+    ) {
+      throw new Error('The questionnaire definition metadata is incomplete.');
+    }
+    if (
+      !record.result.scoreName ||
+      !Number.isFinite(record.result.primaryScore) ||
+      !Number.isFinite(record.result.scoreMinimum) ||
+      !Number.isFinite(record.result.scoreMaximum)
+    ) {
+      throw new Error('The questionnaire score is missing or invalid.');
     }
     if (!record.responses || !record.responses.ratings || !record.responses.pairwiseChoices) {
       throw new Error('The questionnaire answers are incomplete.');
@@ -142,54 +149,101 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   }
 
   function storeRecord(record) {
-    var dimensions = ['mental', 'physical', 'temporal', 'performance', 'effort', 'frustration'];
     var raw = JSON.stringify(record);
     var chunkCount = Math.ceil(raw.length / rawChunkLength);
     if (chunkCount > maximumRawChunks) {
       throw new Error('The questionnaire record is larger than the approved Qualtrics field allocation.');
     }
 
-    setField('ANTLX_ACCEPTED', 1);
-    setField('ANTLX_SCHEMA', record.schemaVersion);
-    setField('ANTLX_SUBMISSION_ID', record.submissionId);
-    setField('ANTLX_STUDY_ID', record.study.studyId);
-    setField('ANTLX_CONFIG_ID', record.study.configId);
-    setField('ANTLX_PARTICIPANT_CODE', record.participantCode);
-    setField('ANTLX_STARTED_AT', record.timing.startedAt);
-    setField('ANTLX_COMPLETED_AT', record.timing.completedAt);
-    setField('ANTLX_PROTOTYPE_VERSION', record.prototype.version);
-    setField('ANTLX_COLLECTION_MODE', record.collection.mode);
-    setField('ANTLX_WEIGHTED_SCORE', Number(record.result.weightedScore).toFixed(2));
-
-    dimensions.forEach(function (dimension) {
-      setField('ANTLX_RATING_' + dimension.toUpperCase(), record.result.ratings[dimension]);
-      setField('ANTLX_WEIGHT_' + dimension.toUpperCase(), record.result.weights[dimension]);
-    });
-
-    setField('ANTLX_PAIR_CHOICES_JSON', JSON.stringify(record.responses.pairwiseChoices));
-    setField('ANTLX_PAIR_ORDER_JSON', JSON.stringify(record.responses.pairPresentationOrder));
-    setField('ANTLX_RATING_ROUTES_JSON', JSON.stringify(record.supportMetadata.ratingInputRoutes));
-    setField('ANTLX_PAIR_ROUTES_JSON', JSON.stringify(record.supportMetadata.pairInputRoutes));
-    setField('ANTLX_CONFIGURED_SUPPORT_JSON', JSON.stringify(record.configuration));
-    setField('ANTLX_SUPPORT_CHANGE_COUNT', record.supportMetadata.supportChanges.length);
-    setField('ANTLX_FINAL_SIMPLE_LANGUAGE', record.supportMetadata.simplerExplanationsShownAtSubmission);
-    setField('ANTLX_FINAL_ANSWER_MODE', record.supportMetadata.answerModeAtSubmission);
-    setField('ANTLX_FINAL_LARGE_TEXT', record.supportMetadata.largeTextUsedAtSubmission);
-    setField('ANTLX_FINAL_AUDIO', record.supportMetadata.automaticAudioGuidanceEnabledAtSubmission);
-    setField('ANTLX_FINAL_RECOVERY', record.supportMetadata.recoveryEnabledAtSubmission);
-    setField('ANTLX_READ_ALOUD_USED', record.supportMetadata.readAloudUsed);
-    setField('ANTLX_INTERRUPTION_SUMMARY', record.supportMetadata.interruptionSummaryShown);
-    setField('ANTLX_GAZE_USED', record.supportMetadata.gazeUsed);
-    setField('ANTLX_GAZE_ACTION_COUNT', record.supportMetadata.gazeActionCount);
-    setField('ANTLX_RAW_CHUNK_COUNT', chunkCount);
+    setField('AQP_ACCEPTED', 1);
+    setField('AQP_SCHEMA', record.schemaVersion);
+    setField('AQP_SUBMISSION_ID', record.submissionId);
+    setField('AQP_STUDY_ID', record.study.studyId);
+    setField('AQP_CONFIG_ID', record.study.configId);
+    setField('AQP_PARTICIPANT_CODE', record.participantCode);
+    setField('AQP_STARTED_AT', record.timing.startedAt);
+    setField('AQP_COMPLETED_AT', record.timing.completedAt);
+    setField('AQP_PROTOTYPE_VERSION', record.prototype.version);
+    setField('AQP_COLLECTION_MODE', record.collection.mode);
+    setField('AQP_INSTRUMENT_ID', record.instrument.id);
+    setField('AQP_INSTRUMENT_NAME', record.instrument.name);
+    setField('AQP_INSTRUMENT_VERSION', record.instrument.version);
+    setField('AQP_SCORING_STRATEGY', record.instrument.scoringStrategy);
+    setField('AQP_SCORE_NAME', record.result.scoreName);
+    setField('AQP_PRIMARY_SCORE', Number(record.result.primaryScore).toFixed(2));
+    setField('AQP_SCORE_MINIMUM', record.result.scoreMinimum);
+    setField('AQP_SCORE_MAXIMUM', record.result.scoreMaximum);
+    setField('AQP_SCORE_DETAILS_JSON', JSON.stringify(record.result.details));
+    setField('AQP_RATINGS_JSON', JSON.stringify(record.responses.ratings));
+    setField('AQP_PAIR_CHOICES_JSON', JSON.stringify(record.responses.pairwiseChoices));
+    setField('AQP_PAIR_ORDER_JSON', JSON.stringify(record.responses.pairPresentationOrder));
+    setField('AQP_RATING_ROUTES_JSON', JSON.stringify(record.supportMetadata.ratingInputRoutes));
+    setField('AQP_PAIR_ROUTES_JSON', JSON.stringify(record.supportMetadata.pairInputRoutes));
+    setField('AQP_CONFIGURED_SUPPORT_JSON', JSON.stringify(record.configuration));
+    setField('AQP_SUPPORT_CHANGE_COUNT', record.supportMetadata.supportChanges.length);
+    setField('AQP_FINAL_SIMPLE_LANGUAGE', record.supportMetadata.simplerExplanationsShownAtSubmission);
+    setField('AQP_FINAL_ANSWER_MODE', record.supportMetadata.answerModeAtSubmission);
+    setField('AQP_FINAL_LARGE_TEXT', record.supportMetadata.largeTextUsedAtSubmission);
+    setField('AQP_FINAL_AUDIO', record.supportMetadata.automaticAudioGuidanceEnabledAtSubmission);
+    setField('AQP_FINAL_RECOVERY', record.supportMetadata.recoveryEnabledAtSubmission);
+    setField('AQP_READ_ALOUD_USED', record.supportMetadata.readAloudUsed);
+    setField('AQP_INTERRUPTION_SUMMARY', record.supportMetadata.interruptionSummaryShown);
+    setField('AQP_GAZE_USED', record.supportMetadata.gazeUsed);
+    setField('AQP_GAZE_ACTION_COUNT', record.supportMetadata.gazeActionCount);
+    setField('AQP_RAW_CHUNK_COUNT', chunkCount);
 
     for (var index = 0; index < maximumRawChunks; index += 1) {
       var suffix = String(index + 1).padStart(2, '0');
       setField(
-        'ANTLX_RAW_' + suffix,
+        'AQP_RAW_' + suffix,
         index < chunkCount ? raw.slice(index * rawChunkLength, (index + 1) * rawChunkLength) : ''
       );
     }
+  }
+
+  function revealQuestionnaireTarget(message) {
+    var requestedOffset = Number(message.offsetTop);
+    var requestedHeight = Number(message.targetHeight);
+    if (
+      !Number.isFinite(requestedOffset) ||
+      !Number.isFinite(requestedHeight) ||
+      requestedOffset < 0 ||
+      requestedOffset > 10000 ||
+      requestedHeight < 1 ||
+      requestedHeight > 5000 ||
+      typeof iframe.getBoundingClientRect !== 'function' ||
+      typeof window.scrollTo !== 'function'
+    ) {
+      return;
+    }
+
+    function reveal() {
+      var frameRect = iframe.getBoundingClientRect();
+      var visualViewport = window.visualViewport;
+      var viewportOffset = visualViewport ? visualViewport.offsetTop : 0;
+      var viewportHeight = visualViewport ? visualViewport.height : window.innerHeight;
+      var parentScrollTop = window.scrollY || window.pageYOffset || 0;
+      var absoluteTargetTop = parentScrollTop + frameRect.top + requestedOffset;
+      var top = absoluteTargetTop - viewportOffset;
+      if (viewportHeight > requestedHeight) {
+        top -= (viewportHeight - requestedHeight) / 2;
+      }
+      window.scrollTo({
+        top: Math.max(0, Math.round(top)),
+        left: window.scrollX || window.pageXOffset || 0,
+        behavior: 'auto'
+      });
+    }
+
+    // Repeat after responsive layout settles. This mirrors the bounded child
+    // reveal and avoids relying on focus propagation across an iframe boundary.
+    reveal();
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(function waitForFirstFrame() {
+        window.requestAnimationFrame(reveal);
+      });
+    }
+    window.setTimeout(reveal, 160);
   }
 
   function receiveResult(event) {
@@ -200,6 +254,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
       if (Number.isFinite(requestedHeight)) {
         iframe.style.height = Math.max(600, Math.min(10000, Math.ceil(requestedHeight))) + 'px';
       }
+      return;
+    }
+    if (message && message.type === revealType) {
+      revealQuestionnaireTarget(message);
       return;
     }
     if (!message || message.type !== submitType) return;
@@ -257,7 +315,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   }
 
   if (!iframe || !iframe.contentWindow) {
-    setStatus('The Accessible NASA-TLX iframe is missing. The study conductor must correct this Qualtrics question.');
+    setStatus('The accessible questionnaire iframe is missing. The study conductor must correct this Qualtrics question.');
     // Keep the native navigation available on a misconfigured test page instead of
     // trapping the researcher or participant. This path must fail the synthetic
     // preflight and must never be used to collect a participant response.
@@ -268,7 +326,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
   question.hideNextButton();
   setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
-  Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleNasaTlxListener() {
+  Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
     if (completionTimerId !== null) {
       window.clearTimeout(completionTimerId);
       completionTimerId = null;
@@ -280,106 +338,108 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
     window.removeEventListener('message', receiveResult);
   });
 });
-`,L=`<!--
+`,N=`<!--
   REFERENCE TEMPLATE ONLY.
   Do not paste this file into Qualtrics unchanged. Use the complete generated
   question HTML from study.html so the iframe has the configured participant URL.
 -->
 <style>
-  #accessible-nasa-tlx-recorded-summary {
+  #accessible-questionnaire-recorded-summary {
     display: none;
     color: #172235;
     font-family: Arial, Helvetica, sans-serif;
     line-height: 1.5;
   }
-  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] { display: block !important; }
-  #accessible-nasa-tlx-recorded-summary[data-recorded="1"] + #accessible-nasa-tlx-live-question { display: none; }
-  #accessible-nasa-tlx-recorded-summary h2,
-  #accessible-nasa-tlx-recorded-summary h3 { color: #173f63; }
-  #accessible-nasa-tlx-recorded-summary table {
+  #accessible-questionnaire-recorded-summary[data-recorded="1"] { display: block !important; }
+  #accessible-questionnaire-recorded-summary[data-recorded="1"] + #accessible-questionnaire-live-question { display: none; }
+  #accessible-questionnaire-recorded-summary h2,
+  #accessible-questionnaire-recorded-summary h3 { color: #173f63; }
+  #accessible-questionnaire-recorded-summary table {
     width: 100%;
     border-collapse: collapse;
     margin: 0 0 1.25rem;
   }
-  #accessible-nasa-tlx-recorded-summary th,
-  #accessible-nasa-tlx-recorded-summary td {
-    border: 1px solid #9fb2c3;
+  #accessible-questionnaire-recorded-summary th,
+  #accessible-questionnaire-recorded-summary td {
+    border: 2px solid #6d7f91;
     padding: 0.5rem;
     text-align: left;
     vertical-align: top;
   }
-  #accessible-nasa-tlx-recorded-summary th { background: #edf4f8; }
-  #accessible-nasa-tlx-recorded-summary .antlx-long-value {
+  #accessible-questionnaire-recorded-summary th { background: #edf4f8; }
+  #accessible-questionnaire-recorded-summary .aqp-long-value {
     overflow-wrap: anywhere;
     white-space: pre-wrap;
   }
 </style>
 <section
-  id="accessible-nasa-tlx-recorded-summary"
-  data-recorded="\${e://Field/__js_ANTLX_ACCEPTED}"
-  aria-labelledby="accessible-nasa-tlx-recorded-summary-heading"
+  id="accessible-questionnaire-recorded-summary"
+  data-recorded="\${e://Field/__js_AQP_ACCEPTED}"
+  aria-labelledby="accessible-questionnaire-recorded-summary-heading"
   style="display:none"
 >
-  <h2 id="accessible-nasa-tlx-recorded-summary-heading">Accessible NASA-TLX recorded response</h2>
+  <h2 id="accessible-questionnaire-recorded-summary-heading">Accessible questionnaire recorded response</h2>
   <p>This read-only summary is generated from the values saved in this Qualtrics response.</p>
   <table>
     <caption>Submission details</caption>
     <tbody>
-      <tr><th scope="row">Participant code</th><td>\${e://Field/__js_ANTLX_PARTICIPANT_CODE}</td></tr>
-      <tr><th scope="row">Study ID</th><td>\${e://Field/__js_ANTLX_STUDY_ID}</td></tr>
-      <tr><th scope="row">Submission ID</th><td class="antlx-long-value">\${e://Field/__js_ANTLX_SUBMISSION_ID}</td></tr>
-      <tr><th scope="row">Started</th><td>\${e://Field/__js_ANTLX_STARTED_AT}</td></tr>
-      <tr><th scope="row">Completed</th><td>\${e://Field/__js_ANTLX_COMPLETED_AT}</td></tr>
-      <tr><th scope="row">Weighted workload score</th><td>\${e://Field/__js_ANTLX_WEIGHTED_SCORE}/100</td></tr>
+      <tr><th scope="row">Participant code</th><td>\${e://Field/__js_AQP_PARTICIPANT_CODE}</td></tr>
+      <tr><th scope="row">Study ID</th><td>\${e://Field/__js_AQP_STUDY_ID}</td></tr>
+      <tr><th scope="row">Questionnaire</th><td>\${e://Field/__js_AQP_INSTRUMENT_NAME}</td></tr>
+      <tr><th scope="row">Questionnaire version</th><td>\${e://Field/__js_AQP_INSTRUMENT_VERSION}</td></tr>
+      <tr><th scope="row">Submission ID</th><td class="aqp-long-value">\${e://Field/__js_AQP_SUBMISSION_ID}</td></tr>
+      <tr><th scope="row">Started</th><td>\${e://Field/__js_AQP_STARTED_AT}</td></tr>
+      <tr><th scope="row">Completed</th><td>\${e://Field/__js_AQP_COMPLETED_AT}</td></tr>
+      <tr><th scope="row">Scoring rule</th><td>\${e://Field/__js_AQP_SCORING_STRATEGY}</td></tr>
+      <tr>
+        <th scope="row">\${e://Field/__js_AQP_SCORE_NAME}</th>
+        <td>
+          \${e://Field/__js_AQP_PRIMARY_SCORE}
+          (defined range \${e://Field/__js_AQP_SCORE_MINIMUM}–\${e://Field/__js_AQP_SCORE_MAXIMUM})
+        </td>
+      </tr>
     </tbody>
   </table>
-  <h3>Ratings and weights</h3>
-  <table>
-    <thead><tr><th scope="col">Dimension</th><th scope="col">Rating (0–100)</th><th scope="col">Weight (0–5)</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">Mental Demand</th><td>\${e://Field/__js_ANTLX_RATING_MENTAL}</td><td>\${e://Field/__js_ANTLX_WEIGHT_MENTAL}</td></tr>
-      <tr><th scope="row">Physical Demand</th><td>\${e://Field/__js_ANTLX_RATING_PHYSICAL}</td><td>\${e://Field/__js_ANTLX_WEIGHT_PHYSICAL}</td></tr>
-      <tr><th scope="row">Temporal Demand</th><td>\${e://Field/__js_ANTLX_RATING_TEMPORAL}</td><td>\${e://Field/__js_ANTLX_WEIGHT_TEMPORAL}</td></tr>
-      <tr><th scope="row">Performance</th><td>\${e://Field/__js_ANTLX_RATING_PERFORMANCE}</td><td>\${e://Field/__js_ANTLX_WEIGHT_PERFORMANCE}</td></tr>
-      <tr><th scope="row">Effort</th><td>\${e://Field/__js_ANTLX_RATING_EFFORT}</td><td>\${e://Field/__js_ANTLX_WEIGHT_EFFORT}</td></tr>
-      <tr><th scope="row">Frustration</th><td>\${e://Field/__js_ANTLX_RATING_FRUSTRATION}</td><td>\${e://Field/__js_ANTLX_WEIGHT_FRUSTRATION}</td></tr>
-    </tbody>
-  </table>
-  <h3>Pairwise comparisons</h3>
-  <p class="antlx-long-value">\${e://Field/__js_ANTLX_PAIR_CHOICES_JSON}</p>
+  <h3>Item responses</h3>
+  <p class="aqp-long-value">\${e://Field/__js_AQP_RATINGS_JSON}</p>
+  <h3>Pairwise responses, when required by the definition</h3>
+  <p class="aqp-long-value">\${e://Field/__js_AQP_PAIR_CHOICES_JSON}</p>
   <h3>Accessibility-support record</h3>
   <table>
     <tbody>
-      <tr><th scope="row">Simpler explanations at submission</th><td>\${e://Field/__js_ANTLX_FINAL_SIMPLE_LANGUAGE}</td></tr>
-      <tr><th scope="row">Answer presentation at submission</th><td>\${e://Field/__js_ANTLX_FINAL_ANSWER_MODE}</td></tr>
-      <tr><th scope="row">Large text at submission</th><td>\${e://Field/__js_ANTLX_FINAL_LARGE_TEXT}</td></tr>
-      <tr><th scope="row">Automatic audio at submission</th><td>\${e://Field/__js_ANTLX_FINAL_AUDIO}</td></tr>
-      <tr><th scope="row">Recovery at submission</th><td>\${e://Field/__js_ANTLX_FINAL_RECOVERY}</td></tr>
-      <tr><th scope="row">Read aloud used</th><td>\${e://Field/__js_ANTLX_READ_ALOUD_USED}</td></tr>
-      <tr><th scope="row">Gaze used</th><td>\${e://Field/__js_ANTLX_GAZE_USED}</td></tr>
-      <tr><th scope="row">Support changes</th><td>\${e://Field/__js_ANTLX_SUPPORT_CHANGE_COUNT}</td></tr>
+      <tr><th scope="row">Simpler explanations at submission</th><td>\${e://Field/__js_AQP_FINAL_SIMPLE_LANGUAGE}</td></tr>
+      <tr><th scope="row">Answer presentation at submission</th><td>\${e://Field/__js_AQP_FINAL_ANSWER_MODE}</td></tr>
+      <tr><th scope="row">Large text at submission</th><td>\${e://Field/__js_AQP_FINAL_LARGE_TEXT}</td></tr>
+      <tr><th scope="row">Automatic audio at submission</th><td>\${e://Field/__js_AQP_FINAL_AUDIO}</td></tr>
+      <tr><th scope="row">Recovery at submission</th><td>\${e://Field/__js_AQP_FINAL_RECOVERY}</td></tr>
+      <tr><th scope="row">Read aloud used</th><td>\${e://Field/__js_AQP_READ_ALOUD_USED}</td></tr>
+      <tr><th scope="row">Gaze used</th><td>\${e://Field/__js_AQP_GAZE_USED}</td></tr>
+      <tr><th scope="row">Support changes</th><td>\${e://Field/__js_AQP_SUPPORT_CHANGE_COUNT}</td></tr>
     </tbody>
   </table>
-  <p><strong>Rating input routes:</strong> <span class="antlx-long-value">\${e://Field/__js_ANTLX_RATING_ROUTES_JSON}</span></p>
-  <p><strong>Pair input routes:</strong> <span class="antlx-long-value">\${e://Field/__js_ANTLX_PAIR_ROUTES_JSON}</span></p>
-  <p>The CSV or JSON export remains the lossless research record. This section is a readable response/PDF summary.</p>
+  <p><strong>Rating input routes:</strong> <span class="aqp-long-value">\${e://Field/__js_AQP_RATING_ROUTES_JSON}</span></p>
+  <p><strong>Pair input routes:</strong> <span class="aqp-long-value">\${e://Field/__js_AQP_PAIR_ROUTES_JSON}</span></p>
+  <p>The reconstructed raw JSON or CSV export is the lossless research record. This section is a readable response/PDF summary.</p>
 </section>
-<div id="accessible-nasa-tlx-live-question">
+<div id="accessible-questionnaire-live-question">
   <iframe
-    id="accessible-nasa-tlx-frame"
+    id="accessible-questionnaire-frame"
     src="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE"
-    title="Accessible NASA Task Load Index participant questionnaire"
+    title="Accessible questionnaire participant page"
     allow="camera; microphone"
     style="width:100%;min-height:1200px;border:0"
   ></iframe>
-  <p id="accessible-nasa-tlx-collection-status" role="status" aria-live="polite"></p>
+  <p id="accessible-questionnaire-collection-status" role="status" aria-live="polite"></p>
 </div>
-`;var E=Object.defineProperty,S=Object.getOwnPropertyDescriptor,s=(e,t,r,i)=>{for(var l=i>1?void 0:i?S(t,r):t,c=e.length-1,u;c>=0;c--)(u=e[c])&&(l=(i?u(t,r,l):u(l))||l);return i&&l&&E(t,r,l),l};function I(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(r=>{if(!r||typeof r!="object")return!1;const i=r;return"study"in i&&"responses"in i&&"result"in i})}function R(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const r=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return L.trim().replace(t,r)}let n=class extends T{constructor(){super(...arguments),this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.generateParticipantLink=()=>{this.errorMessage="";try{const e=y({studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&p(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,r=t.files?.[0];if(r){this.errorMessage="";try{const i=JSON.parse(await r.text());if(!A(i))throw I(i)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.7 study configuration.");this.useConfiguration(i),this.message="Configuration imported and participant link regenerated."}catch(i){this.showError(i instanceof Error?i.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=b()},this.exportResultsJson=()=>{this.completedResults.length&&p(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&p(`accessible-nasa-tlx-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${f(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed NASA-TLX record stored by this site in this browser? Confirm only after checking the exported files.")&&(v(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}render(){return o`
+`;var q=Object.defineProperty,$=Object.getOwnPropertyDescriptor,s=(e,t,a,r)=>{for(var l=r>1?void 0:r?$(t,a):t,c=e.length-1,u;c>=0;c--)(u=e[c])&&(l=(r?u(t,a,l):u(l))||l);return r&&l&&q(t,a,l),l};const M=m.trim().split(/\r?\n/).filter(Boolean).length;function j(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(a=>{if(!a||typeof a!="object")return!1;const r=a;return"study"in r&&"responses"in r&&"result"in r})}function F(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const a=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return N.trim().replace(t,a)}function k(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
+`):"";return O.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
+
+`).trim()}let n=class extends b{constructor(){super(...arguments),this.instrumentId=A,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,a=_(t);a&&(this.instrumentId=t,a.supports.simplerExplanations||(this.showSimpleLanguage=!1),a.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.message=`${a.name} selected. Generate a new configuration before testing.`)},this.generateParticipantLink=()=>{this.errorMessage="";try{const e=v({instrumentId:this.instrumentId,studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&p(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,a=t.files?.[0];if(a){this.errorMessage="";try{const r=JSON.parse(await a.text()),l=w(r);if(!l)throw j(r)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.message="Configuration imported and participant link regenerated."}catch(r){this.showError(r instanceof Error?r.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=S()},this.exportResultsJson=()=>{this.completedResults.length&&p(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&p(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${T(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(P(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return _(this.instrumentId)}render(){return o`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
-          <p class="eyebrow">Study conductor · Version 0.7 release candidate</p>
-          <h1>Prepare an accessible NASA-TLX study</h1>
+          <p class="eyebrow">Study conductor · Version ${g}</p>
+          <h1>Prepare an accessible questionnaire study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
 
@@ -404,21 +464,45 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
         <p class="sr-only" aria-live="polite">${this.message}</p>
 
         <section class="panel conductor-panel" aria-labelledby="study-details-heading">
-          <h2 id="study-details-heading">1. Study details</h2>
+          <h2 id="study-details-heading">1. Questionnaire and study details</h2>
           <p class="support-boundary">
             These fields identify the questionnaire configuration, not the participant. Give each participant a separate
             pseudonymous code such as P-001; they enter that code on the participant page.
           </p>
           <div class="form-grid">
+            <label class="full-width">
+              <strong>Questionnaire definition</strong>
+              <span>
+                Choose a versioned definition. Item wording, scale, workflow and scoring are loaded from that
+                definition; accessibility supports are configured separately.
+              </span>
+              <select .value=${this.instrumentId} @change=${this.selectInstrument}>
+                ${E.map(e=>o`<option value=${e.id}>
+                    ${e.name} · ${e.version}
+                  </option>`)}
+              </select>
+            </label>
+            <aside class="definition-summary full-width">
+              <strong>${this.definition.shortName}</strong>
+              <span>
+                ${this.definition.items.length} items,
+                ${h(this.definition).length} response values,
+                ${I(this.definition).length} comparisons,
+                ${this.definition.scoring.scoreName}.
+              </span>
+              <a href=${this.definition.source.url} target="_blank" rel="noopener">
+                Instrument source: ${this.definition.source.label}
+              </a>
+            </aside>
             <label>
               <strong>Study ID</strong>
-              <span>Internal label shared by records from one study or condition. Example: TLX-TECH-01. Do not use a participant name.</span>
-              <input placeholder="TLX-TECH-01" autocomplete="off" spellcheck="false" .value=${this.studyId} maxlength="64" @input=${e=>{this.studyId=e.currentTarget.value}} />
+              <span>Internal label shared by records from one study or condition. Example: ACCESS-TECH-01. Do not use a participant name.</span>
+              <input placeholder="ACCESS-TECH-01" autocomplete="off" spellcheck="false" .value=${this.studyId} maxlength="64" @input=${e=>{this.studyId=e.currentTarget.value}} />
             </label>
             <label>
               <strong>Study title</strong>
-              <span>Participant-facing name of the study. Example: Route-planning workload study.</span>
-              <input placeholder="Route-planning workload study" autocomplete="off" .value=${this.studyTitle} maxlength="120" @input=${e=>{this.studyTitle=e.currentTarget.value}} />
+              <span>Participant-facing name of the study. Example: Route-planning interface study.</span>
+              <input placeholder="Route-planning interface study" autocomplete="off" .value=${this.studyTitle} maxlength="120" @input=${e=>{this.studyTitle=e.currentTarget.value}} />
             </label>
             <label class="full-width">
               <strong>Task label</strong>
@@ -431,16 +515,22 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
         <section class="panel conductor-panel" aria-labelledby="support-config-heading">
           <h2 id="support-config-heading">2. Prepare the participant questionnaire</h2>
           <p>
-            These are the starting settings. The official six dimensions, 0–100 values, fifteen comparisons and scoring do not change.
+            These are starting settings. The selected definition keeps its official items, values,
+            workflow and allowlisted scoring rule unchanged.
           </p>
           <div class="config-grid">
-            ${this.booleanOption("Show simpler explanations from the start",this.showSimpleLanguage,e=>{this.showSimpleLanguage=e})}
+            ${this.definition.supports.simplerExplanations?this.booleanOption("Show simpler explanations from the start",this.showSimpleLanguage,e=>{this.showSimpleLanguage=e}):o`<aside class="boundary-note">
+                  <strong>Simpler item text is unavailable for ${this.definition.shortName}</strong>
+                  <p>
+                    This definition preserves the validated item statements without adding unvalidated rewording.
+                  </p>
+                </aside>`}
             ${this.booleanOption("Use large text from the start",this.largeText,e=>{this.largeText=e})}
             ${this.booleanOption("Use automatic spoken guidance from the start",this.audioGuidance,e=>{this.audioGuidance=e})}
             ${this.booleanOption("Save incomplete progress on this device",this.recoveryEnabled,e=>{this.recoveryEnabled=e})}
             ${this.booleanOption("Allow confirmed built-in voice answers",this.voiceInputAvailable,e=>{this.voiceInputAvailable=e})}
             ${this.booleanOption("Allow experimental webcam gaze input",this.gazeInputAvailable,e=>{this.gazeInputAvailable=e},"Default off because current gaze accuracy is recorded as Partial.")}
-            ${this.booleanOption("Show the weighted score to the participant",this.showScoreToParticipant,e=>{this.showScoreToParticipant=e},"Default off for a study; the conductor receives the score in the export.")}
+            ${this.booleanOption(`Show the ${this.definition.scoring.scoreName.toLowerCase()} to the participant`,this.showScoreToParticipant,e=>{this.showScoreToParticipant=e},"Default off for a study; the conductor receives the score in the export.")}
           </div>
 
           <fieldset class="answer-mode-control conductor-answer-mode">
@@ -486,23 +576,29 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
                 <strong>Prepared defaults with optional participant choice</strong>
                 <small>
                   Recommended for evaluating the accessibility support. Nothing must be configured before starting; the
-                  participant may change optional support, and every change is exported separately from the NASA-TLX answers.
+                  participant may change applicable optional support, and every change is exported separately from the scored answers.
                 </small>
               </span>
             </label>
           </fieldset>
 
-          <fieldset class="answer-mode-control conductor-answer-mode">
-            <legend>Starting rating presentation</legend>
-            <label>
-              <input type="radio" name="conductor-answer-mode" value="standard" .checked=${this.answerMode==="standard"} @change=${()=>{this.answerMode="standard"}} />
-              <span><strong>Standard 21-point scale</strong><small>Recommended default.</small></span>
-            </label>
-            <label>
-              <input type="radio" name="conductor-answer-mode" value="smiley" .checked=${this.answerMode==="smiley"} @change=${()=>{this.answerMode="smiley"}} />
-              <span><strong>Experimental smiley landmarks</strong><small>Use only when this presentation is part of the approved protocol.</small></span>
-            </label>
-          </fieldset>
+          ${this.definition.supports.smileyLandmarks?o`<fieldset class="answer-mode-control conductor-answer-mode">
+                <legend>Starting rating presentation</legend>
+                <label>
+                  <input type="radio" name="conductor-answer-mode" value="standard" .checked=${this.answerMode==="standard"} @change=${()=>{this.answerMode="standard"}} />
+                  <span>
+                    <strong>Standard ${h(this.definition).length}-value scale</strong>
+                    <small>Recommended default.</small>
+                  </span>
+                </label>
+                <label>
+                  <input type="radio" name="conductor-answer-mode" value="smiley" .checked=${this.answerMode==="smiley"} @change=${()=>{this.answerMode="smiley"}} />
+                  <span><strong>Experimental smiley landmarks</strong><small>Use only when this presentation is part of the approved protocol.</small></span>
+                </label>
+              </fieldset>`:o`<p class="support-boundary">
+                ${this.definition.shortName} uses its standard ${h(this.definition).length}-value
+                response scale. Smiley landmarks are disabled because facial valence is not equivalent to agreement.
+              </p>`}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="collection-heading">
@@ -573,6 +669,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
           ${this.generatedConfig?o`<div class="generated-link" role="region" aria-labelledby="generated-link-heading">
                 <h3 id="generated-link-heading">Configuration ready</h3>
                 <dl class="study-details">
+                  <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
                   <div><dt>Study ID</dt><dd>${this.generatedConfig.studyId}</dd></div>
                   <div><dt>Configuration ID</dt><dd>${this.generatedConfig.configId}</dd></div>
                   <div><dt>Created</dt><dd>${this.generatedConfig.createdAt}</dd></div>
@@ -600,13 +697,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
           ${this.completedResults.length?o`
                 <div class="table-scroll">
                   <table>
-                    <thead><tr><th>Study ID</th><th>Participant code</th><th>Completed</th><th>Weighted score</th></tr></thead>
+                    <thead><tr><th>Study ID</th><th>Instrument</th><th>Participant code</th><th>Completed</th><th>Primary score</th></tr></thead>
                     <tbody>
                       ${this.completedResults.map(e=>o`<tr>
                         <td>${e.study.studyId}</td>
+                        <td>${e.instrument.name}</td>
                         <td>${e.participantCode}</td>
                         <td>${e.timing.completedAt}</td>
-                        <td>${e.result.weightedScore.toFixed(2)}</td>
+                        <td>${e.result.scoreName}: ${e.result.primaryScore.toFixed(2)}</td>
                       </tr>`)}
                     </tbody>
                   </table>
@@ -630,17 +728,17 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
             as the normal study procedure.
           </p>
           <p>
-            Version 0.7 includes a tested Qualtrics parent bridge. The participant page sends a complete record only to the
+            Version ${g} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
             exact HTTPS origin stored by the conductor; Qualtrics writes the fields into the current response and returns a
             matching receipt before advancing. A failed save leaves the answers on Review for retry. Platform selection,
             consent, retention and access must still match the approved ethics and data-management documents.
           </p>
         </section>
       </main>
-    `}booleanOption(e,t,r,i=""){return o`<label class="toggle-card conductor-toggle">
-      <input type="checkbox" .checked=${t} @change=${l=>r(l.currentTarget.checked)} />
-      <span><strong>${e}</strong>${i?o`<small>${i}</small>`:d}</span>
-    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.showSimpleLanguage,answerMode:this.answerMode,largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=N(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=w(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":R(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml();return o`
+    `}booleanOption(e,t,a,r=""){return o`<label class="toggle-card conductor-toggle">
+      <input type="checkbox" .checked=${t} @change=${l=>a(l.currentTarget.checked)} />
+      <span><strong>${e}</strong>${r?o`<small>${r}</small>`:d}</span>
+    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=R(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=C(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":F(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=k(this.generatedConfig?.showScoreToParticipant===!0);return o`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
         <aside class="boundary-note important-boundary">
@@ -676,22 +774,24 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
           <li>
             <h4>Survey Flow: Embedded Data field names</h4>
             <p>
-              Before the NASA-TLX block, add one Embedded Data element. Add every non-empty line below as a separate
+              Before the questionnaire block, add one Embedded Data element. Add every non-empty line below as a separate
               field name, including the <code>__js_</code> prefix, and leave each value unset. This list does not go
               into the question body.
             </p>
-            <label for="qualtrics-embedded-fields"><strong>63 Embedded Data field names</strong></label>
+            <label for="qualtrics-embedded-fields">
+              <strong>${M} Embedded Data field names</strong>
+            </label>
             <textarea
               id="qualtrics-embedded-fields"
               data-qualtrics-asset="embedded-data"
               readonly
               rows="10"
-              .value=${h.trim()}
+              .value=${m.trim()}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(h.trim(),"Embedded Data field list")}
+              @click=${()=>this.copySetupAsset(m.trim(),"Embedded Data field list")}
             >
               Copy Embedded Data field list
             </button>
@@ -709,12 +809,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
               data-qualtrics-asset="question-javascript"
               readonly
               rows="10"
-              .value=${m.trim()}
+              .value=${f.trim()}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(m.trim(),"question JavaScript")}
+              @click=${()=>this.copySetupAsset(f.trim(),"question JavaScript")}
             >
               Copy complete question JavaScript
             </button>
@@ -731,12 +831,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
               data-qualtrics-asset="end-message"
               readonly
               rows="8"
-              .value=${_.trim()}
+              .value=${t}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(_.trim(),"End of Survey message")}
+              @click=${()=>this.copySetupAsset(t,"End of Survey message")}
             >
               Copy End of Survey message
             </button>
@@ -744,7 +844,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
         </ol>
         <p class="support-boundary">
           The Qualtrics editing canvas may show piped-text tokens such as
-          <code>\${e://Field/__js_ANTLX_PARTICIPANT_CODE}</code>. That canvas is not the participant test. In Preview,
+          <code>\${e://Field/__js_AQP_PARTICIPANT_CODE}</code>. That canvas is not the participant test. In Preview,
           before a response is recorded, the summary must be hidden and the configured participant iframe must be
           visible. If it is not, clear the question body and repeat step 1 in HTML or source view.
         </p>
@@ -752,4 +852,4 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleNasaTlxBridge() {
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
         </p>
       </div>
-    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&(t.focus(),t.scrollIntoView?.({block:"start"}))})}};s([a()],n.prototype,"studyId",2);s([a()],n.prototype,"studyTitle",2);s([a()],n.prototype,"taskLabel",2);s([a()],n.prototype,"showScoreToParticipant",2);s([a()],n.prototype,"showSimpleLanguage",2);s([a()],n.prototype,"answerMode",2);s([a()],n.prototype,"largeText",2);s([a()],n.prototype,"audioGuidance",2);s([a()],n.prototype,"recoveryEnabled",2);s([a()],n.prototype,"participantAdjustmentPolicy",2);s([a()],n.prototype,"voiceInputAvailable",2);s([a()],n.prototype,"gazeInputAvailable",2);s([a()],n.prototype,"collectionMode",2);s([a()],n.prototype,"qualtricsSurveyUrl",2);s([a()],n.prototype,"generatedConfig",2);s([a()],n.prototype,"participantUrl",2);s([a()],n.prototype,"message",2);s([a()],n.prototype,"errorMessage",2);s([a()],n.prototype,"completedResults",2);n=s([g("study-conductor-app")],n);
+    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&Q(t)})}};s([i()],n.prototype,"instrumentId",2);s([i()],n.prototype,"studyId",2);s([i()],n.prototype,"studyTitle",2);s([i()],n.prototype,"taskLabel",2);s([i()],n.prototype,"showScoreToParticipant",2);s([i()],n.prototype,"showSimpleLanguage",2);s([i()],n.prototype,"answerMode",2);s([i()],n.prototype,"largeText",2);s([i()],n.prototype,"audioGuidance",2);s([i()],n.prototype,"recoveryEnabled",2);s([i()],n.prototype,"participantAdjustmentPolicy",2);s([i()],n.prototype,"voiceInputAvailable",2);s([i()],n.prototype,"gazeInputAvailable",2);s([i()],n.prototype,"collectionMode",2);s([i()],n.prototype,"qualtricsSurveyUrl",2);s([i()],n.prototype,"generatedConfig",2);s([i()],n.prototype,"participantUrl",2);s([i()],n.prototype,"message",2);s([i()],n.prototype,"errorMessage",2);s([i()],n.prototype,"completedResults",2);n=s([y("study-conductor-app")],n);

@@ -1,20 +1,20 @@
-# Version 0.7 source snapshot
+# Version 0.8 source
 
-This directory builds the public Version 0.7 release candidate. It exposes the instrument, scoring, two-role study workflow, auditable support preferences, receipt validation, Qualtrics child sink and automated tests.
-
-The private `SaSoup-YR/accessible-hci-questionnaire-library` repository remains the canonical dissertation/evidence source. This public snapshot supports inspection and reproducibility.
+This directory builds the public Accessible Questionnaire Platform candidate.
 
 ## Structure
 
-- `src/nasa-tlx.ts` — six dimensions, anchors, rating values and fifteen pairs.
-- `src/scoring.ts` — full weighted NASA-TLX calculation.
-- `src/study.ts` — Version 0.7 configuration/result schemas, local export and support-change provenance.
-- `src/result-sink.ts` — provider contract and exact-origin Qualtrics child-to-parent sink.
-- `src/study-conductor.ts` — researcher setup, participant policies and local/Qualtrics collection choice.
-- `src/accessible-nasa-tlx.ts` — participant questionnaire.
-- `tests/` — measurement, interaction, workflow, collection, packaging and structural-accessibility checks.
-
-The matching Qualtrics parent script, HTML and Embedded Data manifest are in repository-root [`integrations/qualtrics/`](../integrations/qualtrics/).
+- `instruments/*.questionnaire.json` — versioned registered definitions.
+- `instruments/questionnaire-definition.schema.json` — published structural schema.
+- `src/questionnaire-definition.ts` — discovery and strict semantic validation.
+- `src/scoring.ts` — allowlisted NASA-TLX and SUS scorers.
+- `src/study.ts` — Version 4 configuration/result schemas and exports.
+- `src/result-sink.ts` — exact-origin Qualtrics child sink and parent-viewport
+  reveal request.
+- `src/study-conductor.ts` — researcher configuration and collection setup.
+- `src/accessible-nasa-tlx.ts` — shared participant runner; filename retained for
+  implementation provenance.
+- `tests/` — instrument, workflow, accessibility, collection and packaging checks.
 
 ## Run
 
@@ -22,11 +22,17 @@ The matching Qualtrics parent script, HTML and Embedded Data manifest are in rep
 npm ci
 npm test
 npm run dev
-npm run build:standalone
+npm run build:release
 ```
 
-The development routes are `/` for participants and `/study.html` for conductors. `demo/accessible-nasa-tlx-v0.7.html` is a participant-only technical file and cannot collect centrally from `file://`.
+Development routes are `/` for participants and `/study.html` for conductors.
+`demo/accessible-questionnaire-platform-v0.8.html` is participant-only and cannot
+collect centrally from `file://`.
 
 ## Evidence boundary
 
-This source demonstrates technical behaviour. It does not establish that the interface is more accessible for a disability group, that optional presentations are psychometrically equivalent or that WebGazer provides accurate independent control. Participant data collection remains gated by supervisor review, ethics/information-governance requirements and a successful synthetic Qualtrics cross-device test.
+This source demonstrates tested technical behavior for the supported definition
+profile. It does not establish improved accessibility, full WCAG conformance,
+psychometric equivalence, WebGazer accuracy or participant benefit. Recruitment
+remains gated by supervisor review, approved ethics/information governance and the
+real UCL Qualtrics synthetic test.
