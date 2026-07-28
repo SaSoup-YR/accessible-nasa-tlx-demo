@@ -56,7 +56,8 @@ configuration. Use those blocks rather than uploading repository files.
 9. Configure the custom End of Survey message from
    `end-of-survey-message.txt`. Do not add a redirect. If a Survey Flow End of
    Survey element overrides survey options, configure the same message there.
-10. Save and Preview. Publish only after all checks below pass.
+10. Save and Preview. After the synthetic checks pass, select **Review and
+    Publish**. Draft changes do not update an already active distribution link.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
 them to the prefixed Survey Flow fields. Do not remove the prefix in Survey Flow.
@@ -72,10 +73,13 @@ response exists in the editor.
 In Preview before submission:
 
 - the recorded-response summary is hidden;
-- the configured participant page is visible in the iframe;
+- the iframe remains hidden until the exact-origin child handshake succeeds, then
+  the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`;
-- the questionnaire uses the outer Qualtrics page as the only vertical scrollbar.
+  connected`, names bridge `0.8.2-q2` and says the diagnostic fields were staged;
+- the participant application fills the browser viewport and exposes one visible
+  vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
+  create a second scrolling region.
 
 If the raw summary is visible, repeat the HTML/source-view step. If the iframe is
 blank, regenerate the complete HTML and confirm that the placeholder is absent.
@@ -84,11 +88,19 @@ both the complete generated HTML and the generated JavaScript from the same
 configuration. The bridge restores native navigation after eight seconds so a
 misconfigured synthetic run cannot trap the tester.
 
+The connection message establishes a same-origin bridge and a successful
+in-browser write request. It is not proof of a durable server row. Only a newly
+completed synthetic response whose newly dated Data & Analysis row contains
+`__js_AQP_ACCEPTED = 1`, schema 4 and the expected instrument ID passes collection
+preflight. Older rows are not backfilled.
+
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Version 0.8 uses a two-way ready handshake, bounded retries,
-mutation/resize observation and a non-scrolling iframe so this timing order cannot
-leave a fixed-height inner scrollbar.
+listener exists. Bridge `0.8.2-q2` uses a two-way ready handshake with an exact
+package fingerprint and bounded parent retries. It moves the live wrapper to the
+document body, fixes it to the visual viewport, disables outer-page scrolling and
+lets the participant document own the single scrollbar. It no longer depends on
+measuring and copying a changing child height through Qualtrics theme wrappers.
 
 ## Handoff and data-loss protection
 
@@ -103,8 +115,8 @@ make them durable until the Qualtrics page is submitted. Version 0.8 therefore:
 6. starts native Qualtrics advancement after a 1.5-second technical handoff;
 7. restores native navigation after a missing connection, staging error or a
    failed-advance watchdog;
-8. accepts only an exact-origin reveal request from its own iframe and moves the
-   outer Qualtrics viewport to a newly focused error or recovery control.
+8. requires the generated HTML, parent JavaScript and child application to report
+   the same bridge fingerprint before enabling participation or accepting a record.
 
 The 1.5 seconds is not participant reading time. Increasing it enlarges the window
 in which a participant can close the tab after seeing an acknowledgement but before
@@ -165,38 +177,44 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
    - ten 1–5 ratings;
    - empty pair responses;
    - the expected alternating SUS score.
-5. Open View Response and an individual PDF. Confirm that the blank interactive
+5. Repeat with Raw TLX and UEQ-S. Confirm their instrument IDs, empty pair data and
+   the expected unweighted or subscale score details.
+6. Open View Response and an individual PDF. Confirm that the blank interactive
    iframe is replaced by the saved instrument, score and response summary.
 
 ### Adverse paths
 
-6. Close immediately after the in-frame acknowledgement. Reopen the same configured
+7. Close immediately after the in-frame acknowledgement. Reopen the same configured
    link on the same device, enter the same synthetic code and confirm that the
    completed local backup is discoverable. Check Data & Analysis separately.
-7. Disconnect the network at submission. Confirm that the questionnaire remains on
+8. Disconnect the network at submission. Confirm that the questionnaire remains on
    Review, focuses the error summary and retains retry, answer-editing and backup
-   routes. On a phone and tablet, confirm that both the iframe and outer Qualtrics
-   viewport reveal the error rather than leaving it above the visible area.
-8. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
+   routes. On a phone and tablet, confirm that the single participant viewport
+   reveals the error rather than leaving it above the visible area.
+9. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
    session restores the exact next step after the pseudonymous code is re-entered.
    The Resume control must receive focus and expose the saved count and Resume/Erase
    choice to a screen reader. If automatic audio was previously enabled, confirm
    the attempted spoken message and the user-activated replay fallback.
-9. Block or fill site storage. Confirm that submission does not crash, backup
+10. Block or fill site storage. Confirm that submission does not crash, backup
    buttons remain available and the page does not claim a stored local copy.
-10. Stage an invalid or oversized synthetic record. Confirm that Qualtrics navigation
+11. Stage an invalid or oversized synthetic record. Confirm that Qualtrics navigation
     is restored and the record is not falsely acknowledged.
-11. In a copied synthetic survey, block native advancement. Confirm that the
+12. In a copied synthetic survey, block native advancement. Confirm that the
     six-second watchdog reports failure and restores Next.
-12. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two
+13. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two
     factor names. None may become a proposal. Test one consistent lower-ranked
     alternative and confirm that it remains an explicit proposal rather than an
     automatic answer.
-13. Delete synthetic rows and local backups if the approved plan requires a clean
+14. Delete synthetic rows and local backups if the approved plan requires a clean
     dataset.
 
 Record the survey ID, distribution URL, frozen Git commit, configuration JSON, date,
 browser/device and exported rows in the study log.
+
+After any installation change, publish it and create a newly dated synthetic
+response. Rows recorded before the `AQP_*` package was installed are expected to
+remain blank in the new columns; they are not evidence that the new package failed.
 
 ## Migration warning
 

@@ -11,11 +11,15 @@ observed result and Pass, Partial, Fail or Not supported.
 1. Open `study.html`.
 2. Select weighted NASA-TLX. Confirm 6 items, 21 values, 15 comparisons and weighted
    scoring.
-3. Select SUS. Confirm 10 items, 5 values, no comparisons and SUS scoring.
-4. Confirm SUS removes smiley and simpler-wording controls while retaining
+3. Select Raw TLX. Confirm the same six items, 21 values, no comparisons and
+   unweighted-mean scoring.
+4. Select SUS. Confirm 10 items, 5 values, no comparisons and SUS scoring.
+5. Select UEQ-S. Confirm 8 semantic differentials, 7 response positions, no
+   comparisons and overall/pragmatic/hedonic scoring.
+6. Confirm SUS and UEQ-S remove smiley and simpler-wording controls while retaining
    presentation, audio, recovery, voice and gaze controls.
-5. Generate, download and re-import one configuration for each instrument.
-6. Import a result in the configuration input. Confirm `There is a problem` receives
+7. Generate, download and re-import one configuration for each instrument.
+8. Import a result in the configuration input. Confirm `There is a problem` receives
    focus and is moved to the start of the visible viewport on desktop, iPhone and
    iPad.
 
@@ -37,13 +41,27 @@ observed result and Pass, Partial, Fail or Not supported.
 4. Verify the Version 4 record has SUS identity, ten ratings, empty pair data,
    alternating contributions and the SUS score.
 
+### Raw TLX
+
+1. Confirm the six TLX items and 0–100 scale are retained.
+2. Complete values 0, 20, 40, 60, 80 and 100. Confirm no pair page appears and the
+   Raw workload score is 50.
+
+### UEQ-S
+
+1. Confirm the eight official adjective pairs and 1–7 semantic-differential
+   positions.
+2. Complete 7 for the first four and 1 for the last four. Confirm no pair page
+   appears, the overall score is 0, pragmatic quality is 3 and hedonic quality is
+   -3.
+
 ## 3. Errors, focus and recovery
 
 1. Leave an item unanswered and press Next. Confirm an explicit error, programmatic
    focus and immediate movement to the start of the visible viewport on desktop,
    phone and tablet. Test both the
-   direct participant page and the participant iframe inside the Qualtrics Preview;
-   the latter must move the parent survey viewport as well as the iframe content.
+   direct participant page and the full-viewport participant page inside Qualtrics
+   Preview.
 2. Reload a recovery-enabled questionnaire midway. Re-enter or recover the
    pseudonymous code according to the shared-device procedure. Confirm focus moves
    to the saved-questionnaire region and its accessible description states the
@@ -74,7 +92,7 @@ observed result and Pass, Partial, Fail or Not supported.
 
 ## 5. Keyboard, screen reader, colour and reflow
 
-1. Complete both instruments keyboard-only.
+1. Complete all four registered instruments keyboard-only.
 2. Confirm radio groups use arrows and Tab leaves the group normally.
 3. Confirm selected answers remain visible after focus moves, using a checked state
    and text/check marker as well as colour.
@@ -101,16 +119,19 @@ Follow every normal and adverse test in
 At minimum:
 
 - install the complete Version 0.8 `AQP_*` package into a blank/copy survey;
-- observe and export one NASA row and one SUS row;
+- observe and export one row for each registered instrument;
 - reconstruct each raw JSON record;
 - close immediately after acknowledgement;
 - submit while offline;
 - reload midway;
-- trigger a missing-answer error near the bottom of the iframe and verify the outer
-  mobile Qualtrics viewport reveals it;
+- trigger a missing-answer error near the bottom of the full-viewport iframe and
+  verify that its single mobile viewport reveals it;
 - block/fill storage;
 - force staging and native-advance failures;
+- deliberately combine old and new generated HTML/JavaScript and confirm that the
+  participant cannot start;
 - verify the recorded-response/PDF summary;
+- select Review and Publish, then verify a newly dated row rather than an older row;
 - confirm the distribution bundle contains no secret and accepts only the configured
   origin.
 

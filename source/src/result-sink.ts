@@ -2,10 +2,16 @@ import type { StudyConfig, StudyResultRecord } from './study';
 
 export const QUALTRICS_SUBMIT_MESSAGE = 'accessible-questionnaire:qualtrics-submit:v2';
 export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-questionnaire:qualtrics-receipt:v2';
-export const QUALTRICS_RESIZE_MESSAGE = 'accessible-questionnaire:qualtrics-resize:v2';
-export const QUALTRICS_REVEAL_MESSAGE = 'accessible-questionnaire:qualtrics-reveal:v2';
 export const QUALTRICS_PARENT_READY_MESSAGE = 'accessible-questionnaire:qualtrics-parent-ready:v2';
 export const QUALTRICS_CHILD_READY_MESSAGE = 'accessible-questionnaire:qualtrics-child-ready:v2';
+export const QUALTRICS_BRIDGE_BUILD = '0.8.2-q2';
+
+export type QualtricsBridgeState = 'connecting' | 'connected' | 'failed';
+
+export interface QualtricsBridgeStateDetail {
+  state: QualtricsBridgeState;
+  message: string;
+}
 
 export interface ResultSinkReceipt {
   accepted: true;
@@ -24,6 +30,15 @@ interface QualtricsReceiptMessage {
   submissionId: string;
   receiptId?: string;
   error?: string;
+  bridgeBuild?: string;
+}
+
+export interface InstalledStudyResultSink {
+  sink: ApprovedResultSink;
+  bridge: {
+    getState(): QualtricsBridgeState;
+    disconnect(): void;
+  };
 }
 
 declare global {
@@ -42,145 +57,117 @@ export function configuredResultSink(windowRef: Window = window) {
   return sink;
 }
 
-export function installStudyResultSink(config: StudyConfig, windowRef: Window = window) {
+export function installStudyResultSink(
+  config: StudyConfig,
+  windowRef: Window = window,
+  onBridgeStateChange: (detail: QualtricsBridgeStateDetail) => void = () => undefined,
+): InstalledStudyResultSink | null {
   if (config.collection.mode !== 'qualtrics') return null;
-  const sink = createQualtricsParentResultSink(config.collection.parentOrigin, windowRef);
+  const bridge = installQualtricsBridgeHandshake(
+    config.collection.parentOrigin,
+    windowRef,
+    onBridgeStateChange,
+  );
+  const sink = createQualtricsParentResultSink(
+    config.collection.parentOrigin,
+    windowRef,
+    12_000,
+    () => bridge.getState() === 'connected',
+  );
   windowRef.accessibleQuestionnaireResultSink = sink;
   // Keep the old property for a bounded Version 0.7 migration period. Both
   // properties refer to the same origin-bound sink and do not duplicate data.
   windowRef.accessibleNasaTlxResultSink = sink;
-  installQualtricsAutoResize(config.collection.parentOrigin, windowRef);
-  return sink;
+  return { sink, bridge };
 }
 
-export function installQualtricsAutoResize(parentOrigin: string, windowRef: Window = window) {
-  const ResizeObserverConstructor = (
-    windowRef as unknown as { ResizeObserver?: typeof ResizeObserver }
-  ).ResizeObserver;
-  const MutationObserverConstructor = (
-    windowRef as unknown as { MutationObserver?: typeof MutationObserver }
-  ).MutationObserver;
-  if (windowRef.parent === windowRef) return null;
-  let animationFrameId: number | null = null;
-  let heightScheduled = false;
-
-  const sendHeight = () => {
-    const documentElement = windowRef.document.documentElement;
-    const body = windowRef.document.body;
-    const height = Math.ceil(Math.max(
-      documentElement?.scrollHeight ?? 0,
-      documentElement?.offsetHeight ?? 0,
-      body?.scrollHeight ?? 0,
-      body?.offsetHeight ?? 0,
-    ));
-    if (height > 0) {
-      windowRef.parent.postMessage({ type: QUALTRICS_RESIZE_MESSAGE, height }, parentOrigin);
-    }
-  };
-  const scheduleHeight = () => {
-    if (heightScheduled) return;
-    heightScheduled = true;
-    animationFrameId = windowRef.requestAnimationFrame(() => {
-      heightScheduled = false;
-      animationFrameId = null;
-      sendHeight();
-    });
-  };
-  const announceReady = () => {
-    windowRef.parent.postMessage({
-      type: QUALTRICS_CHILD_READY_MESSAGE,
-      protocolVersion: 2,
-    }, parentOrigin);
-    scheduleHeight();
+export function installQualtricsBridgeHandshake(
+  parentOrigin: string,
+  windowRef: Window = window,
+  onStateChange: (detail: QualtricsBridgeStateDetail) => void = () => undefined,
+) {
+  let state: QualtricsBridgeState = 'connecting';
+  let timeoutId: number | null = null;
+  const setState = (nextState: QualtricsBridgeState, message: string) => {
+    if (state === 'connected' || (state === 'failed' && nextState !== 'connected')) return;
+    state = nextState;
+    onStateChange({ state, message });
   };
   const receiveParentReady = (event: MessageEvent<unknown>) => {
     if (event.source !== windowRef.parent || event.origin !== parentOrigin) return;
-    const message = event.data as { type?: unknown } | null;
-    if (message?.type === QUALTRICS_PARENT_READY_MESSAGE) announceReady();
+    const message = event.data as {
+      type?: unknown;
+      protocolVersion?: unknown;
+      bridgeBuild?: unknown;
+    } | null;
+    if (message?.type !== QUALTRICS_PARENT_READY_MESSAGE) return;
+    if (
+      message.protocolVersion !== 2 ||
+      message.bridgeBuild !== QUALTRICS_BRIDGE_BUILD
+    ) {
+      setState(
+        'failed',
+        `This Qualtrics survey is using an old or incomplete bridge. Expected ${QUALTRICS_BRIDGE_BUILD}. Do not start this questionnaire.`,
+      );
+      return;
+    }
+    if (timeoutId !== null) {
+      windowRef.clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    windowRef.parent.postMessage({
+      type: QUALTRICS_CHILD_READY_MESSAGE,
+      protocolVersion: 2,
+      bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+    }, parentOrigin);
+    setState(
+      'connected',
+      `Secure Qualtrics bridge ${QUALTRICS_BRIDGE_BUILD} connected.`,
+    );
   };
 
   windowRef.addEventListener('message', receiveParentReady);
-  windowRef.addEventListener('load', announceReady);
-  windowRef.addEventListener('resize', scheduleHeight);
-
-  const resizeObserver = typeof ResizeObserverConstructor === 'function'
-    ? new ResizeObserverConstructor(scheduleHeight)
-    : null;
-  if (resizeObserver && windowRef.document.documentElement) {
-    resizeObserver.observe(windowRef.document.documentElement);
-  }
-  if (resizeObserver && windowRef.document.body) {
-    resizeObserver.observe(windowRef.document.body);
-  }
-
-  // Descendant rendering can increase scrollHeight without changing the observed
-  // body's content box. Mutation observation and bounded retries cover the Lit
-  // render, font/layout settlement and a parent listener that starts after the
-  // iframe's first animation frame.
-  const mutationObserver = typeof MutationObserverConstructor === 'function'
-    ? new MutationObserverConstructor(scheduleHeight)
-    : null;
-  if (mutationObserver && windowRef.document.documentElement) {
-    mutationObserver.observe(windowRef.document.documentElement, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    });
-  }
-  const retryTimerIds = [0, 100, 500, 1500, 4000].map((delay) =>
-    windowRef.setTimeout(announceReady, delay));
-  announceReady();
+  onStateChange({
+    state,
+    message: `Checking Qualtrics bridge ${QUALTRICS_BRIDGE_BUILD}.`,
+  });
+  timeoutId = windowRef.setTimeout(() => {
+    timeoutId = null;
+    if (state === 'connected') return;
+    setState(
+      'failed',
+      `The required Qualtrics bridge ${QUALTRICS_BRIDGE_BUILD} did not connect. Do not start this questionnaire.`,
+    );
+  }, 8_500);
 
   return {
+    getState: () => state,
     disconnect() {
-      if (animationFrameId !== null) windowRef.cancelAnimationFrame(animationFrameId);
-      heightScheduled = false;
-      resizeObserver?.disconnect();
-      mutationObserver?.disconnect();
-      retryTimerIds.forEach((timerId) => windowRef.clearTimeout(timerId));
+      if (timeoutId !== null) {
+        windowRef.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       windowRef.removeEventListener('message', receiveParentReady);
-      windowRef.removeEventListener('load', announceReady);
-      windowRef.removeEventListener('resize', scheduleHeight);
     },
   };
-}
-
-/**
- * Requests that the trusted Qualtrics parent reveal an element inside the
- * participant iframe. Scrolling the child document alone cannot move the
- * parent's visual viewport when the iframe is expanded to the full document
- * height. The configured exact origin is deliberately retained.
- */
-export function requestQualtricsParentReveal(
-  element: HTMLElement,
-  parentOrigin: string,
-  windowRef: Window = window,
-) {
-  if (windowRef.parent === windowRef) return false;
-  const rect = element.getBoundingClientRect();
-  const offsetTop = rect.top + (windowRef.scrollY || windowRef.pageYOffset || 0);
-  if (!Number.isFinite(offsetTop) || !Number.isFinite(rect.height)) return false;
-  windowRef.parent.postMessage(
-    {
-      type: QUALTRICS_REVEAL_MESSAGE,
-      offsetTop,
-      targetHeight: Math.max(1, rect.height),
-    },
-    parentOrigin,
-  );
-  return true;
 }
 
 export function createQualtricsParentResultSink(
   parentOrigin: string,
   windowRef: Window = window,
   acknowledgementTimeoutMs = 12_000,
+  isConnectionReady: () => boolean = () => true,
 ): ApprovedResultSink {
   return {
     name: 'UCL Qualtrics',
     submit(record) {
       if (windowRef.parent === windowRef) {
         return Promise.reject(new Error('This centrally collected questionnaire must be opened through its Qualtrics survey.'));
+      }
+      if (!isConnectionReady()) {
+        return Promise.reject(new Error(
+          `Qualtrics bridge ${QUALTRICS_BRIDGE_BUILD} is not connected. The response remains in the local backup.`,
+        ));
       }
 
       return new Promise<ResultSinkReceipt>((resolve, reject) => {
@@ -198,7 +185,8 @@ export function createQualtricsParentResultSink(
           if (
             !message ||
             message.type !== QUALTRICS_RECEIPT_MESSAGE ||
-            message.submissionId !== record.submissionId
+            message.submissionId !== record.submissionId ||
+            message.bridgeBuild !== QUALTRICS_BRIDGE_BUILD
           ) {
             return;
           }
@@ -222,6 +210,7 @@ export function createQualtricsParentResultSink(
         windowRef.addEventListener('message', receiveReceipt);
         windowRef.parent.postMessage({
           type: QUALTRICS_SUBMIT_MESSAGE,
+          bridgeBuild: QUALTRICS_BRIDGE_BUILD,
           record,
         }, parentOrigin);
       });

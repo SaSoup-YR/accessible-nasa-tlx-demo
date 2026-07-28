@@ -120,6 +120,7 @@ describe('study conductor defaults and guidance', () => {
     expect(questionHtml).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
     expect(questionHtml).toContain(participantUrl);
     expect(questionHtml).not.toContain('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE');
+    expect(questionHtml).toContain('data-aqp-package-build="0.8.2-q2"');
     expect(questionHtml).toBe(buildQualtricsQuestionHtml(participantUrl));
     expect(questionHtml).toBe(
       readFileSync(
@@ -145,6 +146,9 @@ describe('study conductor defaults and guidance', () => {
     expect(component.textContent).toContain('Copy Embedded Data field list');
     expect(component.textContent).toContain('Copy complete question JavaScript');
     expect(component.textContent).toContain('Copy End of Survey message');
+    expect(component.textContent).toContain('Qualtrics bridge 0.8.2-q2');
+    expect(component.textContent).toContain('__js_AQP_ACCEPTED = 1');
+    expect(component.textContent).toContain('participant application must fill the browser viewport');
 
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {

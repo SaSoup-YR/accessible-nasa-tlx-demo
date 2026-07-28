@@ -10,12 +10,15 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var childOrigin = 'https://sasoup-yr.github.io';
   var submitType = 'accessible-questionnaire:qualtrics-submit:v2';
   var receiptType = 'accessible-questionnaire:qualtrics-receipt:v2';
-  var resizeType = 'accessible-questionnaire:qualtrics-resize:v2';
-  var revealType = 'accessible-questionnaire:qualtrics-reveal:v2';
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
+  var bridgeBuild = '0.8.2-q2';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
+  var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
+  var recordedSummary = document.getElementById('accessible-questionnaire-recorded-summary');
+  var originalLiveParent = liveQuestion && liveQuestion.parentNode;
+  var originalLiveNextSibling = liveQuestion && liveQuestion.nextSibling;
   var acceptedSubmissionId = null;
   var advancing = false;
   var childConnected = false;
@@ -23,6 +26,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var advanceWatchdogTimerId = null;
   var connectionTimerId = null;
   var parentReadyTimerIds = [];
+  var relaxedLayoutStyles = [];
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
   // setJSEmbeddedData only writes into the in-browser survey session; the values reach
@@ -32,33 +36,148 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   // allows rather than being used as a reading pause.
   var completionDelayMs = 1500;
 
-  function setStatus(message) {
-    if (status) status.textContent = message;
+  function setStatus(message, quiet) {
+    if (!status) return;
+    status.textContent = message;
+    if (typeof status.setAttribute === 'function') {
+      status.setAttribute('data-quiet', quiet ? 'true' : 'false');
+    }
   }
 
-  function setFrameStyle(name, value) {
-    if (!iframe || !iframe.style) return;
-    if (typeof iframe.style.setProperty === 'function') {
-      iframe.style.setProperty(name, value, 'important');
+  function setImportantStyle(element, name, value) {
+    if (!element || !element.style) return;
+    if (typeof element.style.setProperty === 'function') {
+      element.style.setProperty(name, value, 'important');
       return;
     }
-    iframe.style[name] = value;
+    element.style[name] = value;
   }
 
   function prepareFrameLayout() {
-    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('scrolling', 'no');
-    setFrameStyle('display', 'block');
-    setFrameStyle('width', '100%');
-    setFrameStyle('max-width', 'none');
-    setFrameStyle('overflow', 'hidden');
-    setFrameStyle('border', '0');
+    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('scrolling', 'yes');
+    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('aria-hidden', 'true');
+    if (document.body && liveQuestion && liveQuestion.parentNode !== document.body) {
+      document.body.appendChild(liveQuestion);
+    }
+    setImportantStyle(liveQuestion, 'position', 'fixed');
+    setImportantStyle(liveQuestion, 'inset', '0');
+    setImportantStyle(liveQuestion, 'width', '100vw');
+    setImportantStyle(liveQuestion, 'height', '100vh');
+    if (
+      window.CSS &&
+      typeof window.CSS.supports === 'function' &&
+      window.CSS.supports('height', '100dvh')
+    ) {
+      setImportantStyle(liveQuestion, 'height', '100dvh');
+    }
+    setImportantStyle(liveQuestion, 'margin', '0');
+    setImportantStyle(liveQuestion, 'padding', '0');
+    setImportantStyle(liveQuestion, 'overflow', 'hidden');
+    setImportantStyle(liveQuestion, 'background', '#eef2f6');
+    setImportantStyle(liveQuestion, 'z-index', '2147483000');
+    setImportantStyle(iframe, 'display', 'block');
+    setImportantStyle(iframe, 'position', 'absolute');
+    setImportantStyle(iframe, 'inset', '0');
+    setImportantStyle(iframe, 'width', '100%');
+    setImportantStyle(iframe, 'max-width', 'none');
+    setImportantStyle(iframe, 'height', '100%');
+    setImportantStyle(iframe, 'overflow', 'auto');
+    setImportantStyle(iframe, 'border', '0');
+    setImportantStyle(iframe, 'visibility', 'hidden');
+  }
+
+  function revealConnectedFrame() {
+    if (typeof iframe.removeAttribute === 'function') iframe.removeAttribute('aria-hidden');
+    setImportantStyle(iframe, 'visibility', 'visible');
+  }
+
+  function relaxStyle(element, property, value) {
+    if (!element || !element.style) return;
+    var previousValue = typeof element.style.getPropertyValue === 'function'
+      ? element.style.getPropertyValue(property)
+      : element.style[property];
+    var previousPriority = typeof element.style.getPropertyPriority === 'function'
+      ? element.style.getPropertyPriority(property)
+      : '';
+    relaxedLayoutStyles.push({
+      element: element,
+      property: property,
+      value: previousValue || '',
+      priority: previousPriority || ''
+    });
+    if (typeof element.style.setProperty === 'function') {
+      element.style.setProperty(property, value, 'important');
+    } else {
+      element.style[property] = value;
+    }
+  }
+
+  function lockOuterQualtricsViewport() {
+    if (document.documentElement) {
+      relaxStyle(document.documentElement, 'overflow', 'hidden');
+    }
+    if (document.body) {
+      relaxStyle(document.body, 'overflow', 'hidden');
+    }
+  }
+
+  function restoreQualtricsQuestionLayout() {
+    for (var index = relaxedLayoutStyles.length - 1; index >= 0; index -= 1) {
+      var entry = relaxedLayoutStyles[index];
+      if (!entry.element || !entry.element.style) continue;
+      if (typeof entry.element.style.setProperty === 'function') {
+        entry.element.style.setProperty(
+          entry.property,
+          entry.value,
+          entry.priority
+        );
+      } else {
+        entry.element.style[entry.property] = entry.value;
+      }
+    }
+    relaxedLayoutStyles = [];
+    if (liveQuestion && originalLiveParent && liveQuestion.parentNode !== originalLiveParent) {
+      if (
+        originalLiveNextSibling &&
+        originalLiveNextSibling.parentNode === originalLiveParent &&
+        typeof originalLiveParent.insertBefore === 'function'
+      ) {
+        originalLiveParent.insertBefore(liveQuestion, originalLiveNextSibling);
+      } else if (typeof originalLiveParent.appendChild === 'function') {
+        originalLiveParent.appendChild(liveQuestion);
+      }
+    }
+  }
+
+  function releaseFullscreenForNativeNavigation() {
+    restoreQualtricsQuestionLayout();
+    setImportantStyle(liveQuestion, 'position', 'relative');
+    setImportantStyle(liveQuestion, 'inset', 'auto');
+    setImportantStyle(liveQuestion, 'width', '100%');
+    setImportantStyle(liveQuestion, 'height', 'auto');
+    setImportantStyle(liveQuestion, 'margin', '0');
+    setImportantStyle(liveQuestion, 'overflow', 'visible');
+    setImportantStyle(liveQuestion, 'z-index', 'auto');
+    setImportantStyle(iframe, 'position', 'relative');
+    setImportantStyle(iframe, 'inset', 'auto');
+    setImportantStyle(iframe, 'width', '100%');
+    setImportantStyle(iframe, 'height', '70vh');
+    setImportantStyle(iframe, 'min-height', '600px');
+    setImportantStyle(iframe, 'overflow', 'auto');
+    setImportantStyle(status, 'position', 'relative');
+    setImportantStyle(status, 'top', 'auto');
+    setImportantStyle(status, 'left', 'auto');
+    setImportantStyle(status, 'width', '100%');
+    setImportantStyle(status, 'transform', 'none');
+    setImportantStyle(status, 'margin', '0 0 0.75rem');
   }
 
   function sendParentReady() {
     if (!iframe || !iframe.contentWindow) return;
     iframe.contentWindow.postMessage({
       type: parentReadyType,
-      protocolVersion: 2
+      protocolVersion: 2,
+      bridgeBuild: bridgeBuild
     }, childOrigin);
   }
 
@@ -68,7 +187,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       accepted: accepted,
       submissionId: submissionId,
       receiptId: accepted ? 'qualtrics-accepted-' + submissionId : undefined,
-      error: error || undefined
+      error: error || undefined,
+      bridgeBuild: bridgeBuild
     }, childOrigin);
   }
 
@@ -77,6 +197,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       name,
       value === null || value === undefined ? '' : String(value)
     );
+  }
+
+  function stageConnectionDiagnostic() {
+    /*
+     * These values are overwritten by the completed record.  Staging them when
+     * the verified child connects means a synthetic response can distinguish a
+     * working question script from an iframe that merely rendered.  They reach
+     * Data & Analysis only when Qualtrics submits the page.
+     */
+    setField('AQP_ACCEPTED', 0);
+    setField('AQP_SCHEMA', 4);
+    setField('AQP_PROTOTYPE_VERSION', bridgeBuild);
+    setField('AQP_COLLECTION_MODE', 'qualtrics');
   }
 
   function requireRecord(record) {
@@ -162,55 +295,35 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  function revealQuestionnaireTarget(message) {
-    var requestedOffset = Number(message.offsetTop);
-    var requestedHeight = Number(message.targetHeight);
-    if (
-      !Number.isFinite(requestedOffset) ||
-      !Number.isFinite(requestedHeight) ||
-      requestedOffset < 0 ||
-      requestedOffset > 10000 ||
-      requestedHeight < 1 ||
-      requestedHeight > 5000 ||
-      typeof iframe.getBoundingClientRect !== 'function' ||
-      typeof window.scrollTo !== 'function'
-    ) {
-      return;
-    }
-
-    function reveal() {
-      var frameRect = iframe.getBoundingClientRect();
-      var visualViewport = window.visualViewport;
-      var viewportOffset = visualViewport ? visualViewport.offsetTop : 0;
-      var viewportHeight = visualViewport ? visualViewport.height : window.innerHeight;
-      var parentScrollTop = window.scrollY || window.pageYOffset || 0;
-      var absoluteTargetTop = parentScrollTop + frameRect.top + requestedOffset;
-      var top = absoluteTargetTop - viewportOffset;
-      if (viewportHeight > requestedHeight) {
-        top -= (viewportHeight - requestedHeight) / 2;
-      }
-      window.scrollTo({
-        top: Math.max(0, Math.round(top)),
-        left: window.scrollX || window.pageXOffset || 0,
-        behavior: 'auto'
-      });
-    }
-
-    // Repeat after responsive layout settles. This mirrors the bounded child
-    // reveal and avoids relying on focus propagation across an iframe boundary.
-    reveal();
-    if (typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(function waitForFirstFrame() {
-        window.requestAnimationFrame(reveal);
-      });
-    }
-    window.setTimeout(reveal, 160);
-  }
-
   function receiveResult(event) {
     if (!iframe || event.source !== iframe.contentWindow || event.origin !== childOrigin) return;
     var message = event.data;
     if (message && message.type === childReadyType) {
+      if (message.protocolVersion !== 2 || message.bridgeBuild !== bridgeBuild) {
+        setStatus(
+          'The generated questionnaire HTML, JavaScript and participant page do not use the same bridge version. ' +
+          'Do not collect a response. Regenerate and replace the complete package.',
+          false
+        );
+        releaseFullscreenForNativeNavigation();
+        question.showNextButton();
+        return;
+      }
+      try {
+        stageConnectionDiagnostic();
+      } catch (error) {
+        var diagnosticDetail = error && error.message
+          ? error.message
+          : 'Qualtrics could not stage the connection diagnostic.';
+        setStatus(
+          diagnosticDetail +
+          ' Do not collect a response. Check the Survey Flow fields and question JavaScript.',
+          false
+        );
+        releaseFullscreenForNativeNavigation();
+        question.showNextButton();
+        return;
+      }
       childConnected = true;
       if (connectionTimerId !== null) {
         window.clearTimeout(connectionTimerId);
@@ -220,22 +333,34 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         window.clearTimeout(timerId);
       });
       parentReadyTimerIds = [];
-      setStatus('The questionnaire is connected. Completed answers will save into this Qualtrics response.');
-      return;
-    }
-    if (message && message.type === resizeType) {
-      var requestedHeight = Number(message.height);
-      if (Number.isFinite(requestedHeight)) {
-        setFrameStyle('height', Math.max(600, Math.min(10000, Math.ceil(requestedHeight))) + 'px');
-      }
-      return;
-    }
-    if (message && message.type === revealType) {
-      revealQuestionnaireTarget(message);
+      revealConnectedFrame();
+      setStatus(
+        'The questionnaire is connected. Bridge ' + bridgeBuild +
+        ' staged its Qualtrics diagnostic fields. Completed answers will save into this response.',
+        true
+      );
       return;
     }
     if (!message || message.type !== submitType) return;
     var submissionId = message.record && message.record.submissionId;
+    if (!childConnected) {
+      sendReceipt(
+        event.source,
+        false,
+        submissionId || '',
+        'The verified Qualtrics bridge connection is not ready.'
+      );
+      return;
+    }
+    if (message.bridgeBuild !== bridgeBuild) {
+      sendReceipt(
+        event.source,
+        false,
+        submissionId || '',
+        'The questionnaire and Qualtrics bridge versions do not match.'
+      );
+      return;
+    }
 
     if (acceptedSubmissionId === submissionId) {
       sendReceipt(event.source, true, submissionId);
@@ -246,6 +371,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       return;
     }
 
+    if (document.body && liveQuestion.parentNode !== document.body) {
+      prepareFrameLayout();
+      lockOuterQualtricsViewport();
+    }
     try {
       requireRecord(message.record);
       storeRecord(message.record);
@@ -254,7 +383,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       setStatus(
         'Your answers have been accepted and Qualtrics is saving your response now. ' +
         'Please keep this page open until the next page appears by itself. ' +
-        'No backup download is required during this automatic transition.'
+        'No backup download is required during this automatic transition.',
+        true
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
       completionTimerId = window.setTimeout(function completeAcceptedResponse() {
@@ -268,8 +398,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           advancing = false;
           setStatus(
             'Qualtrics did not open the recorded result page. Use one backup button ' +
-            'in the questionnaire and tell the study conductor, or use the restored Next button.'
+            'in the questionnaire and tell the study conductor, or use the restored Next button.',
+            false
           );
+          releaseFullscreenForNativeNavigation();
           question.showNextButton();
         }, 6000);
       }, completionDelayMs);
@@ -278,8 +410,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       setStatus(
         detail +
         ' Return to the questionnaire and try again. If it keeps failing, use the download' +
-        ' button on the questionnaire and tell the study conductor.'
+        ' button on the questionnaire and tell the study conductor.',
+        false
       );
+      releaseFullscreenForNativeNavigation();
       sendReceipt(event.source, false, submissionId || '', detail);
       // Staging can fail deterministically — an oversized record fails identically on every
       // retry — so the navigation control is restored. Without it the participant is left on
@@ -288,19 +422,43 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  if (!iframe || !iframe.contentWindow) {
-    setStatus('The accessible questionnaire iframe is missing. The study conductor must correct this Qualtrics question.');
+  if (
+    recordedSummary &&
+    typeof recordedSummary.getAttribute === 'function' &&
+    recordedSummary.getAttribute('data-recorded') === '1'
+  ) {
+    return;
+  }
+  if (!iframe || !iframe.contentWindow || !liveQuestion) {
+    setStatus(
+      'The accessible questionnaire package is incomplete. The study conductor must replace the complete generated HTML and JavaScript.',
+      false
+    );
     // Keep the native navigation available on a misconfigured test page instead of
     // trapping the researcher or participant. This path must fail the synthetic
     // preflight and must never be used to collect a participant response.
     question.showNextButton();
     return;
   }
+  if (
+    typeof liveQuestion.getAttribute !== 'function' ||
+    liveQuestion.getAttribute('data-aqp-package-build') !== bridgeBuild
+  ) {
+    setStatus(
+      'The questionnaire HTML and JavaScript versions do not match. Expected package ' +
+      bridgeBuild + '. Do not collect a response. Replace both generated blocks together.',
+      false
+    );
+    releaseFullscreenForNativeNavigation();
+    question.showNextButton();
+    return;
+  }
 
   prepareFrameLayout();
+  lockOuterQualtricsViewport();
   question.hideNextButton();
   window.addEventListener('message', receiveResult);
-  setStatus('Connecting the questionnaire to this Qualtrics response.');
+  setStatus('Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.', false);
   if (typeof iframe.addEventListener === 'function') {
     iframe.addEventListener('load', sendParentReady);
   }
@@ -313,8 +471,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (childConnected) return;
     setStatus(
       'The questionnaire connection did not start. Do not collect a real response. ' +
-      'Regenerate and replace the complete HTML and JavaScript, then test again.'
+      'Regenerate and replace the complete HTML and JavaScript, then test again.',
+      false
     );
+    releaseFullscreenForNativeNavigation();
     question.showNextButton();
   }, 8000);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
@@ -337,6 +497,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (typeof iframe.removeEventListener === 'function') {
       iframe.removeEventListener('load', sendParentReady);
     }
+    restoreQualtricsQuestionLayout();
     window.removeEventListener('message', receiveResult);
   });
 });

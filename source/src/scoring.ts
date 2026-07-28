@@ -24,6 +24,16 @@ export interface QuestionnaireScore {
     | {
         kind: 'sus-contributions';
         contributions: Record<DimensionId, number>;
+      }
+    | {
+        kind: 'raw-mean';
+        contributions: Record<DimensionId, number>;
+      }
+    | {
+        kind: 'ueqs-subscales';
+        contributions: Record<DimensionId, number>;
+        pragmaticQuality: number;
+        hedonicQuality: number;
       };
 }
 
@@ -143,6 +153,58 @@ function scoreSus(
   };
 }
 
+function scoreRawTlx(
+  definition: QuestionnaireDefinition,
+  ratings: Ratings,
+): QuestionnaireScore {
+  validateRatings(definition, ratings);
+  const divisor = definition.items.length;
+  const contributions = Object.fromEntries(
+    definition.items.map((item) => [item.id, ratings[item.id] / divisor]),
+  ) as Record<DimensionId, number>;
+  const score = Object.values(ratings).reduce((sum, value) => sum + value, 0) / divisor;
+  return {
+    strategy: 'nasa-tlx-raw-v1',
+    scoreName: definition.scoring.scoreName,
+    primaryScore: score,
+    scoreMinimum: definition.scoring.minimum,
+    scoreMaximum: definition.scoring.maximum,
+    ratings,
+    details: {
+      kind: 'raw-mean',
+      contributions,
+    },
+  };
+}
+
+function scoreUeqs(
+  definition: QuestionnaireDefinition,
+  ratings: Ratings,
+): QuestionnaireScore {
+  validateRatings(definition, ratings);
+  const contributions = Object.fromEntries(
+    definition.items.map((item) => [item.id, ratings[item.id] - 4]),
+  ) as Record<DimensionId, number>;
+  const mean = (ids: readonly string[]) =>
+    ids.reduce((sum, id) => sum + contributions[id], 0) / ids.length;
+  const pragmaticIds = definition.items.slice(0, 4).map(({ id }) => id);
+  const hedonicIds = definition.items.slice(4).map(({ id }) => id);
+  return {
+    strategy: 'ueqs-standard-v1',
+    scoreName: definition.scoring.scoreName,
+    primaryScore: mean(definition.items.map(({ id }) => id)),
+    scoreMinimum: definition.scoring.minimum,
+    scoreMaximum: definition.scoring.maximum,
+    ratings,
+    details: {
+      kind: 'ueqs-subscales',
+      contributions,
+      pragmaticQuality: mean(pragmaticIds),
+      hedonicQuality: mean(hedonicIds),
+    },
+  };
+}
+
 export function scoreQuestionnaire(
   definition: QuestionnaireDefinition,
   ratings: Ratings,
@@ -151,8 +213,14 @@ export function scoreQuestionnaire(
   if (definition.scoring.strategy === 'nasa-tlx-weighted-v1') {
     return scoreWeightedPairwise(definition, pairResponses, ratings);
   }
+  if (definition.scoring.strategy === 'nasa-tlx-raw-v1') {
+    return scoreRawTlx(definition, ratings);
+  }
   if (definition.scoring.strategy === 'sus-standard-v1') {
     return scoreSus(definition, ratings);
+  }
+  if (definition.scoring.strategy === 'ueqs-standard-v1') {
+    return scoreUeqs(definition, ratings);
   }
   const exhaustive: never = definition.scoring.strategy;
   throw new Error(`Unsupported scoring strategy: ${exhaustive}`);
@@ -177,7 +245,7 @@ export function calculateResult(
     introPrompt: 'Think about the completed task.',
     officialContentNotice: 'NASA-TLX scoring.',
     source: { label: 'NASA-TLX', url: 'https://www.nasa.gov/' },
-    scale: { minimum: 0, maximum: 100, step: 5 },
+    scale: { type: 'magnitude', minimum: 0, maximum: 100, step: 5 },
     items: [...nasaDimensions],
     pairwise: {
       mode: 'all-pairs',

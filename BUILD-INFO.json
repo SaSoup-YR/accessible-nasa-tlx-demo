@@ -5,10 +5,11 @@
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
-  "builtAt": "2026-07-28T15:39:52Z",
+  "builtAt": "2026-07-28T17:32:05Z",
+  "qualtricsBridgeBuild": "0.8.2-q2",
   "verification": {
     "testFilesPassed": 16,
-    "testsPassed": 104,
+    "testsPassed": 112,
     "axeStructuralScansPassed": 6,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
@@ -16,10 +17,10 @@
     "releaseDirectorySynchronization": "passed",
     "localHttpEntryPointSmokeTest": "passed",
     "questionnaireDefinitionValidation": "passed",
-    "nasaTlxAndSusEndToEndTests": "passed",
+    "weightedNasaRawTlxSusAndUeqsEndToEndTests": "passed",
     "genericQualtricsBridgeAndAdversePathTests": "passed",
-    "qualtricsReadyHandshakeAndOneScrollTemplateTests": "passed",
-    "mobileErrorFocusForcedCoordinateScrollAndQualtricsParentRevealTests": "passed",
+    "qualtricsExactBuildHandshakeFullViewportOneScrollAndPreflightTests": "passed",
+    "mobileErrorFocusAndForcedCoordinateScrollTests": "passed",
     "savedSessionReloadFocusExactLiveRegionAndPriorOptInSpeechTests": "passed",
     "conservativeVoiceParsingTests": "passed",
     "authoredContrastTokenTests": "passed",
@@ -31,7 +32,9 @@
   },
   "supportedDefinitions": [
     "nasa-tlx-weighted@1.0.0",
-    "system-usability-scale@brooke-1996"
+    "nasa-tlx-raw@1.0.0",
+    "system-usability-scale@brooke-1996",
+    "user-experience-questionnaire-short@ueq-s-2017"
   ],
   "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
   "claimBoundary": "Questionnaire-independent within the published integer single-choice and optional all-pairs profile with allowlisted scorers; not compatible with every questionnaire and not evidence of psychometric equivalence or disability-group benefit.",

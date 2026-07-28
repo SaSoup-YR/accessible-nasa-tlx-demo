@@ -15,6 +15,11 @@ export default defineConfig({
         participant: resolve(import.meta.dirname, 'index.html'),
         study: resolve(import.meta.dirname, 'study.html'),
       },
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/shared-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
+      },
     },
   },
 });

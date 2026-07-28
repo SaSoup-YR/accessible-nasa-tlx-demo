@@ -27,7 +27,8 @@ Required content:
 - definition schema version, ID, instrument version and names;
 - description, participant introduction and content-integrity notice;
 - primary HTTPS source;
-- integer scale minimum, maximum and step;
+- declared magnitude, agreement or semantic-differential scale type, with integer
+  minimum, maximum and step;
 - one or more single-choice items;
 - allowlisted scoring strategy and result range;
 - capability flags.
@@ -45,11 +46,17 @@ JSON Schema catches structural errors. Runtime validation additionally checks
 scorer compatibility, HTTPS sources, unique item IDs, scale divisibility,
 landmark positions and capability dependencies.
 
+The current registry includes weighted NASA-TLX, Raw TLX, SUS and UEQ-S. These
+exercise an optional comparison stage, three scale semantics and four reviewed
+scoring strategies.
+
 The runner fails closed. An unknown property, scorer or incompatible definition
 stops the build or registration instead of being ignored.
 
 ## Current extension limit
 
+Definitions are separate JSON files but are registered into the published build;
+the public site does not fetch an arbitrary remote URL or accept executable code.
 Adding a definition that uses an existing response type but a new scoring rule
 still requires a reviewed scorer in `source/src/scoring.ts`. Adding a new response
 type also requires runner and schema work. This is why the public claim is
