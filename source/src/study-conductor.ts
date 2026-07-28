@@ -169,9 +169,12 @@ export class StudyConductorApp extends LitElement {
                 Choose a versioned definition. Item wording, scale, workflow and scoring are loaded from that
                 definition; accessibility supports are configured separately.
               </span>
-              <select .value=${this.instrumentId} @change=${this.selectInstrument}>
+              <select @change=${this.selectInstrument}>
                 ${builtInQuestionnaires.map(
-                  (definition) => html`<option value=${definition.id}>
+                  (definition) => html`<option
+                    value=${definition.id}
+                    .selected=${definition.id === this.instrumentId}
+                  >
                     ${definition.name} · ${definition.version}
                   </option>`,
                 )}

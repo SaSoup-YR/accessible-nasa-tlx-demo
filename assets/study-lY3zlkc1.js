@@ -769,8 +769,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 Choose a versioned definition. Item wording, scale, workflow and scoring are loaded from that
                 definition; accessibility supports are configured separately.
               </span>
-              <select .value=${this.instrumentId} @change=${this.selectInstrument}>
-                ${E.map(e=>o`<option value=${e.id}>
+              <select @change=${this.selectInstrument}>
+                ${E.map(e=>o`<option
+                    value=${e.id}
+                    .selected=${e.id===this.instrumentId}
+                  >
                     ${e.name} · ${e.version}
                   </option>`)}
               </select>
