@@ -7,6 +7,7 @@ on:
       - '.github/workflows/pr-apply-saved-session-announcement-v2.yml'
       - '.github/workflows/verify.yml'
       - 'source/scripts/apply-saved-session-announcement-v2.py'
+      - 'source/scripts/adjust-saved-session-announcement-test.py'
   push:
     branches:
       - main
