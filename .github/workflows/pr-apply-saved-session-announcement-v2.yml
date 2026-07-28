@@ -1,0 +1,69 @@
+name: Prepare saved-session announcement v2
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-tested-change:
+    if: github.head_ref == 'fix/saved-session-announcement-v2' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the source branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/saved-session-announcement-v2
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Apply the exact component patch
+        run: python3 source/scripts/apply-saved-session-announcement-v2.py
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Run the complete automated test suite
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Build production, standalone and release outputs
+        working-directory: source
+        run: npm run build:release
+
+      - name: Verify the deployed participant output
+        shell: bash
+        run: |
+          test ! -e resume-recovery-enhancement.js
+          ! grep -q 'resume-recovery-enhancement.js' index.html
+          participant_asset="$(sed -n 's/.*src="\.\/assets\/\([^"]*participant[^"]*\.js\)".*/\1/p' index.html)"
+          test -n "$participant_asset"
+          test -f "assets/$participant_asset"
+          grep -q 'Saved questionnaire found.' "assets/$participant_asset"
+          grep -q 'Hear saved-progress message' "assets/$participant_asset"
+          grep -q 'announceSavedSessionOffer' source/src/accessible-nasa-tlx.ts
+          grep -q 'repeatSavedSessionOffer' source/src/accessible-nasa-tlx.ts
+          git diff --check
+
+      - name: Commit only the tested implementation
+        shell: bash
+        run: |
+          git checkout origin/main -- .github/workflows/verify.yml
+          rm -f .github/workflows/apply-saved-session-announcement-v2.yml
+          rm -f .github/workflows/pr-apply-saved-session-announcement-v2.yml
+          rm -f source/scripts/apply-saved-session-announcement-v2.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Make saved-session announcement reliable after refresh'
+          git push origin HEAD:fix/saved-session-announcement-v2
