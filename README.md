@@ -61,6 +61,8 @@ complete WCAG conformance or disability-group benefit. See
 
 The generic Qualtrics bridge:
 
+- uses a two-way readiness handshake and automatic height updates so the outer
+  Qualtrics page remains the only scrollbar;
 - sends only to the exact configured HTTPS parent origin;
 - accepts only a matching submission receipt;
 - attempts a complete local backup before host contact;
@@ -74,7 +76,9 @@ The generic Qualtrics bridge:
 
 Install and re-test the Version 0.8 package from
 [`docs/QUALTRICS-INTEGRATION.md`](docs/QUALTRICS-INTEGRATION.md). Version 0.7
-`ANTLX_*` fields are not compatible with the new generic `AQP_*` manifest.
+`ANTLX_*` fields are not compatible with the new generic `AQP_*` manifest. Existing
+Version 0.7 rows are not deleted or backfilled: their values remain under
+`ANTLX_*`, while their later-added `AQP_*` cells are expected to be blank.
 
 ## Repository map
 

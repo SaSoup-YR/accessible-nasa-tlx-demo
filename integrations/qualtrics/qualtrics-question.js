@@ -12,12 +12,17 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var receiptType = 'accessible-questionnaire:qualtrics-receipt:v2';
   var resizeType = 'accessible-questionnaire:qualtrics-resize:v2';
   var revealType = 'accessible-questionnaire:qualtrics-reveal:v2';
+  var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
+  var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var acceptedSubmissionId = null;
   var advancing = false;
+  var childConnected = false;
   var completionTimerId = null;
   var advanceWatchdogTimerId = null;
+  var connectionTimerId = null;
+  var parentReadyTimerIds = [];
   var rawChunkLength = 900;
   var maximumRawChunks = 24;
   // setJSEmbeddedData only writes into the in-browser survey session; the values reach
@@ -29,6 +34,32 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
   function setStatus(message) {
     if (status) status.textContent = message;
+  }
+
+  function setFrameStyle(name, value) {
+    if (!iframe || !iframe.style) return;
+    if (typeof iframe.style.setProperty === 'function') {
+      iframe.style.setProperty(name, value, 'important');
+      return;
+    }
+    iframe.style[name] = value;
+  }
+
+  function prepareFrameLayout() {
+    if (typeof iframe.setAttribute === 'function') iframe.setAttribute('scrolling', 'no');
+    setFrameStyle('display', 'block');
+    setFrameStyle('width', '100%');
+    setFrameStyle('max-width', 'none');
+    setFrameStyle('overflow', 'hidden');
+    setFrameStyle('border', '0');
+  }
+
+  function sendParentReady() {
+    if (!iframe || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage({
+      type: parentReadyType,
+      protocolVersion: 2
+    }, childOrigin);
   }
 
   function sendReceipt(target, accepted, submissionId, error) {
@@ -179,10 +210,23 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   function receiveResult(event) {
     if (!iframe || event.source !== iframe.contentWindow || event.origin !== childOrigin) return;
     var message = event.data;
+    if (message && message.type === childReadyType) {
+      childConnected = true;
+      if (connectionTimerId !== null) {
+        window.clearTimeout(connectionTimerId);
+        connectionTimerId = null;
+      }
+      parentReadyTimerIds.forEach(function clearParentReadyTimer(timerId) {
+        window.clearTimeout(timerId);
+      });
+      parentReadyTimerIds = [];
+      setStatus('The questionnaire is connected. Completed answers will save into this Qualtrics response.');
+      return;
+    }
     if (message && message.type === resizeType) {
       var requestedHeight = Number(message.height);
       if (Number.isFinite(requestedHeight)) {
-        iframe.style.height = Math.max(600, Math.min(10000, Math.ceil(requestedHeight))) + 'px';
+        setFrameStyle('height', Math.max(600, Math.min(10000, Math.ceil(requestedHeight))) + 'px');
       }
       return;
     }
@@ -253,9 +297,26 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     return;
   }
 
+  prepareFrameLayout();
   question.hideNextButton();
-  setStatus('The questionnaire will save into this Qualtrics response after submission.');
   window.addEventListener('message', receiveResult);
+  setStatus('Connecting the questionnaire to this Qualtrics response.');
+  if (typeof iframe.addEventListener === 'function') {
+    iframe.addEventListener('load', sendParentReady);
+  }
+  [0, 100, 500, 1500, 4000].forEach(function scheduleParentReady(delay) {
+    parentReadyTimerIds.push(window.setTimeout(sendParentReady, delay));
+  });
+  sendParentReady();
+  connectionTimerId = window.setTimeout(function reportMissingConnection() {
+    connectionTimerId = null;
+    if (childConnected) return;
+    setStatus(
+      'The questionnaire connection did not start. Do not collect a real response. ' +
+      'Regenerate and replace the complete HTML and JavaScript, then test again.'
+    );
+    question.showNextButton();
+  }, 8000);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
     if (completionTimerId !== null) {
       window.clearTimeout(completionTimerId);
@@ -264,6 +325,17 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (advanceWatchdogTimerId !== null) {
       window.clearTimeout(advanceWatchdogTimerId);
       advanceWatchdogTimerId = null;
+    }
+    if (connectionTimerId !== null) {
+      window.clearTimeout(connectionTimerId);
+      connectionTimerId = null;
+    }
+    parentReadyTimerIds.forEach(function clearParentReadyTimer(timerId) {
+      window.clearTimeout(timerId);
+    });
+    parentReadyTimerIds = [];
+    if (typeof iframe.removeEventListener === 'function') {
+      iframe.removeEventListener('load', sendParentReady);
     }
     window.removeEventListener('message', receiveResult);
   });

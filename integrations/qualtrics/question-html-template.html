@@ -31,6 +31,19 @@
     overflow-wrap: anywhere;
     white-space: pre-wrap;
   }
+  #accessible-questionnaire-live-question {
+    width: 100%;
+    max-width: none;
+  }
+  #accessible-questionnaire-frame {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: 1200px;
+    border: 0;
+    overflow: hidden;
+    background: #eef2f6;
+  }
 </style>
 <section
   id="accessible-questionnaire-recorded-summary"
@@ -87,7 +100,9 @@
     src="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE"
     title="Accessible questionnaire participant page"
     allow="camera; microphone"
-    style="width:100%;min-height:1200px;border:0"
+    referrerpolicy="origin"
+    scrolling="no"
+    style="display:block;width:100%;max-width:none;min-height:1200px;border:0;overflow:hidden;background:#eef2f6"
   ></iframe>
   <p id="accessible-questionnaire-collection-status" role="status" aria-live="polite"></p>
 </div>

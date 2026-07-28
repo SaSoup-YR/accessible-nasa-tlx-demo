@@ -3,11 +3,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  QUALTRICS_CHILD_READY_MESSAGE,
+  QUALTRICS_PARENT_READY_MESSAGE,
   QUALTRICS_RECEIPT_MESSAGE,
   QUALTRICS_REVEAL_MESSAGE,
+  QUALTRICS_RESIZE_MESSAGE,
   QUALTRICS_SUBMIT_MESSAGE,
   configuredResultSink,
   createQualtricsParentResultSink,
+  installQualtricsAutoResize,
   requestQualtricsParentReveal,
   submitToApprovedResultSink,
 } from '../src/result-sink';
@@ -118,6 +122,76 @@ describe('approved host result sink', () => {
     await expect(sink.submit(record)).rejects.toThrow(/opened through its Qualtrics survey/i);
   });
 
+  it('re-announces readiness and height when the Qualtrics parent starts after the iframe', () => {
+    let receiveMessage: ((event: MessageEvent) => void) | undefined;
+    const parent = { postMessage: vi.fn() };
+    class FakeResizeObserver {
+      constructor(private readonly callback: () => void) {}
+      observe() {
+        this.callback();
+      }
+      disconnect() {}
+    }
+    class FakeMutationObserver {
+      constructor(private readonly callback: () => void) {}
+      observe() {
+        this.callback();
+      }
+      disconnect() {}
+    }
+    const fakeWindow = {
+      parent,
+      document: {
+        documentElement: { scrollHeight: 2400, offsetHeight: 2400 },
+        body: { scrollHeight: 2380, offsetHeight: 2380 },
+      },
+      ResizeObserver: FakeResizeObserver,
+      MutationObserver: FakeMutationObserver,
+      requestAnimationFrame(callback: () => void) {
+        callback();
+        return 1;
+      },
+      cancelAnimationFrame: vi.fn(),
+      setTimeout: vi.fn(() => 1),
+      clearTimeout: vi.fn(),
+      addEventListener(type: string, listener: EventListener) {
+        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+      },
+      removeEventListener: vi.fn(),
+    } as unknown as Window;
+
+    installQualtricsAutoResize(
+      'https://ucl-example.eu.qualtrics.com',
+      fakeWindow,
+    );
+
+    expect(parent.postMessage).toHaveBeenCalledWith(
+      { type: QUALTRICS_CHILD_READY_MESSAGE, protocolVersion: 2 },
+      'https://ucl-example.eu.qualtrics.com',
+    );
+    expect(parent.postMessage).toHaveBeenCalledWith(
+      { type: QUALTRICS_RESIZE_MESSAGE, height: 2400 },
+      'https://ucl-example.eu.qualtrics.com',
+    );
+    const callsBeforeAttacker = parent.postMessage.mock.calls.length;
+    receiveMessage!({
+      source: parent,
+      origin: 'https://attacker.example',
+      data: { type: QUALTRICS_PARENT_READY_MESSAGE },
+    } as unknown as MessageEvent);
+    expect(parent.postMessage).toHaveBeenCalledTimes(callsBeforeAttacker);
+
+    receiveMessage!({
+      source: parent,
+      origin: 'https://ucl-example.eu.qualtrics.com',
+      data: { type: QUALTRICS_PARENT_READY_MESSAGE },
+    } as unknown as MessageEvent);
+    expect(parent.postMessage).toHaveBeenLastCalledWith(
+      { type: QUALTRICS_RESIZE_MESSAGE, height: 2400 },
+      'https://ucl-example.eu.qualtrics.com',
+    );
+  });
+
   it('requests parent-level visual reveal only from an embedded questionnaire and uses the exact origin', () => {
     const parent = { postMessage: vi.fn() };
     const windowRef = {
@@ -205,6 +279,9 @@ describe('approved host result sink', () => {
     expect(questionHtml).toContain('${e://Field/__js_AQP_PARTICIPANT_CODE}');
     expect(questionHtml).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
     expect(questionHtml).toContain('${e://Field/__js_AQP_INSTRUMENT_NAME}');
+    expect(questionHtml).toContain('referrerpolicy="origin"');
+    expect(questionHtml).toContain('scrolling="no"');
+    expect(questionHtml).toContain('overflow:hidden');
     expect(questionHtml).not.toContain('__js_AQP_RAW_01');
     const summaryFields = [...questionHtml.matchAll(/\$\{e:\/\/Field\/(__js_AQP_[A-Z0-9_]+)\}/g)]
       .map((match) => match[1]);
@@ -281,6 +358,18 @@ describe('approved host result sink', () => {
       showNextButton: vi.fn(),
       clickNextButton: vi.fn(),
     });
+
+    expect(frameWindow.postMessage).toHaveBeenCalledWith(
+      { type: QUALTRICS_PARENT_READY_MESSAGE, protocolVersion: 2 },
+      'https://sasoup-yr.github.io',
+    );
+    expect((iframe.style as Record<string, string>).overflow).toBe('hidden');
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: { type: QUALTRICS_CHILD_READY_MESSAGE, protocolVersion: 2 },
+    } as unknown as MessageEvent);
+    expect(status.textContent).toContain('questionnaire is connected');
 
     receiveMessage!({
       source: frameWindow,
