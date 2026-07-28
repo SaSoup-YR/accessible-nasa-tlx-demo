@@ -128,4 +128,96 @@ describe('instrument-independent questionnaire workflow', () => {
     const link = conductor.querySelector<HTMLTextAreaElement>('#participant-link')!.value;
     expect(readStudyConfigFromHash(new URL(link).hash)?.instrumentId).toBe('system-usability-scale');
   });
+
+  it.each([
+    {
+      instrumentId: 'nasa-tlx-raw',
+      participantCode: 'P-RAW-01',
+      values: [0, 20, 40, 60, 80, 100],
+      expectedScore: 50,
+      expectedStrategy: 'nasa-tlx-raw-v1',
+      expectedTitle: 'Raw NASA Task Load Index',
+    },
+    {
+      instrumentId: 'user-experience-questionnaire-short',
+      participantCode: 'P-UEQS-01',
+      values: [7, 7, 7, 7, 1, 1, 1, 1],
+      expectedScore: 0,
+      expectedStrategy: 'ueqs-standard-v1',
+      expectedTitle: 'User Experience Questionnaire Short',
+    },
+  ])(
+    'runs $instrumentId through the same rating-only participant workflow',
+    async ({
+      instrumentId,
+      participantCode,
+      values,
+      expectedScore,
+      expectedStrategy,
+      expectedTitle,
+    }) => {
+      const config = createStudyConfig({
+        instrumentId,
+        studyId: 'PLATFORM-MULTI-01',
+        studyTitle: 'Questionnaire platform evaluation',
+        taskLabel: 'using the route-planning system',
+        showScoreToParticipant: true,
+        support: {
+          showSimpleLanguage: false,
+          answerMode: 'standard',
+          largeText: false,
+          audioGuidance: false,
+          recoveryEnabled: true,
+          participantAdjustmentPolicy: 'participant-choice',
+          voiceInputAvailable: true,
+          gazeInputAvailable: false,
+        },
+        collection: { mode: 'local' },
+      });
+      const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
+      window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+
+      const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+      let completed: StudyResultRecord | null = null;
+      component.addEventListener('questionnaire-complete', (event) => {
+        completed = (event as CustomEvent<StudyResultRecord>).detail;
+      });
+      document.body.append(component);
+      await component.updateComplete;
+
+      expect(component.querySelector('h1')?.textContent).toBe(expectedTitle);
+      const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+      code.value = participantCode;
+      code.dispatchEvent(new Event('input', { bubbles: true }));
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes(`Start the ${values.length} items`))!
+        .click();
+      await component.updateComplete;
+
+      for (let index = 0; index < values.length; index += 1) {
+        component.querySelector<HTMLInputElement>(
+          `.rating-option input[value="${values[index]}"]`,
+        )!.click();
+        await component.updateComplete;
+        [...component.querySelectorAll<HTMLButtonElement>('button')]
+          .find((button) =>
+            button.textContent?.includes(index === values.length - 1
+              ? 'Review responses'
+              : 'Next question'))!
+          .click();
+        await component.updateComplete;
+      }
+
+      expect(component.querySelector('.choice-fieldset')).toBeNull();
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes('Calculate and submit responses'))!
+        .click();
+      await component.updateComplete;
+
+      expect(completed).not.toBeNull();
+      expect((completed as unknown as StudyResultRecord).instrument.id).toBe(instrumentId);
+      expect((completed as unknown as StudyResultRecord).result.strategy).toBe(expectedStrategy);
+      expect((completed as unknown as StudyResultRecord).result.primaryScore).toBe(expectedScore);
+    },
+  );
 });

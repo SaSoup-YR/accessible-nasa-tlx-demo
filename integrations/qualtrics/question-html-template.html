@@ -34,6 +34,28 @@
   #accessible-questionnaire-live-question {
     width: 100%;
     max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  /*
+   * This bridge question is placed on its own Qualtrics page.  The UCL theme
+   * constrains ordinary question text to a reading column, but that same
+   * constraint turns the participant application into a small nested viewport.
+   * These selectors remove only width caps on the live bridge page.  The
+   * JavaScript also relaxes the actual iframe ancestor chain because current
+   * and legacy Qualtrics layouts do not expose identical class names.
+   */
+  #Questions,
+  #Questions .QuestionOuter,
+  #Questions .QuestionBody,
+  #Questions .QuestionText,
+  #SkinContent,
+  .SkinInner,
+  [data-runtime-survey-root],
+  [data-runtime-question-root] {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
   }
   #accessible-questionnaire-frame {
     display: block;
@@ -94,7 +116,18 @@
   <p><strong>Pair input routes:</strong> <span class="aqp-long-value">${e://Field/__js_AQP_PAIR_ROUTES_JSON}</span></p>
   <p>The reconstructed raw JSON or CSV export is the lossless research record. This section is a readable response/PDF summary.</p>
 </section>
-<div id="accessible-questionnaire-live-question">
+<div
+  id="accessible-questionnaire-live-question"
+  data-aqp-package-build="0.8.1-q1"
+>
+  <p
+    id="accessible-questionnaire-collection-status"
+    role="status"
+    aria-live="polite"
+    style="margin:0 0 0.75rem;padding:0.75rem 1rem;border:2px solid #315b7d;background:#edf4f8;color:#172235;font:600 1rem/1.5 Arial,Helvetica,sans-serif"
+  >
+    Connecting this questionnaire to the current Qualtrics response.
+  </p>
   <iframe
     id="accessible-questionnaire-frame"
     src="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE"
@@ -102,7 +135,7 @@
     allow="camera; microphone"
     referrerpolicy="origin"
     scrolling="no"
-    style="display:block;width:100%;max-width:none;min-height:1200px;border:0;overflow:hidden;background:#eef2f6"
+    aria-hidden="true"
+    style="display:block;width:100%;max-width:none;min-height:1200px;border:0;overflow:hidden;visibility:hidden;background:#eef2f6"
   ></iframe>
-  <p id="accessible-questionnaire-collection-status" role="status" aria-live="polite"></p>
 </div>

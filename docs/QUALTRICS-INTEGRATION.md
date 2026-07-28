@@ -72,9 +72,10 @@ response exists in the editor.
 In Preview before submission:
 
 - the recorded-response summary is hidden;
-- the configured participant page is visible in the iframe;
+- the iframe remains hidden until the exact-origin child handshake succeeds, then
+  the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`;
+  connected`, names bridge `0.8.1-q1` and says the diagnostic fields were staged;
 - the questionnaire uses the outer Qualtrics page as the only vertical scrollbar.
 
 If the raw summary is visible, repeat the HTML/source-view step. If the iframe is
@@ -83,6 +84,12 @@ If the connection status does not change, do not continue a real response. Repla
 both the complete generated HTML and the generated JavaScript from the same
 configuration. The bridge restores native navigation after eight seconds so a
 misconfigured synthetic run cannot trap the tester.
+
+The connection message establishes a same-origin bridge and a successful
+in-browser write request. It is not proof of a durable server row. Only a newly
+completed synthetic response whose newly dated Data & Analysis row contains
+`__js_AQP_ACCEPTED = 1`, schema 4 and the expected instrument ID passes collection
+preflight. Older rows are not backfilled.
 
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
@@ -165,34 +172,36 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
    - ten 1–5 ratings;
    - empty pair responses;
    - the expected alternating SUS score.
-5. Open View Response and an individual PDF. Confirm that the blank interactive
+5. Repeat with Raw TLX and UEQ-S. Confirm their instrument IDs, empty pair data and
+   the expected unweighted or subscale score details.
+6. Open View Response and an individual PDF. Confirm that the blank interactive
    iframe is replaced by the saved instrument, score and response summary.
 
 ### Adverse paths
 
-6. Close immediately after the in-frame acknowledgement. Reopen the same configured
+7. Close immediately after the in-frame acknowledgement. Reopen the same configured
    link on the same device, enter the same synthetic code and confirm that the
    completed local backup is discoverable. Check Data & Analysis separately.
-7. Disconnect the network at submission. Confirm that the questionnaire remains on
+8. Disconnect the network at submission. Confirm that the questionnaire remains on
    Review, focuses the error summary and retains retry, answer-editing and backup
    routes. On a phone and tablet, confirm that both the iframe and outer Qualtrics
    viewport reveal the error rather than leaving it above the visible area.
-8. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
+9. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
    session restores the exact next step after the pseudonymous code is re-entered.
    The Resume control must receive focus and expose the saved count and Resume/Erase
    choice to a screen reader. If automatic audio was previously enabled, confirm
    the attempted spoken message and the user-activated replay fallback.
-9. Block or fill site storage. Confirm that submission does not crash, backup
+10. Block or fill site storage. Confirm that submission does not crash, backup
    buttons remain available and the page does not claim a stored local copy.
-10. Stage an invalid or oversized synthetic record. Confirm that Qualtrics navigation
+11. Stage an invalid or oversized synthetic record. Confirm that Qualtrics navigation
     is restored and the record is not falsely acknowledged.
-11. In a copied synthetic survey, block native advancement. Confirm that the
+12. In a copied synthetic survey, block native advancement. Confirm that the
     six-second watchdog reports failure and restores Next.
-12. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two
+13. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two
     factor names. None may become a proposal. Test one consistent lower-ranked
     alternative and confirm that it remains an explicit proposal rather than an
     automatic answer.
-13. Delete synthetic rows and local backups if the approved plan requires a clean
+14. Delete synthetic rows and local backups if the approved plan requires a clean
     dataset.
 
 Record the survey ID, distribution URL, frozen Git commit, configuration JSON, date,

@@ -63,10 +63,18 @@ export function installQualtricsAutoResize(parentOrigin: string, windowRef: Wind
   if (windowRef.parent === windowRef) return null;
   let animationFrameId: number | null = null;
   let heightScheduled = false;
+  const documentElement = windowRef.document.documentElement;
+  const body = windowRef.document.body;
+  const previousDocumentOverflow = documentElement?.style?.overflow ?? '';
+  const previousBodyOverflow = body?.style?.overflow ?? '';
+
+  // The parent owns scrolling once it expands the iframe to the child document
+  // height. Explicitly suppressing child scrolling prevents mobile browsers from
+  // retaining a second scrollable viewport even when scrolling="no" is present.
+  if (documentElement?.style) documentElement.style.overflow = 'hidden';
+  if (body?.style) body.style.overflow = 'hidden';
 
   const sendHeight = () => {
-    const documentElement = windowRef.document.documentElement;
-    const body = windowRef.document.body;
     const height = Math.ceil(Math.max(
       documentElement?.scrollHeight ?? 0,
       documentElement?.offsetHeight ?? 0,
@@ -141,6 +149,8 @@ export function installQualtricsAutoResize(parentOrigin: string, windowRef: Wind
       windowRef.removeEventListener('message', receiveParentReady);
       windowRef.removeEventListener('load', announceReady);
       windowRef.removeEventListener('resize', scheduleHeight);
+      if (documentElement?.style) documentElement.style.overflow = previousDocumentOverflow;
+      if (body?.style) body.style.overflow = previousBodyOverflow;
     },
   };
 }

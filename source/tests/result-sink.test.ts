@@ -142,8 +142,16 @@ describe('approved host result sink', () => {
     const fakeWindow = {
       parent,
       document: {
-        documentElement: { scrollHeight: 2400, offsetHeight: 2400 },
-        body: { scrollHeight: 2380, offsetHeight: 2380 },
+        documentElement: {
+          scrollHeight: 2400,
+          offsetHeight: 2400,
+          style: { overflow: 'auto' },
+        },
+        body: {
+          scrollHeight: 2380,
+          offsetHeight: 2380,
+          style: { overflow: 'scroll' },
+        },
       },
       ResizeObserver: FakeResizeObserver,
       MutationObserver: FakeMutationObserver,
@@ -160,10 +168,12 @@ describe('approved host result sink', () => {
       removeEventListener: vi.fn(),
     } as unknown as Window;
 
-    installQualtricsAutoResize(
+    const autoResize = installQualtricsAutoResize(
       'https://ucl-example.eu.qualtrics.com',
       fakeWindow,
     );
+    expect(fakeWindow.document.documentElement.style.overflow).toBe('hidden');
+    expect(fakeWindow.document.body.style.overflow).toBe('hidden');
 
     expect(parent.postMessage).toHaveBeenCalledWith(
       { type: QUALTRICS_CHILD_READY_MESSAGE, protocolVersion: 2 },
@@ -190,6 +200,9 @@ describe('approved host result sink', () => {
       { type: QUALTRICS_RESIZE_MESSAGE, height: 2400 },
       'https://ucl-example.eu.qualtrics.com',
     );
+    autoResize?.disconnect();
+    expect(fakeWindow.document.documentElement.style.overflow).toBe('auto');
+    expect(fakeWindow.document.body.style.overflow).toBe('scroll');
   });
 
   it('requests parent-level visual reveal only from an embedded questionnaire and uses the exact origin', () => {
@@ -282,6 +295,9 @@ describe('approved host result sink', () => {
     expect(questionHtml).toContain('referrerpolicy="origin"');
     expect(questionHtml).toContain('scrolling="no"');
     expect(questionHtml).toContain('overflow:hidden');
+    expect(questionHtml).toContain('data-aqp-package-build="0.8.1-q1"');
+    expect(questionHtml).toContain('visibility:hidden');
+    expect(questionHtml).toContain('aria-hidden="true"');
     expect(questionHtml).not.toContain('__js_AQP_RAW_01');
     const summaryFields = [...questionHtml.matchAll(/\$\{e:\/\/Field\/(__js_AQP_[A-Z0-9_]+)\}/g)]
       .map((match) => match[1]);
@@ -309,9 +325,46 @@ describe('approved host result sink', () => {
     let onReady: (() => void) | undefined;
     let receiveMessage: ((event: MessageEvent) => void) | undefined;
     const frameWindow = { postMessage: vi.fn() };
+    const layoutRootValues: Record<string, string> = {
+      width: '60rem',
+      'max-width': '60rem',
+    };
+    const layoutRootStyle = {
+      setProperty(property: string, value: string) {
+        layoutRootValues[property] = value;
+      },
+      getPropertyValue(property: string) {
+        return layoutRootValues[property] ?? '';
+      },
+      getPropertyPriority() {
+        return '';
+      },
+    };
+    const layoutRoot = {
+      style: layoutRootStyle,
+      parentElement: null,
+    };
+    const frameParentValues: Record<string, string> = {};
+    const frameParent = {
+      style: {
+        setProperty(property: string, value: string) {
+          frameParentValues[property] = value;
+        },
+        getPropertyValue(property: string) {
+          return frameParentValues[property] ?? '';
+        },
+        getPropertyPriority() {
+          return '';
+        },
+      },
+      parentElement: layoutRoot,
+    };
     const iframe = {
       contentWindow: frameWindow,
       style: { height: '' },
+      parentElement: frameParent,
+      setAttribute: vi.fn(),
+      removeAttribute: vi.fn(),
       getBoundingClientRect: () => ({ top: 400 }),
     };
     const status = { textContent: '' };
@@ -331,20 +384,35 @@ describe('approved host result sink', () => {
       },
       removeEventListener: vi.fn(),
     };
+    const bodyValues: Record<string, string> = {};
+    const bodyStyle = {
+      setProperty(property: string, value: string) {
+        bodyValues[property] = value;
+      },
+      getPropertyValue(property: string) {
+        return bodyValues[property] ?? '';
+      },
+      getPropertyPriority() {
+        return '';
+      },
+    };
     const fakeDocument = {
+      documentElement: {},
+      body: { style: bodyStyle },
       getElementById(id: string) {
         if (id === 'accessible-questionnaire-frame') return iframe;
         if (id === 'accessible-questionnaire-collection-status') return status;
         return null;
       },
     };
+    const setJSEmbeddedData = vi.fn();
     const fakeQualtrics = {
       SurveyEngine: {
         addOnReady(callback: () => void) {
           onReady = callback;
         },
         addOnUnload: vi.fn(),
-        setJSEmbeddedData: vi.fn(),
+        setJSEmbeddedData,
       },
     };
 
@@ -364,12 +432,20 @@ describe('approved host result sink', () => {
       'https://sasoup-yr.github.io',
     );
     expect((iframe.style as Record<string, string>).overflow).toBe('hidden');
+    expect(layoutRootValues['max-width']).toBe('none');
+    expect(bodyValues['max-width']).toBe('none');
     receiveMessage!({
       source: frameWindow,
       origin: 'https://sasoup-yr.github.io',
       data: { type: QUALTRICS_CHILD_READY_MESSAGE, protocolVersion: 2 },
     } as unknown as MessageEvent);
     expect(status.textContent).toContain('questionnaire is connected');
+    expect(iframe.removeAttribute).toHaveBeenCalledWith('aria-hidden');
+    expect((iframe.style as Record<string, string>).visibility).toBe('visible');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '0');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_SCHEMA', '4');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_PROTOTYPE_VERSION', '0.8.1-q1');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_COLLECTION_MODE', 'qualtrics');
 
     receiveMessage!({
       source: frameWindow,
@@ -606,6 +682,73 @@ describe('approved host result sink', () => {
       expect.objectContaining({ accepted: false, submissionId: 'incomplete' }),
       'https://sasoup-yr.github.io',
     );
+  });
+
+  it('keeps the participant runner hidden and restores navigation when diagnostic staging fails', () => {
+    const bridge = readFileSync(
+      resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+      'utf8',
+    );
+    let onReady: (() => void) | undefined;
+    let receiveMessage: ((event: MessageEvent) => void) | undefined;
+    const showNextButton = vi.fn();
+    const frameWindow = { postMessage: vi.fn() };
+    const iframe = {
+      contentWindow: frameWindow,
+      style: { height: '' },
+      setAttribute: vi.fn(),
+      removeAttribute: vi.fn(),
+    };
+    const status = { textContent: '' };
+    const fakeWindow = {
+      setTimeout: vi.fn(() => 1),
+      clearTimeout: vi.fn(),
+      addEventListener(type: string, listener: EventListener) {
+        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+      },
+      removeEventListener: vi.fn(),
+    };
+    const fakeQualtrics = {
+      SurveyEngine: {
+        addOnReady(callback: () => void) {
+          onReady = callback;
+        },
+        addOnUnload: vi.fn(),
+        setJSEmbeddedData: vi.fn(() => {
+          throw new Error('Embedded Data staging unavailable.');
+        }),
+      },
+    };
+    const fakeDocument = {
+      documentElement: {},
+      body: null,
+      getElementById(id: string) {
+        if (id === 'accessible-questionnaire-frame') return iframe;
+        if (id === 'accessible-questionnaire-collection-status') return status;
+        return null;
+      },
+    };
+
+    new Function('Qualtrics', 'document', 'window', bridge)(
+      fakeQualtrics,
+      fakeDocument,
+      fakeWindow,
+    );
+    onReady!.call({
+      hideNextButton: vi.fn(),
+      showNextButton,
+      clickNextButton: vi.fn(),
+    });
+    receiveMessage!({
+      source: frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: { type: QUALTRICS_CHILD_READY_MESSAGE, protocolVersion: 2 },
+    } as unknown as MessageEvent);
+
+    expect(showNextButton).toHaveBeenCalledOnce();
+    expect(status.textContent).toContain('Do not collect a response');
+    expect((iframe.style as Record<string, string>).visibility).toBe('hidden');
+    expect(iframe.removeAttribute).not.toHaveBeenCalled();
   });
 
   it('keeps native navigation available when the Qualtrics iframe is missing', () => {

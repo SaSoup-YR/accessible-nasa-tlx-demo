@@ -13,6 +13,7 @@
     "url": "https://www.nasa.gov/human-systems-integration-division/nasa-task-load-index-tlx/"
   },
   "scale": {
+    "type": "magnitude",
     "minimum": 0,
     "maximum": 100,
     "step": 5

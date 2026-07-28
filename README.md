@@ -15,15 +15,19 @@ reviewed and the frozen candidate has passed the real UCL Qualtrics re-test.
 Version 0.8 is questionnaire-independent within a declared profile; it does not
 claim to support any questionnaire.
 
-| Registered definition | Items and scale | Workflow | Scoring |
+| Registered definition | Items and scale type | Workflow | Scoring |
 | --- | --- | --- | --- |
-| Weighted NASA-TLX | 6 items, 0–100 in steps of 5 | ratings plus 15 pairs | weighted NASA-TLX |
-| System Usability Scale | 10 items, 1–5 | ratings only | standard alternating SUS |
+| Weighted NASA-TLX | 6 magnitude items, 0–100 in steps of 5 | ratings plus 15 pairs | weighted NASA-TLX |
+| Raw TLX | 6 magnitude items, 0–100 in steps of 5 | ratings only | unweighted arithmetic mean |
+| System Usability Scale | 10 agreement items, 1–5 | ratings only | standard alternating SUS |
+| UEQ-S | 8 semantic differentials, 1–7 | ratings only | centred overall, pragmatic and hedonic means |
 
 Questionnaire files are discovered from
 [`source/instruments/*.questionnaire.json`](source/instruments/). JSON Schema plus
 runtime semantic checks reject unsupported fields and incompatible scorers. Scoring
-functions are an executable allowlist; JSON cannot inject code.
+functions are an executable allowlist; JSON cannot inject code. Definitions are
+registered from separate JSON files at build time. This is not an arbitrary remote
+questionnaire uploader.
 
 See
 [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md)
@@ -111,7 +115,8 @@ npm test
 npm run build:release
 ```
 
-Automation covers definition/scorer compatibility, NASA and SUS end-to-end workflows,
+Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS
+and UEQ-S end-to-end workflows,
 configuration migration, conservative voice parsing, direct and iframe-parent
 focus/error movement, saved-session semantics, visible-state contrast, result
 validation/export, exact-origin receipts, Qualtrics adverse paths, standalone
