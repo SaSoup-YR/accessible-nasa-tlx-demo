@@ -1,3 +1,5 @@
+import { nasaTlxDefinition } from './instrument-catalog';
+import { createAllPairs, scoreInstrument } from './instrument-definition';
 import { dimensions, type DimensionId, type TlxPair } from './nasa-tlx';
 
 export type PairResponses = Record<string, DimensionId>;
@@ -32,20 +34,47 @@ export function calculateResult(
   pairResponses: PairResponses,
   ratings: Ratings,
 ): TlxResult {
-  const weights = calculateWeights(pairs, pairResponses);
+  const scoring = nasaTlxDefinition.scoring;
+  if (scoring.strategy !== 'weighted-pairwise' || !nasaTlxDefinition.workflow.pairwise) {
+    throw new Error('The NASA-TLX definition does not use weighted pairwise scoring.');
+  }
+  const expectedPairIds = new Set(
+    createAllPairs(
+      scoring.itemIds,
+      nasaTlxDefinition.workflow.pairwise.pairIdSeparator,
+    ).map(({ id }) => id),
+  );
+  if (
+    pairs.length !== expectedPairIds.size ||
+    pairs.some(({ id }) => !expectedPairIds.has(id))
+  ) {
+    throw new Error('The supplied pairs do not match the NASA-TLX definition.');
+  }
+  calculateWeights(pairs, pairResponses);
+  for (const { id } of dimensions) {
+    const rating = ratings[id];
+    if (!Number.isInteger(rating) || rating < 0 || rating > 100 || rating % 5 !== 0) {
+      throw new Error(`Invalid rating for ${id}`);
+    }
+  }
+  const score = scoreInstrument(nasaTlxDefinition, {
+    itemResponses: ratings,
+    pairwiseResponses: pairResponses,
+  });
+  if (score.primaryScore === null || !score.details) {
+    throw new Error('The NASA-TLX scoring profile did not return a weighted score.');
+  }
+  const weights = Object.fromEntries(
+    dimensions.map(({ id }) => [id, score.details!.weights[id]]),
+  ) as Record<DimensionId, number>;
   const adjustedRatings = Object.fromEntries(
-    dimensions.map(({ id }) => {
-      const rating = ratings[id];
-      if (!Number.isInteger(rating) || rating < 0 || rating > 100 || rating % 5 !== 0) {
-        throw new Error(`Invalid rating for ${id}`);
-      }
-      return [id, weights[id] * rating];
-    }),
+    dimensions.map(({ id }) => [id, score.details!.adjustedRatings[id]]),
   ) as Record<DimensionId, number>;
 
-  const weightedScore =
-    Object.values(adjustedRatings).reduce((sum, value) => sum + value, 0) / pairs.length;
-
-  return { weights, ratings, adjustedRatings, weightedScore };
+  return {
+    weights,
+    ratings,
+    adjustedRatings,
+    weightedScore: score.primaryScore,
+  };
 }
-

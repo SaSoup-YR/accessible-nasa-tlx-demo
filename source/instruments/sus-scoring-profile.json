@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "sus-scoring-profile",
+  "name": "System Usability Scale scoring profile",
+  "shortName": "SUS",
+  "version": "10-item-scoring-demonstrator",
+  "description": "A scoring and workflow demonstrator for ten five-point SUS items. Licensed questionnaire wording is intentionally not redistributed in this repository.",
+  "provenance": {
+    "citation": "Brooke, J. SUS: A quick and dirty usability scale.",
+    "sourceUrl": "https://digital.ahrq.gov/sites/default/files/docs/survey/systemusabilityscale%2528sus%2529_comp%255B1%255D.pdf",
+    "contentNote": "Replace the placeholder prompts with wording obtained from an authorised source before administering the instrument."
+  },
+  "items": [
+    { "id": "sus-1", "title": "SUS item 1", "prompt": "Authorised SUS statement 1", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-2", "title": "SUS item 2", "prompt": "Authorised SUS statement 2", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-3", "title": "SUS item 3", "prompt": "Authorised SUS statement 3", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-4", "title": "SUS item 4", "prompt": "Authorised SUS statement 4", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-5", "title": "SUS item 5", "prompt": "Authorised SUS statement 5", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-6", "title": "SUS item 6", "prompt": "Authorised SUS statement 6", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-7", "title": "SUS item 7", "prompt": "Authorised SUS statement 7", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-8", "title": "SUS item 8", "prompt": "Authorised SUS statement 8", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-9", "title": "SUS item 9", "prompt": "Authorised SUS statement 9", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } },
+    { "id": "sus-10", "title": "SUS item 10", "prompt": "Authorised SUS statement 10", "input": { "type": "numeric-scale", "min": 1, "max": 5, "step": 1, "lowLabel": "Strongly disagree", "highLabel": "Strongly agree" } }
+  ],
+  "workflow": {
+    "sections": [
+      {
+        "id": "statements",
+        "title": "Usability statements",
+        "instructions": "Respond to all ten statements on the five-point agreement scale.",
+        "itemIds": ["sus-1", "sus-2", "sus-3", "sus-4", "sus-5", "sus-6", "sus-7", "sus-8", "sus-9", "sus-10"]
+      }
+    ]
+  },
+  "scoring": {
+    "strategy": "linear-composite",
+    "primaryComponentId": "sus",
+    "components": [
+      {
+        "id": "sus",
+        "label": "SUS score",
+        "itemIds": ["sus-1", "sus-2", "sus-3", "sus-4", "sus-5", "sus-6", "sus-7", "sus-8", "sus-9", "sus-10"],
+        "transforms": {
+          "sus-1": { "multiplier": 1, "offset": -1 },
+          "sus-2": { "multiplier": -1, "offset": 5 },
+          "sus-3": { "multiplier": 1, "offset": -1 },
+          "sus-4": { "multiplier": -1, "offset": 5 },
+          "sus-5": { "multiplier": 1, "offset": -1 },
+          "sus-6": { "multiplier": -1, "offset": 5 },
+          "sus-7": { "multiplier": 1, "offset": -1 },
+          "sus-8": { "multiplier": -1, "offset": 5 },
+          "sus-9": { "multiplier": 1, "offset": -1 },
+          "sus-10": { "multiplier": -1, "offset": 5 }
+        },
+        "aggregate": "sum",
+        "finalMultiplier": 2.5,
+        "range": {
+          "min": 0,
+          "max": 100
+        }
+      }
+    ]
+  }
+}

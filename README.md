@@ -53,6 +53,7 @@ UCL guidance allows Qualtrics for information that is not highly confidential. I
 | --- | --- | --- |
 | Study conductor | [`source/src/study-conductor.ts`](source/src/study-conductor.ts) | [`study.html`](study.html) |
 | Participant questionnaire | [`source/src/accessible-nasa-tlx.ts`](source/src/accessible-nasa-tlx.ts) | [`index.html`](index.html) |
+| Instrument definitions and generic scoring boundary | [`source/instruments/`](source/instruments/) and [`source/src/instrument-definition.ts`](source/src/instrument-definition.ts) | compiled into the current NASA-TLX release |
 | Configuration/result schema and exports | [`source/src/study.ts`](source/src/study.ts) | compiled asset |
 | Receipt and Qualtrics child sink | [`source/src/result-sink.ts`](source/src/result-sink.ts) | compiled asset |
 | Qualtrics parent bridge | [`integrations/qualtrics/`](integrations/qualtrics/) | pasted into the approved Qualtrics survey |
@@ -62,6 +63,7 @@ UCL guidance allows Qualtrics for information that is not highly confidential. I
 | Failure and recovery verification | [`docs/FAILURE-RECOVERY-VERIFICATION.md`](docs/FAILURE-RECOVERY-VERIFICATION.md) | public test evidence |
 | Non-text contrast and use-of-colour audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md) | calculated state/indicator evidence and manual limits |
 | Technical risk register | [`docs/TECHNICAL-RISK-REGISTER.md`](docs/TECHNICAL-RISK-REGISTER.md) | open and remaining pre-recruitment risks |
+| Questionnaire-independent architecture decision | [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md) | implemented boundary, limitations and migration tests |
 | Supervisor update trace | [`docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md`](docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md) | provenance and retained design decisions |
 
 The private `accessible-hci-questionnaire-library` remains the canonical dissertation/evidence repository. This public repository is the tested release snapshot and stable GitHub Pages deployment.

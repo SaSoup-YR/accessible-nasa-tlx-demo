@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "nasa-tlx-weighted",
+  "name": "NASA Task Load Index",
+  "shortName": "NASA-TLX",
+  "version": "full-weighted",
+  "description": "Six workload ratings followed by all fifteen pairwise weighting comparisons.",
+  "provenance": {
+    "citation": "Hart, S. G. and Staveland, L. E. Development of NASA-TLX (Task Load Index).",
+    "sourceUrl": "https://www.nasa.gov/wp-content/uploads/2026/03/nasa-tlx-v1-0-searchable-text-and-forms.pdf"
+  },
+  "items": [
+    {
+      "id": "mental",
+      "title": "Mental Demand",
+      "prompt": "How much mental and perceptual activity was required (for example, thinking, deciding, calculating, remembering, looking or searching)? Was the task easy or demanding, simple or complex, exacting or forgiving?",
+      "simplePrompt": "Think about how much concentration, remembering, deciding, calculating or noticing the task required.",
+      "shortLabel": "Thinking, deciding, remembering or concentrating.",
+      "voiceAliases": ["mental demand", "mental"],
+      "input": {
+        "type": "numeric-scale",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "lowLabel": "Low",
+        "highLabel": "High",
+        "landmarks": [
+          { "value": 0, "label": "Low", "cue": "😀" },
+          { "value": 25, "label": "Closer to Low", "cue": "🙂" },
+          { "value": 50, "label": "Middle", "cue": "😐" },
+          { "value": 75, "label": "Closer to High", "cue": "🙁" },
+          { "value": 100, "label": "High", "cue": "☹️" }
+        ]
+      }
+    },
+    {
+      "id": "physical",
+      "title": "Physical Demand",
+      "prompt": "How much physical activity was required (for example, pushing, pulling, turning, controlling or activating)? Was the task easy or demanding, slow or brisk, slack or strenuous, restful or laborious?",
+      "simplePrompt": "Think about how much physical movement, control or force the task required.",
+      "shortLabel": "Movement, control or physical force.",
+      "voiceAliases": ["physical demand", "physical"],
+      "input": {
+        "type": "numeric-scale",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "lowLabel": "Low",
+        "highLabel": "High",
+        "landmarks": [
+          { "value": 0, "label": "Low", "cue": "😀" },
+          { "value": 25, "label": "Closer to Low", "cue": "🙂" },
+          { "value": 50, "label": "Middle", "cue": "😐" },
+          { "value": 75, "label": "Closer to High", "cue": "🙁" },
+          { "value": 100, "label": "High", "cue": "☹️" }
+        ]
+      }
+    },
+    {
+      "id": "temporal",
+      "title": "Temporal Demand",
+      "prompt": "How much time pressure did you feel due to the rate or pace at which the task or task elements occurred? Was the pace slow and leisurely or rapid and frantic?",
+      "simplePrompt": "Think about pressure caused by the pace or speed of the task. This is about feeling rushed, not simply how long the task lasted.",
+      "shortLabel": "Time pressure caused by the pace of the task.",
+      "voiceAliases": ["temporal demand", "temporal", "time pressure"],
+      "input": {
+        "type": "numeric-scale",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "lowLabel": "Low",
+        "highLabel": "High",
+        "landmarks": [
+          { "value": 0, "label": "Low", "cue": "😀" },
+          { "value": 25, "label": "Closer to Low", "cue": "🙂" },
+          { "value": 50, "label": "Middle", "cue": "😐" },
+          { "value": 75, "label": "Closer to High", "cue": "🙁" },
+          { "value": 100, "label": "High", "cue": "☹️" }
+        ]
+      }
+    },
+    {
+      "id": "performance",
+      "title": "Performance",
+      "prompt": "How successful do you think you were in accomplishing the goals of the task set by the experimenter or yourself? How satisfied were you with your performance in accomplishing these goals?",
+      "simplePrompt": "Think about how successfully you completed the task and how satisfied you were with the result. On this scale, Good is on the left and Poor is on the right.",
+      "shortLabel": "How successful and satisfied you were with your result.",
+      "voiceAliases": ["performance"],
+      "input": {
+        "type": "numeric-scale",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "lowLabel": "Good",
+        "highLabel": "Poor",
+        "landmarks": [
+          { "value": 0, "label": "Good", "cue": "😀" },
+          { "value": 25, "label": "Closer to Good", "cue": "🙂" },
+          { "value": 50, "label": "Middle", "cue": "😐" },
+          { "value": 75, "label": "Closer to Poor", "cue": "🙁" },
+          { "value": 100, "label": "Poor", "cue": "☹️" }
+        ]
+      }
+    },
+    {
+      "id": "effort",
+      "title": "Effort",
+      "prompt": "How hard did you have to work mentally and physically to accomplish your level of performance?",
+      "simplePrompt": "Think about how hard you had to work, mentally and physically, to achieve your result. This is the work you put in, rather than the demands of the task itself.",
+      "shortLabel": "How hard you had to work to achieve your result.",
+      "voiceAliases": ["effort"],
+      "input": {
+        "type": "numeric-scale",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "lowLabel": "Low",
+        "highLabel": "High",
+        "landmarks": [
+          { "value": 0, "label": "Low", "cue": "😀" },
+          { "value": 25, "label": "Closer to Low", "cue": "🙂" },
+          { "value": 50, "label": "Middle", "cue": "😐" },
+          { "value": 75, "label": "Closer to High", "cue": "🙁" },
+          { "value": 100, "label": "High", "cue": "☹️" }
+        ]
+      }
+    },
+    {
+      "id": "frustration",
+      "title": "Frustration",
+      "prompt": "How insecure, discouraged, irritated, stressed and annoyed versus secure, gratified, content, relaxed and complacent did you feel during the task?",
+      "simplePrompt": "Think about how stressed, irritated or discouraged you felt, compared with feeling secure, content and relaxed.",
+      "shortLabel": "Feeling stressed, irritated or discouraged.",
+      "voiceAliases": ["frustration"],
+      "input": {
+        "type": "numeric-scale",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "lowLabel": "Low",
+        "highLabel": "High",
+        "landmarks": [
+          { "value": 0, "label": "Low", "cue": "😀" },
+          { "value": 25, "label": "Closer to Low", "cue": "🙂" },
+          { "value": 50, "label": "Middle", "cue": "😐" },
+          { "value": 75, "label": "Closer to High", "cue": "🙁" },
+          { "value": 100, "label": "High", "cue": "☹️" }
+        ]
+      }
+    }
+  ],
+  "workflow": {
+    "sections": [
+      {
+        "id": "ratings",
+        "title": "Workload ratings",
+        "instructions": "Rate each workload factor from 0 to 100.",
+        "itemIds": ["mental", "physical", "temporal", "performance", "effort", "frustration"]
+      }
+    ],
+    "pairwise": {
+      "id": "weighting",
+      "title": "Sources of workload",
+      "prompt": "Which factor contributed more to workload?",
+      "simplePrompt": "Choose which factor added more to the work you had to do.",
+      "sourceItemIds": ["mental", "physical", "temporal", "performance", "effort", "frustration"],
+      "pairIdSeparator": "-"
+    }
+  },
+  "scoring": {
+    "strategy": "weighted-pairwise",
+    "itemIds": ["mental", "physical", "temporal", "performance", "effort", "frustration"],
+    "primaryLabel": "Weighted workload score",
+    "range": {
+      "min": 0,
+      "max": 100
+    }
+  }
+}
