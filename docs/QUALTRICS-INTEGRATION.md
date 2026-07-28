@@ -44,7 +44,9 @@ configuration. Use those blocks rather than uploading repository files.
 1. Create a blank UCL Qualtrics survey.
 2. Add the approved participant information and consent pages.
 3. Put one Text/Graphic question on its own page.
-4. Open `study.html`, choose the questionnaire, select UCL Qualtrics collection,
+4. Open the versioned
+   [`study.html?package=0.8.2-q2`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.2-q2)
+   entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 5. Generate the configuration.
 6. Open the Text/Graphic question's HTML/source view. Replace the whole body with
@@ -58,6 +60,10 @@ configuration. Use those blocks rather than uploading repository files.
    Survey element overrides survey options, configure the same message there.
 10. Save and Preview. After the synthetic checks pass, select **Review and
     Publish**. Draft changes do not update an already active distribution link.
+
+The conductor heading and its Current Qualtrics generator notice must both show
+`0.8.2-q2`. If generated JavaScript shows `0.8.1-q1`, close that stale tab and
+reopen the versioned link above. Do not paste assets from the stale tab.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
 them to the prefixed Survey Flow fields. Do not remove the prefix in Survey Flow.
