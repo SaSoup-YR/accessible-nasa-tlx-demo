@@ -129,10 +129,22 @@ export class StudyConductorApp extends LitElement {
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
-          <p class="eyebrow">Study conductor · Version ${PROTOTYPE_VERSION}</p>
+          <p class="eyebrow">
+            Study conductor · Version ${PROTOTYPE_VERSION} · Qualtrics package ${qualtricsBridgeBuild}
+          </p>
           <h1>Prepare an accessible questionnaire study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
+
+        <aside class="boundary-note important-boundary" aria-labelledby="current-generator-heading">
+          <h2 id="current-generator-heading">Current Qualtrics generator: ${qualtricsBridgeBuild}</h2>
+          <p>
+            Every generated JavaScript block must contain
+            <code>var bridgeBuild = '${qualtricsBridgeBuild}';</code>. If it shows another value, that browser tab is
+            running a stale conductor build. Close that tab and reopen the versioned
+            <a href="study.html?package=${qualtricsBridgeBuild}">Prepare a study page</a> before copying anything.
+          </p>
+        </aside>
 
         <aside class="boundary-note important-boundary">
           <h2>What this page does</h2>
