@@ -38,6 +38,10 @@ describe('study conductor defaults and guidance', () => {
   it('separates participant identity and starts with optional participant choice for an accessibility evaluation', async () => {
     const component = await renderConductor();
     expect(component.textContent).toContain('This researcher page generates a separate participant page');
+    expect(component.textContent).toContain('Current Qualtrics generator: 0.8.2-q2');
+    expect(component.querySelector<HTMLAnchorElement>(
+      'a[href="study.html?package=0.8.2-q2"]',
+    )).not.toBeNull();
     expect(component.textContent).toContain('P-001');
     expect(inputFor(component, 'Study ID').placeholder).toBe('ACCESS-TECH-01');
     expect(inputFor(component, 'Study title').placeholder).toBe('Route-planning interface study');
