@@ -43,6 +43,15 @@ describe('study conductor defaults and guidance', () => {
     expect(inputFor(component, 'Study title').placeholder).toBe('Route-planning interface study');
     expect(inputFor(component, 'Task label').placeholder).toContain('planning a route');
 
+    const questionnaireDefinition = component.querySelector<HTMLSelectElement>('select')!;
+    expect(questionnaireDefinition.value).toBe('nasa-tlx-weighted');
+    expect(questionnaireDefinition.selectedOptions[0]?.textContent).toContain(
+      'NASA Task Load Index',
+    );
+    expect(component.querySelector('.definition-summary')?.textContent).toContain(
+      'Weighted workload score',
+    );
+
     const participantChoice = inputFor(component, 'Prepared defaults with optional participant choice');
     expect(participantChoice.checked).toBe(true);
   });
