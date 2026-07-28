@@ -12,10 +12,13 @@ const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = resolve(sourceRoot, '..');
 const distRoot = resolve(sourceRoot, 'dist');
 const releaseAssets = resolve(repositoryRoot, 'assets');
+const instrumentRoot = resolve(sourceRoot, 'instruments');
+const releaseQuestionnaires = resolve(repositoryRoot, 'questionnaires');
 
 copyFileSync(resolve(distRoot, 'index.html'), resolve(repositoryRoot, 'index.html'));
 copyFileSync(resolve(distRoot, 'study.html'), resolve(repositoryRoot, 'study.html'));
 mkdirSync(releaseAssets, { recursive: true });
+mkdirSync(releaseQuestionnaires, { recursive: true });
 
 const entryHtml = [
   readFileSync(resolve(distRoot, 'index.html'), 'utf8'),
@@ -36,6 +39,19 @@ for (const asset of readdirSync(releaseAssets)) {
   if (!referencedAssets.has(asset)) rmSync(resolve(releaseAssets, asset));
 }
 
+const questionnaireFiles = readdirSync(instrumentRoot).filter((filename) =>
+  filename === 'questionnaire-definition.schema.json' ||
+  filename.endsWith('.questionnaire.json'),
+);
+for (const filename of questionnaireFiles) {
+  copyFileSync(resolve(instrumentRoot, filename), resolve(releaseQuestionnaires, filename));
+}
+for (const filename of readdirSync(releaseQuestionnaires)) {
+  if (!questionnaireFiles.includes(filename)) {
+    throw new Error(`Refusing to manage unexpected questionnaire file: ${filename}`);
+  }
+}
+
 console.log(
-  `Synchronized ${referencedAssets.size} production assets and both release entry points.`,
+  `Synchronized ${referencedAssets.size} production assets, ${questionnaireFiles.length} questionnaire files and both release entry points.`,
 );

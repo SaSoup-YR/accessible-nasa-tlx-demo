@@ -3,6 +3,10 @@
 Decision date: 23 July 2026  
 Prototype: Accessible NASA-TLX Version 0.7 release candidate
 
+> Historical decision record. Version 0.8 retains the UCL Qualtrics and participant
+> policy decisions but uses the generic questionnaire/result schema documented in
+> `STUDY-WORKFLOW.md`.
+
 ## Decision
 
 Version 0.7 selects UCL Qualtrics as the default remote collection route for a pseudonymous study that does not collect highly confidential data. REDCap in the Data Safe Haven remains the required alternative if the approved protocol links identities, diagnoses or other highly confidential information.

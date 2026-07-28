@@ -2,6 +2,10 @@
 
 Prototype: Accessible NASA-TLX Version 0.7 release candidate
 
+> Historical baseline evidence. The failure model remains relevant, but Version
+> 0.8 uses Version 4 records and generic `AQP_*` Qualtrics fields. Use
+> `QUALTRICS-INTEGRATION.md` and `TESTING.md` for the active procedure.
+
 ## Purpose and claim boundary
 
 These checks test whether foreseeable failures remain detectable and recoverable. They
@@ -29,7 +33,7 @@ confirmation belong on the persistent End-of-Survey page.
 | --- | --- | --- | --- | --- |
 | Close after acknowledgement | Close the result page immediately, reopen the same configured link on the same device and enter the same code | A completed backup is discoverable and downloadable; wording states that it does not prove remote recording | Component test verifies backup creation before host submission and post-close discovery | Check separately whether a Qualtrics row exists |
 | Network interruption | Disconnect immediately before Calculate and submit | Focus moves to the error summary; Review, retry, answer editing and JSON/CSV remain available | Rejected-host component test | Real UCL Qualtrics/browser run |
-| Mid-questionnaire reload | Enable recovery, answer at least one item and reload the same tab | The pseudonymous code is restored for that tab, focus moves to the saved-session offer, and the exact completed count and next step are available | Component reload/recreation and tab-session tests | Screen-reader announcement and browser-specific storage behaviour |
+| Mid-questionnaire reload | Enable recovery, answer at least one item and reload the same tab | The pseudonymous code is restored for that tab; focus moves to the saved-session region; its accessible description and delayed live-region update use the exact count plus `Resume saved questionnaire` and `Erase saved answers`; prior-opt-in built-in speech attempts the same message; an explicit replay remains available | Full localStorage reload/recreation, focus, exact-message, live-region and speech-route tests | iOS automatic-speech policy, external screen-reader announcement and browser-specific storage behaviour |
 | Storage blocked or full | Block site storage or simulate quota exhaustion before submission | No crash or false local-save claim; in-memory JSON/CSV remain available; any existing progress copy is not deliberately cleared | Storage unit and component tests | Browser privacy mode and quota test |
 | Parent staging failure | Send an invalid or oversized synthetic record | Qualtrics navigation is restored and an error receipt is returned | Executed bridge test | Qualtrics editor and survey-theme interaction |
 | Native advance does not unload | In a copied synthetic survey, block or intercept the automatic native advance | After the bounded watchdog, a visible status explains that the recorded-result page did not open; native Next and in-frame JSON/CSV remain available | Executed bridge watchdog test | Safe fault injection in a non-recruitment UCL survey |

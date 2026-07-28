@@ -1,23 +1,21 @@
 # Qualtrics integration files
 
-- `question-html-template.html` is a reference template, not an uploadable or
-  ready-to-paste survey file. Prefer the complete generated question HTML and copy
-  button in `study.html`; that output has already replaced the template placeholder
-  with the configured participant URL. During data
-  collection it displays the live iframe. In a recorded-response view or individual
-  PDF it hides the newly loaded blank iframe and displays a read-only summary built
-  from the response's saved Embedded Data.
-- `qualtrics-question.js` is pasted into that question's JavaScript editor. It uses
-  `setJSEmbeddedData`, as required by the New Survey Taking Experience. After a
-  valid result is prepared, it keeps the navigation button hidden and submits the
-  page automatically after a short receipt handoff. This formally completes the
-  Qualtrics response without another participant action.
-- `embedded-data-fields.txt` lists the fields to declare near the start of Survey Flow.
-  Keep the `__js_` prefix in Survey Flow. The JavaScript API adds that prefix
-  automatically, so the calls in `qualtrics-question.js` intentionally omit it.
-- `end-of-survey-message.txt` is pasted as ordinary text into a custom Qualtrics
-  End of Survey message. This is the final recorded-result page: it contains no
-  HTML, displays each participant's own weighted score and remains visible until
-  the participant closes the page.
+- `question-html-template.html` is a reference template. Use the complete generated
+  HTML from `study.html`, which replaces the participant-URL placeholder. It shows
+  the live iframe during collection and a generic read-only summary in a recorded
+  response or individual PDF.
+- `qualtrics-question.js` belongs in that question's JavaScript editor. It validates
+  a Version 4 record, stages `AQP_*` fields with `setJSEmbeddedData`, acknowledges a
+  matching submission ID, starts native Qualtrics advancement and handles bounded
+  exact-origin requests to reveal a focused error/recovery target in the outer
+  survey viewport.
+- `embedded-data-fields.txt` lists the 60 fields to declare near the start of Survey
+  Flow. Keep `__js_` in Survey Flow; JavaScript calls intentionally omit it.
+- `end-of-survey-message.txt` is ordinary text for a custom End of Survey message.
+  It is the persistent completion page after the Qualtrics response has been
+  submitted.
 
-Use the complete setup and synthetic verification procedure in [`../../docs/QUALTRICS-INTEGRATION.md`](../../docs/QUALTRICS-INTEGRATION.md). Participants receive the activated Qualtrics distribution link, not the raw GitHub participant URL. Do not place an API token or password in these files.
+Use the complete setup and adverse-test procedure in
+[`../../docs/QUALTRICS-INTEGRATION.md`](../../docs/QUALTRICS-INTEGRATION.md).
+Participants receive the activated Qualtrics distribution link, not the raw GitHub
+participant URL. Do not place an API token or password in these files.

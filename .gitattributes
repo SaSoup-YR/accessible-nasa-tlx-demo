@@ -1,2 +1,4 @@
 # Generated standalone bundles contain literal whitespace inside minified JavaScript regex strings.
 source/demo/accessible-nasa-tlx-v*.html -whitespace
+source/demo/accessible-questionnaire-platform-v*.html -whitespace
+assets/*.js -whitespace
