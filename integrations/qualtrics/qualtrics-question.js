@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.4-q4';
+  var bridgeBuild = '0.8.5-q5';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -202,6 +202,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       error: message,
       bridgeBuild: bridgeBuild
     }, childOrigin);
+  }
+
+  function recoverFailedAdvance() {
+    advanceWatchdogTimerId = null;
+    if (!advancing) return;
+    advancing = false;
+    var advanceFailureMessage =
+      'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. ' +
+      'Keep this page open or download one backup before closing it.';
+    setStatus(advanceFailureMessage, false);
+    sendAdvanceFailure(advanceFailureMessage);
+    releaseFullscreenForNativeNavigation();
+    question.showNextButton();
   }
 
   function setField(name, value) {
@@ -399,21 +412,20 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       sendReceipt(event.source, true, acceptedSubmissionId);
       completionTimerId = window.setTimeout(function completeAcceptedResponse() {
         completionTimerId = null;
+        // When the browser already knows it is offline, do not wait for
+        // Qualtrics' own network request and error dialog. Show the recovery
+        // route immediately. navigator.onLine is used only for the definite
+        // offline case; an online report still uses native advancement and the
+        // bounded watchdog because it does not prove server reachability.
+        if (window.navigator && window.navigator.onLine === false) {
+          recoverFailedAdvance();
+          return;
+        }
         question.clickNextButton();
         // If Qualtrics does not unload this question after the native advance, keep
         // the participant out of a dead end. The questionnaire iframe still holds
         // its in-memory JSON/CSV routes, and the native navigation is restored.
-        advanceWatchdogTimerId = window.setTimeout(function recoverFailedAdvance() {
-          advanceWatchdogTimerId = null;
-          advancing = false;
-          var advanceFailureMessage =
-            'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. ' +
-            'Keep this page open or download one backup before closing it.';
-          setStatus(advanceFailureMessage, false);
-          sendAdvanceFailure(advanceFailureMessage);
-          releaseFullscreenForNativeNavigation();
-          question.showNextButton();
-        }, 6000);
+        advanceWatchdogTimerId = window.setTimeout(recoverFailedAdvance, 6000);
       }, completionDelayMs);
     } catch (error) {
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';

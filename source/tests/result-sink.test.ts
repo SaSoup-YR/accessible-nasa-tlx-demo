@@ -338,6 +338,7 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('Submitting response. This page will continue automatically.');
     expect(bridge).toContain('Qualtrics could not confirm this response.');
     expect(bridge).toContain('sendAdvanceFailure(advanceFailureMessage)');
+    expect(bridge).toContain('window.navigator.onLine === false');
     expect(bridge).not.toContain('Please keep this page open until the next page appears by itself.');
     expect(bridge).toContain('Qualtrics could not confirm this response.');
     expect(bridge).not.toContain('five minutes');
@@ -636,71 +637,87 @@ describe('approved host result sink', () => {
         gazeActionCount: 0,
       },
     };
-    let onReady: (() => void) | undefined;
-    let receiveMessage: ((event: MessageEvent) => void) | undefined;
-    let completionCallback: (() => void) | undefined;
-    let completionDelay: number | undefined;
-    const setJSEmbeddedData = vi.fn();
-    const hideNextButton = vi.fn();
-    const showNextButton = vi.fn();
-    const clickNextButton = vi.fn();
-    const frameWindow = { postMessage: vi.fn() };
-    const dom = createBridgeDocument(frameWindow);
-    const fakeQualtrics = {
-      SurveyEngine: {
-        addOnReady(callback: () => void) {
-          onReady = callback;
+    function createRuntime(online: boolean) {
+      let onReady: (() => void) | undefined;
+      let receiveMessage: ((event: MessageEvent) => void) | undefined;
+      let latestTimerCallback: (() => void) | undefined;
+      let latestTimerDelay: number | undefined;
+      const setJSEmbeddedData = vi.fn();
+      const hideNextButton = vi.fn();
+      const showNextButton = vi.fn();
+      const clickNextButton = vi.fn();
+      const frameWindow = { postMessage: vi.fn() };
+      const dom = createBridgeDocument(frameWindow);
+      const fakeQualtrics = {
+        SurveyEngine: {
+          addOnReady(callback: () => void) {
+            onReady = callback;
+          },
+          addOnUnload: vi.fn(),
+          setJSEmbeddedData,
         },
-        addOnUnload: vi.fn(),
+      };
+      const fakeWindow = {
+        CSS: { supports: () => true },
+        navigator: { onLine: online },
+        setTimeout(callback: () => void, delay: number) {
+          latestTimerCallback = callback;
+          latestTimerDelay = delay;
+          return 1;
+        },
+        clearTimeout: vi.fn(),
+        addEventListener(type: string, listener: EventListener) {
+          if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+        },
+        removeEventListener: vi.fn(),
+      };
+
+      new Function('Qualtrics', 'document', 'window', bridge)(
+        fakeQualtrics,
+        dom.documentRef,
+        fakeWindow,
+      );
+      onReady!.call({ hideNextButton, showNextButton, clickNextButton });
+      receiveMessage!({
+        source: frameWindow,
+        origin: 'https://sasoup-yr.github.io',
+        data: {
+          type: QUALTRICS_CHILD_READY_MESSAGE,
+          protocolVersion: 2,
+          bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+        },
+      } as unknown as MessageEvent);
+      receiveMessage!({
+        source: frameWindow,
+        origin: 'https://sasoup-yr.github.io',
+        data: {
+          type: QUALTRICS_SUBMIT_MESSAGE,
+          bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+          record: completeRecord,
+        },
+      } as unknown as MessageEvent);
+
+      return {
+        clickLatestTimer: () => latestTimerCallback!(),
+        getLatestTimerDelay: () => latestTimerDelay,
         setJSEmbeddedData,
-      },
-    };
-    const fakeWindow = {
-      CSS: { supports: () => true },
-      setTimeout(callback: () => void, delay: number) {
-        completionCallback = callback;
-        completionDelay = delay;
-        return 1;
-      },
-      clearTimeout: vi.fn(),
-      addEventListener(type: string, listener: EventListener) {
-        if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
-      },
-      removeEventListener: vi.fn(),
-    };
+        hideNextButton,
+        showNextButton,
+        clickNextButton,
+        frameWindow,
+        dom,
+      };
+    }
 
-    new Function('Qualtrics', 'document', 'window', bridge)(
-      fakeQualtrics,
-      dom.documentRef,
-      fakeWindow,
-    );
-    onReady!.call({ hideNextButton, showNextButton, clickNextButton });
-    receiveMessage!({
-      source: frameWindow,
-      origin: 'https://sasoup-yr.github.io',
-      data: {
-        type: QUALTRICS_CHILD_READY_MESSAGE,
-        protocolVersion: 2,
-        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
-      },
-    } as unknown as MessageEvent);
-    receiveMessage!({
-      source: frameWindow,
-      origin: 'https://sasoup-yr.github.io',
-      data: {
-        type: QUALTRICS_SUBMIT_MESSAGE,
-        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
-        record: completeRecord,
-      },
-    } as unknown as MessageEvent);
+    const onlineRuntime = createRuntime(true);
 
-    expect(hideNextButton).toHaveBeenCalledOnce();
-    expect(showNextButton).not.toHaveBeenCalled();
-    expect(setJSEmbeddedData).toHaveBeenCalledTimes(64);
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '1');
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_INSTRUMENT_ID', 'system-usability-scale');
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_PRIMARY_SCORE', '100.00');
-    expect(frameWindow.postMessage).toHaveBeenCalledWith(
+    expect(onlineRuntime.hideNextButton).toHaveBeenCalledOnce();
+    expect(onlineRuntime.showNextButton).not.toHaveBeenCalled();
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledTimes(64);
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '1');
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_INSTRUMENT_ID', 'system-usability-scale');
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_PRIMARY_SCORE', '100.00');
+    expect(onlineRuntime.frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         accepted: true,
         submissionId: 'submission-complete',
@@ -708,17 +725,17 @@ describe('approved host result sink', () => {
       }),
       'https://sasoup-yr.github.io',
     );
-    expect(dom.status.textContent).toBe(
+    expect(onlineRuntime.dom.status.textContent).toBe(
       'Submitting response. This page will continue automatically.',
     );
-    expect(completionDelay).toBe(800);
-    completionCallback!();
-    expect(clickNextButton).toHaveBeenCalledOnce();
-    expect(completionDelay).toBe(6000);
-    completionCallback!();
-    expect(showNextButton).toHaveBeenCalledOnce();
-    expect(dom.status.textContent).toContain('could not confirm this response');
-    expect(frameWindow.postMessage).toHaveBeenCalledWith(
+    expect(onlineRuntime.getLatestTimerDelay()).toBe(800);
+    onlineRuntime.clickLatestTimer();
+    expect(onlineRuntime.clickNextButton).toHaveBeenCalledOnce();
+    expect(onlineRuntime.getLatestTimerDelay()).toBe(6000);
+    onlineRuntime.clickLatestTimer();
+    expect(onlineRuntime.showNextButton).toHaveBeenCalledOnce();
+    expect(onlineRuntime.dom.status.textContent).toContain('could not confirm this response');
+    expect(onlineRuntime.frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: QUALTRICS_ADVANCE_FAILED_MESSAGE,
         submissionId: 'submission-complete',
@@ -727,6 +744,14 @@ describe('approved host result sink', () => {
       }),
       'https://sasoup-yr.github.io',
     );
+
+    const offlineRuntime = createRuntime(false);
+    expect(offlineRuntime.getLatestTimerDelay()).toBe(800);
+    offlineRuntime.clickLatestTimer();
+    expect(offlineRuntime.clickNextButton).not.toHaveBeenCalled();
+    expect(offlineRuntime.showNextButton).toHaveBeenCalledOnce();
+    expect(offlineRuntime.getLatestTimerDelay()).toBe(800);
+    expect(offlineRuntime.dom.status.textContent).toContain('could not confirm this response');
   });
 
   it('restores Qualtrics navigation when an invalid record cannot be staged', () => {
