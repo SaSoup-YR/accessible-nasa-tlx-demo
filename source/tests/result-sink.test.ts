@@ -70,6 +70,7 @@ function createBridgeDocument(frameWindow: { postMessage: ReturnType<typeof vi.f
   };
   const status = {
     textContent: '',
+    scrollIntoView: vi.fn(),
     setAttribute(name: string, value: string) {
       statusAttributes[name] = value;
     },
@@ -337,6 +338,7 @@ describe('approved host result sink', () => {
     expect(bridge).not.toContain('Your answers have been accepted');
     expect(bridge).toContain('Submitting response. This page will continue automatically.');
     expect(bridge).toContain('Qualtrics could not confirm this response.');
+    expect(bridge).toContain('Internet connection unavailable.');
     expect(bridge).toContain('sendAdvanceFailure(advanceFailureMessage)');
     expect(bridge).toContain('window.navigator.onLine === false');
     expect(bridge).not.toContain('Please keep this page open until the next page appears by itself.');
@@ -746,12 +748,24 @@ describe('approved host result sink', () => {
     );
 
     const offlineRuntime = createRuntime(false);
-    expect(offlineRuntime.getLatestTimerDelay()).toBe(800);
-    offlineRuntime.clickLatestTimer();
     expect(offlineRuntime.clickNextButton).not.toHaveBeenCalled();
     expect(offlineRuntime.showNextButton).toHaveBeenCalledOnce();
-    expect(offlineRuntime.getLatestTimerDelay()).toBe(800);
-    expect(offlineRuntime.dom.status.textContent).toContain('could not confirm this response');
+    expect(offlineRuntime.dom.status.textContent).toContain('Internet connection unavailable');
+    expect(offlineRuntime.dom.status.textContent).toContain('has not recorded this response');
+    expect(offlineRuntime.dom.statusAttributes['data-severity']).toBe('error');
+    expect(offlineRuntime.dom.status.scrollIntoView).toHaveBeenCalledWith({
+      block: 'start',
+      inline: 'nearest',
+    });
+    expect(offlineRuntime.frameWindow.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: QUALTRICS_ADVANCE_FAILED_MESSAGE,
+        submissionId: 'submission-complete',
+        error: expect.stringContaining('Internet connection unavailable'),
+        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+      }),
+      'https://sasoup-yr.github.io',
+    );
   });
 
   it('restores Qualtrics navigation when an invalid record cannot be staged', () => {
