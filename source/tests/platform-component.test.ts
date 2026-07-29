@@ -68,6 +68,21 @@ describe('instrument-independent questionnaire workflow', () => {
       .click();
     await component.updateComplete;
 
+    expect(
+      component.querySelector<HTMLInputElement>('.rating-option input[value="1"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('1, Strongly disagree, for Item 1');
+    expect(
+      component.querySelector<HTMLInputElement>('.rating-option input[value="3"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('3 for Item 1');
+    expect(
+      component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('5, Strongly agree, for Item 1');
+    expect(component.textContent).toContain('exact visible endpoint label');
+    expect(component.textContent).not.toContain('Neutral');
+
     for (let index = 0; index < 10; index += 1) {
       const expectedValue = index % 2 === 0 ? '5' : '1';
       const options = component.querySelectorAll<HTMLInputElement>('.rating-option input');

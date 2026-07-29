@@ -114,7 +114,7 @@ function chooseConsistentAlternative<T>(
   parser: (transcript: string) => T | null,
 ): RankedSpeechAnswer<T> | null {
   const ranked = transcripts.map((transcript) => transcript.trim()).filter(Boolean);
-  if (ranked.length === 0 || hasUnsafeSpeechMeaning(ranked[0])) return null;
+  if (ranked.length === 0) return null;
 
   const parsed = ranked
     .map((transcript, index) => ({ transcript, value: parser(transcript), index }))
@@ -130,6 +130,33 @@ function chooseConsistentAlternative<T>(
   // because an endpoint error could change a rating from 0 to 100.
   if (new Set(parsed.map(({ value }) => value)).size !== 1) return null;
   return { transcript: parsed[0].transcript, value: parsed[0].value };
+}
+
+function endpointAliases(anchor: string, aliases: readonly string[] | undefined) {
+  return new Set(
+    [anchor, ...(aliases ?? [])]
+      .map(normalise)
+      .filter(Boolean),
+  );
+}
+
+function exactEndpointCandidate(
+  text: string,
+  dimension: TlxDimension,
+  allowedValues: readonly number[],
+): number | null | undefined {
+  const answer = text
+    .replace(
+      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?)\s+/,
+      '',
+    )
+    .trim();
+  const low = endpointAliases(dimension.lowAnchor, dimension.voiceLowAliases).has(answer);
+  const high = endpointAliases(dimension.highAnchor, dimension.voiceHighAliases).has(answer);
+
+  if (!low && !high) return undefined;
+  if (low && high) return null;
+  return low ? allowedValues[0] : allowedValues.at(-1) ?? null;
 }
 
 function numericCandidates(text: string, allowedValues: readonly number[]) {
@@ -225,7 +252,17 @@ export function parseRatingTranscript(
   landmarks: readonly RatingLandmark[] = nasaSmileyLandmarks,
 ) {
   const text = normalise(transcript);
-  if (!text || unsafeMeaning.test(text)) return null;
+  if (!text) return null;
+
+  // Agreement and semantic-differential questionnaires expose official endpoint
+  // labels without inventing meanings for the intermediate response positions.
+  // Accept an exact visible endpoint (or a deliberately configured alias), then
+  // still require confirmation in the participant interface. This check must
+  // precede the general negation guard because "Not interesting" is an official
+  // UEQ-S endpoint rather than a negated instruction.
+  const endpoint = exactEndpointCandidate(text, dimension, allowedValues);
+  if (endpoint !== undefined) return endpoint;
+  if (unsafeMeaning.test(text)) return null;
 
   const candidates = numericCandidates(text, allowedValues);
   const anchor = anchorCandidate(text, dimension, landmarks);

@@ -1005,12 +1005,13 @@ export class AccessibleNasaTlx extends LitElement {
         <div class="rating-grid">
           ${this.ratingValues.map((value) => {
             const inputId = `rating-${dimension.id}-${value}`;
+            const optionLabel = this.ratingOptionLabel(dimension, value);
             return html`
               <label
                 class="rating-option"
                 for=${inputId}
                 data-gaze-target
-                data-gaze-label=${`${value} for ${dimension.name}`}
+                data-gaze-label=${optionLabel}
               >
                 <input
                   id=${inputId}
@@ -1018,6 +1019,7 @@ export class AccessibleNasaTlx extends LitElement {
                   name=${`rating-${dimension.id}`}
                   value=${value}
                   .checked=${selected === value}
+                  aria-label=${optionLabel}
                   @change=${() => this.selectRating(dimension.id, value, 'standard-scale')}
                 />
                 <span>${value}</span>
@@ -1701,9 +1703,25 @@ export class AccessibleNasaTlx extends LitElement {
     return String(value);
   }
 
+  private ratingEndpointLabel(dimension: TlxDimension, value: number) {
+    if (value === this.definition.scale.minimum) return dimension.lowAnchor;
+    if (value === this.definition.scale.maximum) return dimension.highAnchor;
+    return null;
+  }
+
+  private ratingOptionLabel(dimension: TlxDimension, value: number) {
+    const endpoint = this.ratingEndpointLabel(dimension, value);
+    return endpoint
+      ? `${value}, ${endpoint}, for ${dimension.name}`
+      : `${value} for ${dimension.name}`;
+  }
+
   private ratingVoicePrompt(dimension: TlxDimension) {
     if (this.answerMode !== 'smiley') {
-      return `Say one shown value from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} in steps of ${this.definition.scale.step}.`;
+      const numericPrompt = `Say one shown value from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} in steps of ${this.definition.scale.step}.`;
+      return this.definition.scale.type === 'magnitude'
+        ? numericPrompt
+        : `${numericPrompt} You may instead say the exact visible endpoint label: ${dimension.lowAnchor} or ${dimension.highAnchor}.`;
     }
     const labels = this.smileyLandmarks.map(({ value }) => this.landmarkLabel(dimension, value));
     const values = this.smileyLandmarks.map(({ value }) => value);
@@ -1714,8 +1732,11 @@ export class AccessibleNasaTlx extends LitElement {
     const visibleAsLandmark =
       this.answerMode === 'smiley' &&
       this.smileyLandmarks.some((landmark) => landmark.value === value);
+    const endpoint = this.ratingEndpointLabel(dimension, value);
     return visibleAsLandmark
       ? `${this.landmarkLabel(dimension, value)}, value ${value}, for ${dimension.name}`
+      : endpoint
+      ? `${endpoint}, value ${value}, for ${dimension.name}`
       : `${value} for ${dimension.name}`;
   }
 
@@ -1743,8 +1764,11 @@ export class AccessibleNasaTlx extends LitElement {
     const visibleAsLandmark =
       this.answerMode === 'smiley' &&
       this.smileyLandmarks.some((landmark) => landmark.value === value);
+    const endpoint = this.ratingEndpointLabel(currentDimension, value);
     this.statusMessage = visibleAsLandmark
       ? `${currentDimension.name}, ${this.landmarkLabel(currentDimension, value)}, value ${value}, selected.`
+      : endpoint
+      ? `${currentDimension.name}, ${endpoint}, value ${value}, selected.`
       : `${currentDimension.name}, ${value}, selected.`;
     this.announceAutomatic(this.statusMessage);
     this.persistProgress();
