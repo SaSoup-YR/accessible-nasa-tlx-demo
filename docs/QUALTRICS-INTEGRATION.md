@@ -211,7 +211,11 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
 13. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two
     factor names. None may become a proposal. Test one consistent lower-ranked
     alternative and confirm that it remains an explicit proposal rather than an
-    automatic answer.
+    automatic answer. In SUS, confirm that the exact official endpoint labels
+    `Strongly disagree` and `Strongly agree` propose 1 and 5, while `Agree` and
+    `Neutral` are not inferred. In UEQ-S, confirm both endpoints for at least one
+    item and confirm that the official endpoint `Not interesting` proposes 1 without
+    accepting a conflicting phrase such as `Not interesting or interesting`.
 14. Delete synthetic rows and local backups if the approved plan requires a clean
     dataset.
 

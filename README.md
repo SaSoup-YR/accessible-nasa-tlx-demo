@@ -54,7 +54,10 @@ preferences, or permit all definition-approved choices.
 
 Support changes and input routes are recorded separately and never enter scoring.
 Instrument-specific capability checks prevent smileys or unvalidated simpler wording
-from appearing in SUS. NASA-TLX smileys and simpler explanations remain experimental
+from appearing in SUS or UEQ-S. Their standard response positions keep the official
+endpoint labels without inventing meanings such as `Neutral` or `Agree` for
+intermediate values. Confirmed voice input accepts a displayed number or an exact
+official endpoint label. NASA-TLX smileys and simpler explanations remain experimental
 support routes, not psychometrically equivalent replacements.
 
 WCAG 2.2 is used as an engineering and test framework. The repository does not claim

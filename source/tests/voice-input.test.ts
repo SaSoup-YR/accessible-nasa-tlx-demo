@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { dimensions } from '../src/nasa-tlx';
 import {
+  buildRatingValues,
+  getQuestionnaireDefinition,
+} from '../src/questionnaire-definition';
+import {
   parsePairAlternatives,
   parsePairTranscript,
   parseRatingAlternatives,
@@ -86,5 +90,38 @@ describe('voice-answer parsing', () => {
       value: 'physical',
     });
     expect(parsePairAlternatives(['mental demand', 'physical demand'], ['mental', 'physical'])).toBeNull();
+  });
+
+  it('accepts only exact official SUS endpoint labels and numeric response positions', () => {
+    const definition = getQuestionnaireDefinition('system-usability-scale')!;
+    const item = definition.items[0];
+    const values = buildRatingValues(definition);
+
+    expect(parseRatingTranscript('strongly disagree', item, values, [])).toBe(1);
+    expect(parseRatingTranscript('I choose strongly agree', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('3', item, values, [])).toBe(3);
+    expect(parseRatingTranscript('agree', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('neutral', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('not strongly agree', item, values, [])).toBeNull();
+  });
+
+  it('accepts exact official UEQ-S endpoints without misreading its negative endpoint', () => {
+    const definition = getQuestionnaireDefinition('user-experience-questionnaire-short')!;
+    const values = buildRatingValues(definition);
+    const firstItem = definition.items[0];
+    const interestItem = definition.items[5];
+
+    expect(parseRatingTranscript('obstructive', firstItem, values, [])).toBe(1);
+    expect(parseRatingTranscript('I select supportive', firstItem, values, [])).toBe(7);
+    expect(parseRatingTranscript('not interesting', interestItem, values, [])).toBe(1);
+    expect(parseRatingTranscript('interesting', interestItem, values, [])).toBe(7);
+    expect(parseRatingTranscript('not interesting or interesting', interestItem, values, [])).toBeNull();
+    expect(parseRatingTranscript('middle', firstItem, values, [])).toBeNull();
+    expect(parseRatingAlternatives(
+      ['not interesting', 'interesting'],
+      interestItem,
+      values,
+      [],
+    )).toBeNull();
   });
 });
