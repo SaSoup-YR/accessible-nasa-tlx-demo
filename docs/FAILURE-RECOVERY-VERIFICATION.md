@@ -11,8 +11,8 @@ Prototype: Accessible NASA-TLX Version 0.7 release candidate
 These checks test whether foreseeable failures remain detectable and recoverable. They
 do not prove that Qualtrics has stored a response, that the interface is accessible to
 a disability group, or that participant data are safe to collect. A recorded
-Qualtrics row must be verified in Data & Analysis, and participant recruitment remains
-blocked until the supervisor approves the frozen prototype and protocol.
+Qualtrics row must be verified in Data & Analysis. Participant recruitment remains
+blocked until the frozen release, study protocol and ethics/data route are approved.
 
 The submission states are deliberately separated:
 
@@ -23,7 +23,7 @@ The submission states are deliberately separated:
 3. **Recorded remotely** — Qualtrics has submitted the page and a response row can be
    inspected and exported.
 
-Only the third state supports a claim of central collection. The 1.5-second handoff is
+Only the third state supports a claim of central collection. The 0.8-second handoff is
 a short technical interval, not participant reading time. Reading and final
 confirmation belong on the persistent Qualtrics final page, whether it uses the
 default message or the optional generated wording.
@@ -45,7 +45,7 @@ default message or the optional generated wording.
 | Intermediate landmark speech | Say `close to low`, `closer to low`, `closer to high` and repeat with Performance's Good/Poor anchors | The proposals match the visible values 25 or 75; they are not converted to 0 or 100 | Parser and component tests | Browser recognition accuracy with microphone |
 | Ranked speech alternatives | Supply a harmless invalid primary hypothesis followed by one consistent valid hypothesis; then repeat with conflicting endpoint hypotheses | The consistent lower-ranked answer becomes a proposal; conflicting or negated results are rejected | Parser and component tests | Whether each target browser actually returns useful alternatives |
 | Valid speech | Say `seventy`, `seven zero` or a valid factor name | Exact proposed answer is announced; the named confirmation control receives focus; nothing is selected before confirmation | Parser and component tests | NVDA/VoiceOver run |
-| Automatic built-in audio feedback | Enable automatic audio, use Smiley mode and trigger simpler help, a voice proposal, a missing answer, recovery and completion | Labels and values, proposal, error, saved position, next action and completion state are spoken while the page remains open. Parent staging is described as not yet recorded; failed advancement triggers corrective spoken feedback | Component speech-synthesis and parent-failure message tests | Real device volume, voice availability and interruption on Qualtrics navigation |
+| Automatic built-in audio feedback | Enable automatic audio, use Smiley mode and trigger simpler help, a voice proposal, a missing answer, recovery and completion | Labels and values, proposal, error, saved position and next action are spoken. A successful automatic Qualtrics transition adds no built-in speech. Failed advancement triggers one concise corrective spoken message | Component speech-synthesis and parent-failure message tests | Real device volume, voice availability and interruption on Qualtrics navigation |
 
 ## Reproducible manual fault injection
 
@@ -103,10 +103,10 @@ failure being tested, not a route for participant use.
 1. In an unpublished duplicate survey only, temporarily replace
    `question.clickNextButton()` with a no-op comment.
 2. Complete `TEST-ADVANCE-FAIL-01`.
-3. After the watchdog interval, confirm that the parent status states that the
-   recorded-result page did not open and that native Next is visible.
+3. After the watchdog interval, confirm that the parent status states that Qualtrics
+   could not confirm the response and that native Next is visible.
 4. Confirm that the participant iframe displays and, when automatic audio was
-   enabled, speaks that the response is not confirmed as recorded.
+   enabled, speaks the concise reconnect, backup and retry instruction.
 5. Confirm that the in-frame JSON and CSV backup routes remain available.
 6. Restore the exact repository bridge and pass the synthetic preflight again.
 

@@ -306,6 +306,27 @@ describe('study-conductor and participant separation', () => {
   it('creates a local backup before asking the approved host to collect the response', async () => {
     const component = await renderConfiguredComponent();
     const submitted: StudyResultRecord[] = [];
+    const speak = vi.fn();
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      pitch = 1;
+      volume = 1;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speaking: false,
+        pending: false,
+        paused: false,
+        cancel: vi.fn(),
+        speak,
+      },
+    });
+    (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
     window.accessibleNasaTlxResultSink = {
       name: 'UCL approved test platform',
       async submit(record) {
@@ -321,6 +342,7 @@ describe('study-conductor and participant separation', () => {
     };
 
     await completeQuestionnaire(component);
+    (component as any).audioGuidance = true;
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Calculate and submit'))!
       .click();
@@ -329,39 +351,54 @@ describe('study-conductor and participant separation', () => {
 
     expect(submitted).toHaveLength(1);
     expect(loadCompletedResults()).toHaveLength(1);
-    expect(component.querySelector('.save-status')?.textContent).toContain('UCL approved test platform');
-    expect(component.querySelector('.save-status')?.textContent).toContain('receipt-001');
-    expect(component.querySelector('.save-status')?.textContent).toContain(
-      'Completing in the study platform',
-    );
-    expect(component.querySelector('.save-status')?.textContent).toContain(
-      'not a confirmed server record yet',
-    );
-    expect(component.querySelector('.save-status')?.textContent).toMatch(
-      /Please keep this page\s+open/,
-    );
-    expect(component.querySelector('.save-status')?.textContent).toMatch(
-      /recorded\s+result page opens by itself/,
-    );
-    expect(component.textContent).toContain(
-      'please keep this page open and wait for the recorded result page to open automatically.',
-    );
+    expect(component.querySelector('.save-status')?.textContent).toContain('Submitting response');
+    expect(component.querySelector('.save-status')?.textContent).toContain('No action is needed');
+    expect(component.querySelector('.save-status')?.textContent).not.toContain('keep this page open');
+    expect(component.querySelector('.save-status')?.hasAttribute('role')).toBe(false);
     expect(component.textContent).not.toContain('Scheduled for automatic completion');
     expect(component.textContent).toContain('Download JSON backup');
     expect(component.textContent).toContain('Download CSV backup');
     expect(component.querySelector('.submission-fallback')?.textContent).toContain(
-      'No download is required during the normal automatic transition',
+      'If this page does not continue',
     );
     expect(component.querySelector('.submission-fallback')?.textContent).toContain(
-      'If this page remains visible',
+      'Wait for the error instructions',
     );
     expect((component as any).currentStepSpeech()).toBe(
-      'Answers transferred to the Qualtrics page but are not recorded yet. Keep this page open until the recorded result page appears.',
+      'Submitting response. No action is needed.',
+    );
+    expect(
+      speak.mock.calls.map(([utterance]) => (utterance as FakeUtterance).text),
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/Submitting response|keep this page open/i),
+      ]),
     );
   });
 
   it('replaces provisional completion feedback with a visible and spoken failure correction', async () => {
     const component = await renderConfiguredComponent();
+    const spoken: string[] = [];
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      pitch = 1;
+      volume = 1;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speaking: false,
+        pending: false,
+        paused: false,
+        cancel: vi.fn(),
+        speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
+      },
+    });
+    (globalThis as any).SpeechSynthesisUtterance = FakeUtterance;
     window.accessibleNasaTlxResultSink = {
       name: 'UCL Qualtrics',
       async submit(record) {
@@ -382,7 +419,9 @@ describe('study-conductor and participant separation', () => {
 
     (component as any).remoteRecordingUnconfirmed = true;
     (component as any).statusMessage =
-      'The response is not confirmed as recorded. Reconnect to the internet.';
+      'Qualtrics could not confirm this response.';
+    (component as any).audioGuidance = true;
+    (component as any).announceAutomatic((component as any).currentStepSpeech());
     await component.updateComplete;
 
     expect(component.querySelector('#remote-recording-error')?.textContent).toContain(
@@ -395,8 +434,11 @@ describe('study-conductor and participant separation', () => {
       'Download JSON backup',
     );
     expect((component as any).currentStepSpeech()).toBe(
-      'The response is not confirmed as recorded. Reconnect to the internet, keep or download one backup, and use the restored Qualtrics Next button.',
+      'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.',
     );
+    expect(spoken).toEqual([
+      'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.',
+    ]);
   });
 
   it('makes the completed backup recoverable after the accepted page is closed and reopened', async () => {

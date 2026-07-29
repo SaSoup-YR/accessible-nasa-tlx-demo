@@ -7,7 +7,7 @@ the selected questionnaire definition.
 
 - Version 0.7 study links are decoded as weighted NASA-TLX configurations.
 - The legacy `<accessible-nasa-tlx>` element and completion event remain available.
-- The supervisor-reviewed local-first backup, exact-origin receipt, short Qualtrics
+- The Version 0.7 local-first backup, exact-origin receipt, short Qualtrics
   handoff and failed-navigation recovery logic are retained.
 - `source/demo/accessible-nasa-tlx-v0.7.html` remains as the frozen baseline.
 
@@ -46,4 +46,4 @@ Qualtrics page scrolls, and that one completed row has `__js_AQP_ACCEPTED = 1`.
 Standalone Version 0.5 and 0.6 files were removed from the active tree because Git
 history preserves them and multiple runnable candidates caused ambiguity. No
 implementation evidence was erased from repository history. Version 0.7 is retained
-as the direct supervisor baseline.
+as a historical baseline.

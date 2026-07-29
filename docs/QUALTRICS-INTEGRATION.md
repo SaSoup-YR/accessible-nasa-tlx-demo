@@ -22,8 +22,8 @@ Participants must receive the activated Qualtrics distribution link.
 Use the integration only under the approved ethics, consent, retention and
 information-governance plan. The supplied participant code is pseudonymous. Do not
 add names, email addresses, diagnoses or highly confidential linked fields without
-UCL information-governance approval. The supervisor must see the final frozen
-prototype before participant recruitment.
+UCL information-governance approval. Freeze and approve the exact prototype and
+study protocol before participant recruitment.
 
 ## Installation inputs
 
@@ -47,7 +47,7 @@ uploading repository files.
 2. Add the approved participant information and consent pages.
 3. Put one Text/Graphic question on its own page.
 4. Open the versioned
-   [`study.html?package=0.8.3-q3`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.3-q3)
+   [`study.html?package=0.8.4-q4`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.4-q4)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 5. Generate the configuration.
@@ -65,7 +65,7 @@ uploading repository files.
     Publish**. Draft changes do not update an already active distribution link.
 
 The conductor heading and its Current Qualtrics generator notice must both show
-`0.8.3-q3`. If generated JavaScript shows an earlier value, close that stale tab and
+`0.8.4-q4`. If generated JavaScript shows an earlier value, close that stale tab and
 reopen the versioned link above. Do not paste assets from the stale tab.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
@@ -85,7 +85,7 @@ In Preview before submission:
 - the iframe remains hidden until the exact-origin child handshake succeeds, then
   the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`, names bridge `0.8.3-q3` and says the diagnostic fields were staged;
+  connected`, names bridge `0.8.4-q4` and says the diagnostic fields were staged;
 - the participant application fills the browser viewport and exposes one visible
   vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
   create a second scrolling region.
@@ -103,9 +103,16 @@ completed synthetic response whose newly dated Data & Analysis row contains
 `__js_AQP_ACCEPTED = 1`, schema 4 and the expected instrument ID passes collection
 preflight. Older rows are not backfilled.
 
+Bridge diagnostics use `__js_AQP_BRIDGE_READY = 1` and
+`__js_AQP_BRIDGE_BUILD = 0.8.4-q4`. `__js_AQP_ACCEPTED` is left unset until a
+complete result has passed validation. This keeps a connection diagnostic separate
+from an accepted response and prevents a failed or abandoned run from being labelled
+as `AQP_ACCEPTED = 0`. Rows created with older bridge packages keep their original
+values and must be interpreted using that package's documentation.
+
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Bridge `0.8.3-q3` uses a two-way ready handshake with an exact
+listener exists. Bridge `0.8.4-q4` uses a two-way ready handshake with an exact
 package fingerprint and bounded parent retries. It moves the live wrapper to the
 document body, fixes it to the visual viewport, disables outer-page scrolling and
 lets the participant document own the single scrollbar. It no longer depends on
@@ -123,23 +130,25 @@ participant iframe confirms this staging step, not a server-side record. Version
 3. sends the result only to the configured HTTPS origin;
 4. requires a receipt with the same submission ID;
 5. keeps JSON and CSV emergency buttons available;
-6. starts native Qualtrics advancement after a 1.5-second technical handoff;
+6. starts native Qualtrics advancement after an 0.8-second technical handoff;
 7. restores native navigation after a missing connection, staging error or a
    failed-advance watchdog;
 8. requires the generated HTML, parent JavaScript and child application to report
    the same bridge fingerprint before enabling participation or accepting a record.
 
-The 1.5 seconds is not participant reading time. Increasing it enlarges the window
+The 0.8 seconds is not participant reading time. Increasing it enlarges the window
 in which a participant can close the tab after seeing an acknowledgement but before
 Qualtrics has submitted the page. Durable completion information belongs on the End
 of Survey page, which remains visible.
 
-The in-frame acknowledgement says that the parent staged the record and that it is
-not yet recorded. If native advancement fails, the parent sends a second failure
-message to the participant iframe. The visible and spoken status then says that
-remote recording is unconfirmed and directs the participant to reconnect, retain a
-backup and use the restored Qualtrics Next button. A local backup is a recovery
-route, not evidence of a Qualtrics row.
+During a normal handoff, the page displays a short `Submitting response` status and
+advances automatically. Built-in spoken guidance does not read a second transition
+message because that speech would add load and may be interrupted by navigation. If
+native advancement fails, the parent sends a failure message to the participant
+iframe. The visible alert and, when previously enabled, built-in spoken guidance
+state that recording is unconfirmed and direct the participant to reconnect, keep
+or download one backup and use the restored Qualtrics Next button. A local backup
+is a recovery route, not evidence of a Qualtrics row.
 
 The conductor generates optional End of Survey text from the score-display policy.
 It includes the instrument and score only when the conductor selected Show score to
@@ -151,6 +160,7 @@ not affect response storage; use the Qualtrics default final page instead.
 
 The normalized fields include:
 
+- bridge-ready state and the exact bridge build;
 - submission, study, participant, timing and prototype identifiers;
 - instrument ID, name, version and scoring strategy;
 - score name, primary score and defined range;
@@ -204,10 +214,12 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
 7. Close immediately after the in-frame acknowledgement. Reopen the same configured
    link on the same device, enter the same synthetic code and confirm that the
    completed local backup is discoverable. Check Data & Analysis separately.
-8. Disconnect the network at submission. Confirm that the questionnaire remains on
-   Review, focuses the error summary and retains retry, answer-editing and backup
-   routes. On a phone and tablet, confirm that the single participant viewport
-   reveals the error rather than leaving it above the visible area.
+8. Disconnect the network at submission. After the native-advance watchdog, confirm
+   that the result page changes to a focused failure alert, the Qualtrics Next button
+   is restored and a backup remains available. Reconnect, select Next and verify the
+   newly dated row separately. On a phone and tablet, confirm that the single
+   participant viewport reveals the error rather than leaving it above the visible
+   area.
 9. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
    session restores the exact next step after the pseudonymous code is re-entered.
    The Resume control must receive focus and expose the saved count and Resume/Erase
