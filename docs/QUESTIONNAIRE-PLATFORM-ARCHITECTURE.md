@@ -130,8 +130,7 @@ Result schema Version 4 stores:
 The Qualtrics bridge uses generic `AQP_*` Embedded Data fields and stores the full
 record in bounded raw JSON chunks. It no longer assumes six NASA dimensions.
 Exact-origin messaging, a matching submission receipt, local backup before the
-handoff and navigation recovery are retained from the supervisor-reviewed Version
-0.7 implementation.
+handoff and navigation recovery are retained from the Version 0.7 implementation.
 
 ## Relationship to mature systems
 

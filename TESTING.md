@@ -1,7 +1,7 @@
 # Version 0.8 technical test checklist
 
-Use synthetic data only. Do not recruit until the supervisor has reviewed the
-frozen candidate and the approved ethics/data route is confirmed.
+Use synthetic data only. Do not recruit until the candidate release, study
+protocol and ethics/data route are approved.
 
 Record commit, browser, operating system, device, test data, expected result,
 observed result and Pass, Partial, Fail or Not supported.

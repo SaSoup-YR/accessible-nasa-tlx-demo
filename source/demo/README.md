@@ -3,7 +3,7 @@
 - `accessible-questionnaire-platform-v0.8.html` is the active self-contained
   participant runner. It defaults to the registered NASA-TLX definition when it
   is opened without a conductor configuration.
-- `accessible-nasa-tlx-v0.7.html` is the frozen supervisor-reviewed baseline.
+- `accessible-nasa-tlx-v0.7.html` is the frozen historical baseline.
   It is retained as implementation evidence and is not the active release.
 
 Version 0.5 and 0.6 copies were removed from the current tree because Git history

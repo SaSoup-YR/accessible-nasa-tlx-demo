@@ -330,17 +330,16 @@ describe('approved host result sink', () => {
     expect(bridge).toContain("var childOrigin = 'https://sasoup-yr.github.io'");
     expect(bridge).toContain('var rawChunkLength = 900');
     expect(bridge).toContain('var maximumRawChunks = 24');
-    expect(bridge).toContain('var completionDelayMs = 1500');
+    expect(bridge).toContain('var completionDelayMs = 800');
     expect(bridge).toContain('}, completionDelayMs);');
     expect(bridge).toContain('question.showNextButton();');
     expect(bridge).not.toContain('No further action is required.');
     expect(bridge).not.toContain('Your answers have been accepted');
-    expect(bridge).toContain('not recorded yet');
-    expect(bridge).toContain('not confirmed as recorded');
+    expect(bridge).toContain('Submitting response. This page will continue automatically.');
+    expect(bridge).toContain('Qualtrics could not confirm this response.');
     expect(bridge).toContain('sendAdvanceFailure(advanceFailureMessage)');
-    expect(bridge).toContain('Please keep this page open until the next page appears by itself.');
-    expect(bridge).toContain('No backup download is required during this automatic transition.');
-    expect(bridge).toContain('Qualtrics did not open the recorded result page,');
+    expect(bridge).not.toContain('Please keep this page open until the next page appears by itself.');
+    expect(bridge).toContain('Qualtrics could not confirm this response.');
     expect(bridge).not.toContain('five minutes');
     expect(bridge).toContain('window.clearTimeout(completionTimerId);');
     expect(bridge).toContain('window.clearTimeout(advanceWatchdogTimerId);');
@@ -358,7 +357,7 @@ describe('approved host result sink', () => {
     )
       .trim()
       .split(/\r?\n/);
-    expect(embeddedDataFields).toHaveLength(60);
+    expect(embeddedDataFields).toHaveLength(62);
     expect(embeddedDataFields.every((field) => field.startsWith('__js_AQP_'))).toBe(true);
 
     const questionHtml = readFileSync(
@@ -470,11 +469,17 @@ describe('approved host result sink', () => {
     } as unknown as MessageEvent);
     expect(dom.status.textContent).toContain('questionnaire is connected');
     expect(dom.statusAttributes['data-quiet']).toBe('true');
+    expect(dom.statusAttributes['aria-live']).toBe('off');
     expect(dom.iframe.removeAttribute).toHaveBeenCalledWith('aria-hidden');
     expect(dom.iframeStyle.visibility).toBe('visible');
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '0');
+    expect(setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '0');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_BRIDGE_READY', '1');
+    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_BRIDGE_BUILD', QUALTRICS_BRIDGE_BUILD);
     expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_SCHEMA', '4');
-    expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_PROTOTYPE_VERSION', QUALTRICS_BRIDGE_BUILD);
+    expect(setJSEmbeddedData).not.toHaveBeenCalledWith(
+      'AQP_PROTOTYPE_VERSION',
+      QUALTRICS_BRIDGE_BUILD,
+    );
     expect(setJSEmbeddedData).toHaveBeenCalledWith('AQP_COLLECTION_MODE', 'qualtrics');
   });
 
@@ -703,19 +708,21 @@ describe('approved host result sink', () => {
       }),
       'https://sasoup-yr.github.io',
     );
-    expect(dom.status.textContent).toContain('Please keep this page open');
-    expect(completionDelay).toBe(1500);
+    expect(dom.status.textContent).toBe(
+      'Submitting response. This page will continue automatically.',
+    );
+    expect(completionDelay).toBe(800);
     completionCallback!();
     expect(clickNextButton).toHaveBeenCalledOnce();
     expect(completionDelay).toBe(6000);
     completionCallback!();
     expect(showNextButton).toHaveBeenCalledOnce();
-    expect(dom.status.textContent).toContain('did not open the recorded result page');
+    expect(dom.status.textContent).toContain('could not confirm this response');
     expect(frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: QUALTRICS_ADVANCE_FAILED_MESSAGE,
         submissionId: 'submission-complete',
-        error: expect.stringContaining('not confirmed as recorded'),
+        error: expect.stringContaining('could not confirm this response'),
         bridgeBuild: QUALTRICS_BRIDGE_BUILD,
       }),
       'https://sasoup-yr.github.io',

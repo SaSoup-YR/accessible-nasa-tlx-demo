@@ -4,11 +4,11 @@ A public research prototype that separates questionnaire definitions from a shar
 study-conductor, participant, accessibility-support, result and UCL Qualtrics
 workflow.
 
-- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.3-q3)**
+- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.4-q4)**
 - **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
-Use synthetic codes only. Recruitment remains blocked until the supervisor has
-reviewed and the frozen candidate has passed the real UCL Qualtrics re-test.
+Use synthetic codes only. Do not recruit until the candidate release, study
+protocol, ethics route and real UCL Qualtrics verification are approved.
 
 ## Supported scope
 
@@ -105,12 +105,11 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Configuration/result schemas | [`source/src/study.ts`](source/src/study.ts) |
 | Qualtrics child and parent bridge | [`source/src/result-sink.ts`](source/src/result-sink.ts), [`integrations/qualtrics/`](integrations/qualtrics/) |
 | Current standalone participant runner | [`source/demo/accessible-questionnaire-platform-v0.8.html`](source/demo/accessible-questionnaire-platform-v0.8.html) |
-| Frozen supervisor-reviewed v0.7 baseline | [`source/demo/accessible-nasa-tlx-v0.7.html`](source/demo/accessible-nasa-tlx-v0.7.html) |
+| Historical v0.7 baseline | [`source/demo/accessible-nasa-tlx-v0.7.html`](source/demo/accessible-nasa-tlx-v0.7.html) |
 | Architecture and extension rules | [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md), [`docs/INSTRUMENT-DEFINITION-GUIDE.md`](docs/INSTRUMENT-DEFINITION-GUIDE.md) |
 | Migration | [`docs/MIGRATION-V0.7-V0.8.md`](docs/MIGRATION-V0.7-V0.8.md) |
 | Colour and WCAG audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md), [`docs/WCAG-2.2-COMPONENT-AUDIT.md`](docs/WCAG-2.2-COMPONENT-AUDIT.md) |
 | Technical risk register | [`docs/TECHNICAL-RISK-REGISTER.md`](docs/TECHNICAL-RISK-REGISTER.md) |
-| Supervisor-change provenance | [`docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md`](docs/SUPERVISOR-UPDATE-TRACE-2026-07-27.md) |
 
 Historical Version 0.5 and 0.6 standalone files remain in Git history but were
 removed from the active tree to avoid ambiguous test candidates.
