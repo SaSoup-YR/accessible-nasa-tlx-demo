@@ -157,6 +157,11 @@ use the restored Next button. The persistent Qualtrics final page carries the du
 completion message. It may use either Qualtrics' default text or the optional
 generated wording.
 
+If the browser already reports that it is offline, the parent sends this correction
+after the 0.8-second handoff without starting Qualtrics' network request. A browser
+that still reports online uses native advancement and the six-second watchdog, so a
+slow but valid connection is not treated as a definite failure.
+
 ## Role and file boundary
 
 Version 0.5 is one workflow with two role-specific pages, not one mixed page:
