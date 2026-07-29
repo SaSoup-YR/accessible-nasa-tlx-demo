@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.3-q3';
+  var bridgeBuild = '0.8.4-q4';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -35,13 +35,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   // Everything between the receipt and that submission is a window in which closing the
   // tab loses the response, so this hand-off is kept as short as the receipt round-trip
   // allows rather than being used as a reading pause.
-  var completionDelayMs = 1500;
+  var completionDelayMs = 800;
 
   function setStatus(message, quiet) {
     if (!status) return;
     status.textContent = message;
     if (typeof status.setAttribute === 'function') {
       status.setAttribute('data-quiet', quiet ? 'true' : 'false');
+      status.setAttribute('aria-live', quiet ? 'off' : 'polite');
     }
   }
 
@@ -212,14 +213,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
   function stageConnectionDiagnostic() {
     /*
-     * These values are overwritten by the completed record.  Staging them when
-     * the verified child connects means a synthetic response can distinguish a
-     * working question script from an iframe that merely rendered.  They reach
-     * Data & Analysis only when Qualtrics submits the page.
+     * These fields show that the exact bridge connected. They are deliberately
+     * separate from AQP_ACCEPTED, which is written only after a complete record
+     * has passed validation. They reach Data & Analysis only when Qualtrics
+     * submits the page.
      */
-    setField('AQP_ACCEPTED', 0);
+    setField('AQP_BRIDGE_READY', 1);
+    setField('AQP_BRIDGE_BUILD', bridgeBuild);
     setField('AQP_SCHEMA', 4);
-    setField('AQP_PROTOTYPE_VERSION', bridgeBuild);
     setField('AQP_COLLECTION_MODE', 'qualtrics');
   }
 
@@ -392,10 +393,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your answers have been transferred to this Qualtrics page but are not recorded yet. ' +
-        'Qualtrics is submitting the response now. ' +
-        'Please keep this page open until the next page appears by itself. ' +
-        'No backup download is required during this automatic transition.',
+        'Submitting response. This page will continue automatically.',
         true
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
@@ -409,8 +407,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           advanceWatchdogTimerId = null;
           advancing = false;
           var advanceFailureMessage =
-            'Qualtrics did not open the recorded result page, so this response is not confirmed as recorded. ' +
-            'Reconnect to the internet, keep or download one backup, and use the restored Next button to try the Qualtrics submission again.';
+            'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. ' +
+            'Keep this page open or download one backup before closing it.';
           setStatus(advanceFailureMessage, false);
           sendAdvanceFailure(advanceFailureMessage);
           releaseFullscreenForNativeNavigation();

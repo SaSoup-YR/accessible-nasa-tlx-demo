@@ -23,7 +23,6 @@ import {
   submitToApprovedResultSink,
   type InstalledStudyResultSink,
   type QualtricsBridgeState,
-  type ResultSinkReceipt,
 } from './result-sink';
 import {
   PROTOTYPE_VERSION,
@@ -199,8 +198,6 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private completionSavedByHost = false;
   @state() private remoteRecordingUnconfirmed = false;
   @state() private hostSubmissionFailed = false;
-  @state() private hostSinkName = '';
-  @state() private hostReceipt: ResultSinkReceipt | null = null;
   @state() private submittingResult = false;
   @state() private hostBridgeState: QualtricsBridgeState | 'not-required' = 'not-required';
   @state() private hostBridgeMessage = '';
@@ -246,7 +243,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.installedResultSink = null;
     this.stopReading(false);
     this.releaseRecognition();
-    this.stopGazeInput();
+    this.stopGazeInputInternal(false);
     super.disconnectedCallback();
   }
 
@@ -297,7 +294,7 @@ export class AccessibleNasaTlx extends LitElement {
         (message) => {
           this.remoteRecordingUnconfirmed = true;
           this.statusMessage = message;
-          this.announceAutomatic(message);
+          this.announceAutomatic(this.currentStepSpeech());
           void this.updateComplete.then(() => {
             const error = this.querySelector<HTMLElement>('#remote-recording-error');
             if (error) {
@@ -1363,7 +1360,13 @@ export class AccessibleNasaTlx extends LitElement {
     const showScore = !this.studyConfig || this.studyConfig.showScoreToParticipant;
     return html`
       <section class="panel confirmation" id="question-panel" aria-labelledby="complete-heading">
-        <h2 id="complete-heading">${this.studyConfig ? 'Result prepared' : 'Responses calculated'}</h2>
+        <h2 id="complete-heading">${
+          this.studyConfig && this.completionSavedByHost && !this.remoteRecordingUnconfirmed
+            ? 'Submitting response'
+            : this.studyConfig
+            ? 'Result prepared'
+            : 'Responses calculated'
+        }</h2>
         ${showScore
           ? html`<p class="score">
               ${this.result.scoreName}:
@@ -1388,14 +1391,9 @@ export class AccessibleNasaTlx extends LitElement {
                 <p>Tell the study conductor if the recorded result page still does not appear.</p>
               </div>`
             : this.completionSavedByHost
-            ? html`<div class="save-status" role="status">
-                <h3>Completing in the study platform — keep this page open</h3>
-                <p>
-                  ${this.hostSinkName} staged submission
-                  <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>
-                  in this browser page. It is not a confirmed server record yet. Please keep this page
-                  open until the recorded result page opens by itself. You do not need to press anything.
-                </p>
+            ? html`<div class="save-status">
+                <h3>Submitting response</h3>
+                <p>This page will continue automatically. No action is needed.</p>
                 ${this.completionSavedLocally
                   ? nothing
                   : html`<p>
@@ -1428,11 +1426,10 @@ export class AccessibleNasaTlx extends LitElement {
           : nothing}
         ${this.studyConfig && this.completionSavedByHost
           ? html`<aside class="submission-fallback" aria-labelledby="submission-fallback-heading">
-              <h3 id="submission-fallback-heading">Emergency backup if this page does not advance</h3>
+              <h3 id="submission-fallback-heading">If this page does not continue</h3>
               <p>
-                No download is required during the normal automatic transition. If this page remains visible
-                instead of opening the recorded result page, or an error appears, use one backup button and
-                contact the study conductor.
+                Wait for the error instructions. If an error appears, keep this page open or use one backup
+                button before closing it.
               </p>
               <div class="button-row compact">
                 <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
@@ -1455,12 +1452,12 @@ export class AccessibleNasaTlx extends LitElement {
                 : nothing}
             </div>`}
         ${this.studyConfig
-          ? html`<p>
+          ? this.completionSavedByHost && !this.remoteRecordingUnconfirmed
+            ? nothing
+            : html`<p>
               <strong>Participant:</strong>
               ${this.remoteRecordingUnconfirmed
                 ? 'reconnect to the internet and use the restored Qualtrics Next button. Keep or download a backup until the recorded result page appears.'
-                : this.completionSavedByHost
-                ? 'please keep this page open and wait for the recorded result page to open automatically.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
@@ -1986,16 +1983,12 @@ export class AccessibleNasaTlx extends LitElement {
       this.completionSavedByHost = false;
       this.remoteRecordingUnconfirmed = false;
       this.hostSubmissionFailed = false;
-      this.hostSinkName = '';
-      this.hostReceipt = null;
       if (sink) {
         this.submittingResult = true;
         this.statusMessage = `Submitting responses to ${sink.name}.`;
-        this.announceAutomatic(this.statusMessage);
         try {
-          this.hostReceipt = await submitToApprovedResultSink(this.submittedRecord, sink);
+          await submitToApprovedResultSink(this.submittedRecord, sink);
           this.completionSavedByHost = true;
-          this.hostSinkName = sink.name;
         } catch (error) {
           this.hostSubmissionFailed = true;
           const detail = error instanceof Error ? error.message : 'The study platform did not accept the response.';
@@ -2024,9 +2017,13 @@ export class AccessibleNasaTlx extends LitElement {
       // somewhere else. A blocked or full localStorage makes saveCompletedResult return
       // false, and erasing the recovery copy then would leave no way back after a reload.
       if (!this.studyConfig || this.completionSavedLocally) this.clearSavedProgress();
-      this.stopGazeInput();
+      this.stopGazeInputInternal(false);
       this.clearError();
-      this.focusHeading();
+      // A successful Qualtrics hand-off is a short automatic transition. Do not
+      // move focus or start speech that competes with the native page change.
+      // The failure callback focuses and announces its actionable alert if the
+      // page does not advance.
+      if (!this.completionSavedByHost) this.focusHeading();
     } catch (error) {
       this.submittingResult = false;
       this.showError(error instanceof Error ? error.message : 'Responses could not be calculated.');
@@ -2061,7 +2058,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private restart = () => {
     this.stopReading(false);
-    this.stopGazeInput();
+    this.stopGazeInputInternal(false);
     this.releaseRecognition();
     this.clearSavedProgress();
     this.forgetParticipantCodeForTab();
@@ -2083,8 +2080,6 @@ export class AccessibleNasaTlx extends LitElement {
     this.completionSavedByHost = false;
     this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
-    this.hostSinkName = '';
-    this.hostReceipt = null;
     this.submittingResult = false;
     this.startedAt = '';
     this.participantCodeError = '';
@@ -2116,8 +2111,6 @@ export class AccessibleNasaTlx extends LitElement {
     this.completionSavedByHost = false;
     this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
-    this.hostSinkName = '';
-    this.hostReceipt = null;
   }
 
   private toggleReadAloud = () => {
@@ -2236,10 +2229,10 @@ export class AccessibleNasaTlx extends LitElement {
       return `Review ${this.dimensions.length} item responses${this.pairs.length ? ` and ${this.pairs.length} comparisons` : ''} before submitting.`;
     }
     if (this.studyConfig && this.remoteRecordingUnconfirmed) {
-      return 'The response is not confirmed as recorded. Reconnect to the internet, keep or download one backup, and use the restored Qualtrics Next button.';
+      return 'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.';
     }
     if (this.studyConfig && this.completionSavedByHost) {
-      return 'Answers transferred to the Qualtrics page but are not recorded yet. Keep this page open until the recorded result page appears.';
+      return 'Submitting response. No action is needed.';
     }
     if (!this.result) return 'Responses calculated.';
     const score = !this.studyConfig || this.studyConfig.showScoreToParticipant
@@ -2479,14 +2472,19 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private stopGazeInput = () => {
+    this.stopGazeInputInternal(true);
+  };
+
+  private stopGazeInputInternal(announce: boolean) {
+    const wasActive = this.gazeState !== 'off' || this.webgazer !== null;
     this.cancelGazeProposal();
     this.resetGazeHover();
     this.restoreWebGazerPreviewContainer();
     this.releaseGazeResources();
     this.gazeState = 'off';
     this.gazeMessage = 'Gaze input and camera stopped.';
-    this.announceAutomatic(this.gazeMessage);
-  };
+    if (announce && wasActive) this.announceAutomatic(this.gazeMessage);
+  }
 
   private releaseGazeResources() {
     const webgazer = this.webgazer;
@@ -2909,7 +2907,7 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private requestParentReveal(_element: HTMLElement) {
-    // Qualtrics bridge 0.8.3-q3 gives the participant page the only visible
+    // The Qualtrics bridge gives the participant page the only visible
     // viewport and scrollbar. focusAndReveal therefore scrolls this document
     // directly; a second parent-window scroll request would reintroduce the
     // nested-scroll failure that the full-viewport bridge removes.
@@ -2919,7 +2917,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.errorMessage = '';
   }
 
-  private focusHeading() {
+  private focusHeading(speak = true) {
     void this.updateComplete.then(() => {
       window.scrollTo({ top: 0 });
       const heading = this.querySelector<HTMLElement>('#question-panel h2');
@@ -2927,7 +2925,7 @@ export class AccessibleNasaTlx extends LitElement {
         heading.tabIndex = -1;
         heading.focus();
         this.statusMessage = heading.textContent?.trim() ?? '';
-        if (this.audioGuidance) this.speakText(this.currentStepSpeech());
+        if (speak && this.audioGuidance) this.speakText(this.currentStepSpeech());
       }
     });
   }

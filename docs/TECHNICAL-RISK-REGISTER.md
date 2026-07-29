@@ -11,15 +11,14 @@ WebGazer accuracy, assistive-technology usability, psychometric equivalence or b
 for people with impairments.
 
 The current build is a release candidate. Recruitment remains blocked until the
-supervisor reviews the re-tested prototype, the actual UCL Qualtrics survey records and
-exports a complete synthetic response, and the approved protocol and data-management
-route are in place.
+re-tested prototype and actual UCL Qualtrics survey export a complete synthetic
+response, and the approved protocol and data-management route are in place.
 
 ## Current risks and controls
 
 | ID | Risk and consequence | Current control | Evidence now | Remaining gate |
 | --- | --- | --- | --- | --- |
-| R1 | The three required Qualtrics inputs are pasted into the wrong locations, mixed across versions or left as unpublished draft changes, producing a blank iframe, clipped page, visible tokens or empty fields | The conductor separates three required code/data blocks from one optional plain-text final message; the parent and child require the exact `0.8.3-q3` build; guidance requires Review and Publish | Component, template, mismatch and handshake tests | Install in the UCL tenant from a blank survey, publish and repeat the guide cold |
+| R1 | The three required Qualtrics inputs are pasted into the wrong locations, mixed across versions or left as unpublished draft changes, producing a blank iframe, clipped page, visible tokens or empty fields | The conductor separates three required code/data blocks from one optional plain-text final message; the parent and child require the exact `0.8.4-q4` build; guidance requires Review and Publish | Component, template, mismatch and handshake tests | Install in the UCL tenant from a blank survey, publish and repeat the guide cold |
 | R2 | A parent acknowledgement is mistaken for a server-recorded Qualtrics response | The interface describes the acknowledgement as browser-page staging that is not yet recorded. A failed-advance message updates visible and spoken participant feedback; only a submitted Qualtrics row is recorded evidence | State, bridge and failed-advance message tests | Observe and export one synthetic Data & Analysis row |
 | R3 | The tab is closed after acknowledgement but before Qualtrics navigation completes | A complete local backup is attempted before host contact and remains discoverable on the same device | Component close/reopen test | Close immediately in the UCL survey and check the remote row separately |
 | R4 | Network or parent failure loses answers or creates false completion | Failure returns to Review with focused error, retry, edit and JSON/CSV routes | Rejected-host and timeout tests | Interrupt the real network during a UCL preview run |

@@ -34,5 +34,5 @@ collect centrally from `file://`.
 This source demonstrates tested technical behavior for the supported definition
 profile. It does not establish improved accessibility, full WCAG conformance,
 psychometric equivalence, WebGazer accuracy or participant benefit. Recruitment
-remains gated by supervisor review, approved ethics/information governance and the
+remains gated by an approved frozen release, ethics/information governance and the
 real UCL Qualtrics synthetic test.

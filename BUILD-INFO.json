@@ -1,12 +1,12 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "candidate; questionnaire-independent supported profile; supervisor review, bridge 0.8.3-q3 mobile re-test, novice-conductor evaluation and accepted-row weighted NASA-TLX UCL Qualtrics verification pending",
+  "releaseStatus": "candidate; questionnaire-independent supported profile; bridge 0.8.4-q4 UCL reinstallation, four-instrument accepted-row verification and novice-conductor evaluation pending",
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
-  "builtAt": "2026-07-29T12:50:34Z",
-  "qualtricsBridgeBuild": "0.8.3-q3",
+  "builtAt": "2026-07-29T15:24:04Z",
+  "qualtricsBridgeBuild": "0.8.4-q4",
   "verification": {
     "testFilesPassed": 16,
     "testsPassed": 115,
@@ -38,5 +38,5 @@
   ],
   "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
   "claimBoundary": "Questionnaire-independent within the published integer single-choice and optional all-pairs profile with allowlisted scorers; not compatible with every questionnaire and not evidence of psychometric equivalence or disability-group benefit.",
-  "supervisorBaseline": "6cd72d7 includes supervisor commit 6e055e2 and remains available as the Version 0.7 baseline."
+  "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history."
 }

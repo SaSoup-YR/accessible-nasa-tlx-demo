@@ -85,7 +85,7 @@ These values support process analysis and fidelity checks. They do not prove why
 
 Before any participant data collection:
 
-1. obtain supervisor review of this frozen prototype;
+1. freeze and approve the exact prototype release used by the study;
 2. confirm ethics and information-governance requirements;
 3. create the UCL Qualtrics survey and install [`QUALTRICS-INTEGRATION.md`](QUALTRICS-INTEGRATION.md);
 4. complete and export a synthetic cross-device response;
@@ -94,7 +94,7 @@ Before any participant data collection:
 
 ## Claim boundary
 
-Version 0.7 implements a testable cross-device collection architecture and auditable support-choice policy. The feature strengthens implementation readiness, reproducibility and alignment with the supervisor's export/saving question. It does not itself demonstrate that the questionnaire is more accessible. A claim of improved accessibility requires relevant participants, defined outcomes and analysis.
+Version 0.7 implements a testable cross-device collection architecture and auditable support-choice policy. The feature strengthens implementation readiness and reproducibility, and it answers how results are exported and saved. It does not itself demonstrate that the questionnaire is more accessible. A claim of improved accessibility requires relevant participants, defined outcomes and analysis.
 
 ## Authoritative sources
 

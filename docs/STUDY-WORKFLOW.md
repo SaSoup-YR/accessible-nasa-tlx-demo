@@ -2,7 +2,7 @@
 
 Decision dates: 20–27 July 2026
 
-## Supervisor questions addressed
+## Workflow questions addressed
 
 The implementation must make explicit:
 
@@ -86,5 +86,5 @@ accepted.
 Technical tests establish deterministic software behavior. They do not establish
 that a support is helpful, that the workflow is easier, that optional presentation
 is psychometrically equivalent, or that WebGazer is accurate. Recruitment remains
-blocked until the supervisor reviews the frozen prototype and the study protocol
-defines appropriate outcomes and participants.
+blocked until the frozen release, study protocol, participant group and ethics/data
+route are approved.
