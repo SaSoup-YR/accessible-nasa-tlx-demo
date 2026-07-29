@@ -419,7 +419,7 @@ describe('study-conductor and participant separation', () => {
 
     (component as any).remoteRecordingUnconfirmed = true;
     (component as any).statusMessage =
-      'Qualtrics could not confirm this response.';
+      'Internet connection unavailable. Qualtrics has not recorded this response. A complete backup is saved on this device. Reconnect, keep this page open, then select Next to try again. You may download a backup before closing.';
     (component as any).audioGuidance = true;
     (component as any).announceAutomatic((component as any).currentStepSpeech());
     await component.updateComplete;
@@ -434,10 +434,10 @@ describe('study-conductor and participant separation', () => {
       'Download JSON backup',
     );
     expect((component as any).currentStepSpeech()).toBe(
-      'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.',
+      'Internet connection unavailable. Qualtrics has not recorded this response. A complete backup is saved on this device. Reconnect, keep this page open, then select Next to try again. You may download a backup before closing.',
     );
     expect(spoken).toEqual([
-      'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.',
+      'Internet connection unavailable. Qualtrics has not recorded this response. A complete backup is saved on this device. Reconnect, keep this page open, then select Next to try again. You may download a backup before closing.',
     ]);
   });
 

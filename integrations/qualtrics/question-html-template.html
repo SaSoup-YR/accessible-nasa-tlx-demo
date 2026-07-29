@@ -78,6 +78,12 @@
     white-space: nowrap !important;
     border: 0 !important;
   }
+  #accessible-questionnaire-collection-status[data-severity="error"] {
+    border-color: #b10e1e;
+    background: #fff4f4;
+    color: #171717;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.18);
+  }
 </style>
 <section
   id="accessible-questionnaire-recorded-summary"
@@ -130,13 +136,14 @@
 </section>
 <div
   id="accessible-questionnaire-live-question"
-  data-aqp-package-build="0.8.5-q5"
+  data-aqp-package-build="0.8.6-q6"
 >
   <p
     id="accessible-questionnaire-collection-status"
     role="status"
     aria-live="polite"
     data-quiet="false"
+    data-severity="information"
   >
     Connecting this questionnaire to the current Qualtrics response.
   </p>

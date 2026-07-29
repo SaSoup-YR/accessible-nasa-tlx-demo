@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.5-q5';
+  var bridgeBuild = '0.8.6-q6';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -37,11 +37,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   // allows rather than being used as a reading pause.
   var completionDelayMs = 800;
 
-  function setStatus(message, quiet) {
+  function setStatus(message, quiet, severity) {
     if (!status) return;
     status.textContent = message;
     if (typeof status.setAttribute === 'function') {
       status.setAttribute('data-quiet', quiet ? 'true' : 'false');
+      status.setAttribute('data-severity', severity === 'error' ? 'error' : 'information');
       status.setAttribute('aria-live', quiet ? 'off' : 'polite');
     }
   }
@@ -204,16 +205,25 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }, childOrigin);
   }
 
-  function recoverFailedAdvance() {
+  function recoverFailedAdvance(reason) {
     advanceWatchdogTimerId = null;
     if (!advancing) return;
     advancing = false;
-    var advanceFailureMessage =
-      'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. ' +
-      'Keep this page open or download one backup before closing it.';
-    setStatus(advanceFailureMessage, false);
-    sendAdvanceFailure(advanceFailureMessage);
+    var advanceFailureMessage = reason === 'offline'
+      ? 'Internet connection unavailable. Qualtrics has not recorded this response. ' +
+        'A complete backup is saved on this device. Reconnect, keep this page open, ' +
+        'then select Next to try again. You may download a backup before closing.'
+      : 'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. ' +
+        'Keep this page open or download one backup before closing it.';
     releaseFullscreenForNativeNavigation();
+    setImportantStyle(status, 'position', 'sticky');
+    setImportantStyle(status, 'top', '0');
+    setImportantStyle(status, 'z-index', '2147483001');
+    setStatus(advanceFailureMessage, false, 'error');
+    if (status && typeof status.scrollIntoView === 'function') {
+      status.scrollIntoView({ block: 'start', inline: 'nearest' });
+    }
+    sendAdvanceFailure(advanceFailureMessage);
     question.showNextButton();
   }
 
@@ -410,17 +420,15 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         true
       );
       sendReceipt(event.source, true, acceptedSubmissionId);
+      // A definite browser-offline state cannot produce a durable Qualtrics
+      // response. Show the platform-owned recovery notice immediately instead
+      // of waiting for Qualtrics' slower native network-error dialog.
+      if (window.navigator && window.navigator.onLine === false) {
+        recoverFailedAdvance('offline');
+        return;
+      }
       completionTimerId = window.setTimeout(function completeAcceptedResponse() {
         completionTimerId = null;
-        // When the browser already knows it is offline, do not wait for
-        // Qualtrics' own network request and error dialog. Show the recovery
-        // route immediately. navigator.onLine is used only for the definite
-        // offline case; an online report still uses native advancement and the
-        // bounded watchdog because it does not prove server reachability.
-        if (window.navigator && window.navigator.onLine === false) {
-          recoverFailedAdvance();
-          return;
-        }
         question.clickNextButton();
         // If Qualtrics does not unload this question after the native advance, keep
         // the participant out of a dead end. The questionnaire iframe still holds

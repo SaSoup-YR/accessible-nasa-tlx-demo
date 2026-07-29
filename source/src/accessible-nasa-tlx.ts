@@ -2229,7 +2229,8 @@ export class AccessibleNasaTlx extends LitElement {
       return `Review ${this.dimensions.length} item responses${this.pairs.length ? ` and ${this.pairs.length} comparisons` : ''} before submitting.`;
     }
     if (this.studyConfig && this.remoteRecordingUnconfirmed) {
-      return 'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.';
+      return this.statusMessage.trim() ||
+        'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.';
     }
     if (this.studyConfig && this.completionSavedByHost) {
       return 'Submitting response. No action is needed.';
