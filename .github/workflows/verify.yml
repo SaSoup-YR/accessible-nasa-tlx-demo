@@ -44,3 +44,32 @@ jobs:
           ../study.html
           ../assets
           ../questionnaires
+
+  sync-pages:
+    name: Sync verified main to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Replace its file tree with the verified main revision
+        env:
+          VERIFIED_MAIN_SHA: ${{ github.sha }}
+        run: |
+          git fetch origin "$VERIFIED_MAIN_SHA"
+          git read-tree --reset -u "$VERIFIED_MAIN_SHA"
+          if git diff --cached --quiet; then
+            echo "GitHub Pages already matches verified main."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Deploy verified main ${VERIFIED_MAIN_SHA}"
+          git push origin HEAD:gh-pages
