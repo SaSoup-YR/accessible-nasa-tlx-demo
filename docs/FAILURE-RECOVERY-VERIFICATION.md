@@ -25,14 +25,15 @@ The submission states are deliberately separated:
 
 Only the third state supports a claim of central collection. The 1.5-second handoff is
 a short technical interval, not participant reading time. Reading and final
-confirmation belong on the persistent End-of-Survey page.
+confirmation belong on the persistent Qualtrics final page, whether it uses the
+default message or the optional generated wording.
 
 ## Adverse-path matrix
 
 | Case | Action with synthetic data | Required observable outcome | Automated evidence | Manual evidence still required |
 | --- | --- | --- | --- | --- |
 | Close after acknowledgement | Close the result page immediately, reopen the same configured link on the same device and enter the same code | A completed backup is discoverable and downloadable; wording states that it does not prove remote recording | Component test verifies backup creation before host submission and post-close discovery | Check separately whether a Qualtrics row exists |
-| Network interruption | Disconnect immediately before Calculate and submit | Focus moves to the error summary; Review, retry, answer editing and JSON/CSV remain available | Rejected-host component test | Real UCL Qualtrics/browser run |
+| Network interruption | Disconnect immediately before Calculate and submit | The page may stage the record locally, but it must not describe it as remotely recorded. If Qualtrics cannot open its recorded-result page, visible and spoken feedback states that remote recording is unconfirmed; backup, reconnection and restored-Next instructions remain available | Rejected-host and failed-advance message tests | Real UCL Qualtrics/browser run and exported row check |
 | Mid-questionnaire reload | Enable recovery, answer at least one item and reload the same tab | The pseudonymous code is restored for that tab; focus moves to the saved-session region; its accessible description and delayed live-region update use the exact count plus `Resume saved questionnaire` and `Erase saved answers`; prior-opt-in built-in speech attempts the same message; an explicit replay remains available | Full localStorage reload/recreation, focus, exact-message, live-region and speech-route tests | iOS automatic-speech policy, external screen-reader announcement and browser-specific storage behaviour |
 | Storage blocked or full | Block site storage or simulate quota exhaustion before submission | No crash or false local-save claim; in-memory JSON/CSV remain available; any existing progress copy is not deliberately cleared | Storage unit and component tests | Browser privacy mode and quota test |
 | Parent staging failure | Send an invalid or oversized synthetic record | Qualtrics navigation is restored and an error receipt is returned | Executed bridge test | Qualtrics editor and survey-theme interaction |
@@ -44,7 +45,7 @@ confirmation belong on the persistent End-of-Survey page.
 | Intermediate landmark speech | Say `close to low`, `closer to low`, `closer to high` and repeat with Performance's Good/Poor anchors | The proposals match the visible values 25 or 75; they are not converted to 0 or 100 | Parser and component tests | Browser recognition accuracy with microphone |
 | Ranked speech alternatives | Supply a harmless invalid primary hypothesis followed by one consistent valid hypothesis; then repeat with conflicting endpoint hypotheses | The consistent lower-ranked answer becomes a proposal; conflicting or negated results are rejected | Parser and component tests | Whether each target browser actually returns useful alternatives |
 | Valid speech | Say `seventy`, `seven zero` or a valid factor name | Exact proposed answer is announced; the named confirmation control receives focus; nothing is selected before confirmation | Parser and component tests | NVDA/VoiceOver run |
-| Automatic built-in audio feedback | Enable automatic audio, use Smiley mode and trigger simpler help, a voice proposal, a missing answer, recovery and completion | Labels and values, proposal, error, saved position, next action and completion state are spoken while the page remains open | Component speech-synthesis tests | Real device volume, voice availability and interruption on Qualtrics navigation |
+| Automatic built-in audio feedback | Enable automatic audio, use Smiley mode and trigger simpler help, a voice proposal, a missing answer, recovery and completion | Labels and values, proposal, error, saved position, next action and completion state are spoken while the page remains open. Parent staging is described as not yet recorded; failed advancement triggers corrective spoken feedback | Component speech-synthesis and parent-failure message tests | Real device volume, voice availability and interruption on Qualtrics navigation |
 
 ## Reproducible manual fault injection
 
@@ -104,8 +105,10 @@ failure being tested, not a route for participant use.
 2. Complete `TEST-ADVANCE-FAIL-01`.
 3. After the watchdog interval, confirm that the parent status states that the
    recorded-result page did not open and that native Next is visible.
-4. Confirm that the in-frame JSON and CSV backup routes remain available.
-5. Restore the exact repository bridge and pass the synthetic preflight again.
+4. Confirm that the participant iframe displays and, when automatic audio was
+   enabled, speaks that the response is not confirmed as recorded.
+5. Confirm that the in-frame JSON and CSV backup routes remain available.
+6. Restore the exact repository bridge and pass the synthetic preflight again.
 
 These deliberate failures are unsuitable for a live recruitment survey. Record the
 bridge hash, browser, expected result, observed result and screenshot for each run.

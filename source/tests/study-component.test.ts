@@ -335,7 +335,10 @@ describe('study-conductor and participant separation', () => {
       'Completing in the study platform',
     );
     expect(component.querySelector('.save-status')?.textContent).toContain(
-      'Please keep this page open',
+      'not a confirmed server record yet',
+    );
+    expect(component.querySelector('.save-status')?.textContent).toMatch(
+      /Please keep this page\s+open/,
     );
     expect(component.querySelector('.save-status')?.textContent).toMatch(
       /recorded\s+result page opens by itself/,
@@ -353,7 +356,46 @@ describe('study-conductor and participant separation', () => {
       'If this page remains visible',
     );
     expect((component as any).currentStepSpeech()).toBe(
-      'Answers accepted. The study platform is finishing automatically.',
+      'Answers transferred to the Qualtrics page but are not recorded yet. Keep this page open until the recorded result page appears.',
+    );
+  });
+
+  it('replaces provisional completion feedback with a visible and spoken failure correction', async () => {
+    const component = await renderConfiguredComponent();
+    window.accessibleNasaTlxResultSink = {
+      name: 'UCL Qualtrics',
+      async submit(record) {
+        return {
+          accepted: true,
+          submissionId: record.submissionId,
+          receiptId: 'receipt-before-offline-failure',
+        };
+      },
+    };
+
+    await completeQuestionnaire(component);
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+
+    (component as any).remoteRecordingUnconfirmed = true;
+    (component as any).statusMessage =
+      'The response is not confirmed as recorded. Reconnect to the internet.';
+    await component.updateComplete;
+
+    expect(component.querySelector('#remote-recording-error')?.textContent).toContain(
+      'Qualtrics has not confirmed a recorded response',
+    );
+    expect(component.querySelector('#remote-recording-error')?.textContent).toContain(
+      'Reconnect to the internet',
+    );
+    expect(component.querySelector('.submission-fallback')?.textContent).toContain(
+      'Download JSON backup',
+    );
+    expect((component as any).currentStepSpeech()).toBe(
+      'The response is not confirmed as recorded. Reconnect to the internet, keep or download one backup, and use the restored Qualtrics Next button.',
     );
   });
 

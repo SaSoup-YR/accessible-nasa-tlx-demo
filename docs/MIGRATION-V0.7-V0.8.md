@@ -22,12 +22,16 @@ their new `__js_AQP_*` cells are expected to be blank. Use Qualtrics Column choo
 or a full data export to inspect the old `__js_ANTLX_*` columns, and keep those
 fields until the old rows have been exported and verified.
 
-Generate a new installation package from `study.html`, then replace:
+Generate a new installation package from `study.html`, then replace the three
+required inputs:
 
 1. the Text/Graphic question HTML;
 2. the Embedded Data manifest;
-3. the question JavaScript;
-4. the End of Survey message.
+3. the question JavaScript.
+
+The generated End of Survey message is optional plain text. Qualtrics' default
+final page is acceptable; use the generated message when the protocol requires
+custom completion wording or a persistent participant score.
 
 Run the synthetic and adverse tests in `QUALTRICS-INTEGRATION.md` before recruitment.
 The migration deliberately fails closed rather than writing Version 4 records into

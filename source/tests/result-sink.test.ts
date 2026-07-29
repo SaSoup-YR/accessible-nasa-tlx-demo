@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  QUALTRICS_ADVANCE_FAILED_MESSAGE,
   QUALTRICS_BRIDGE_BUILD,
   QUALTRICS_CHILD_READY_MESSAGE,
   QUALTRICS_PARENT_READY_MESSAGE,
@@ -217,6 +218,7 @@ describe('approved host result sink', () => {
     let receiveMessage: ((event: MessageEvent) => void) | undefined;
     const parent = { postMessage: vi.fn() };
     const states: string[] = [];
+    const advanceFailures: string[] = [];
     const fakeWindow = {
       parent,
       setTimeout: vi.fn(() => 1),
@@ -231,6 +233,7 @@ describe('approved host result sink', () => {
       'https://ucl-example.eu.qualtrics.com',
       fakeWindow,
       ({ state }) => states.push(state),
+      (message) => advanceFailures.push(message),
     );
     expect(states).toEqual(['connecting']);
     receiveMessage!({
@@ -274,6 +277,28 @@ describe('approved host result sink', () => {
       },
       'https://ucl-example.eu.qualtrics.com',
     );
+
+    receiveMessage!({
+      source: parent,
+      origin: 'https://ucl-example.eu.qualtrics.com',
+      data: {
+        type: QUALTRICS_ADVANCE_FAILED_MESSAGE,
+        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+        error: 'The response is not confirmed as recorded.',
+      },
+    } as unknown as MessageEvent);
+    expect(advanceFailures).toEqual(['The response is not confirmed as recorded.']);
+
+    receiveMessage!({
+      source: parent,
+      origin: 'https://attacker.example',
+      data: {
+        type: QUALTRICS_ADVANCE_FAILED_MESSAGE,
+        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+        error: 'False warning.',
+      },
+    } as unknown as MessageEvent);
+    expect(advanceFailures).toEqual(['The response is not confirmed as recorded.']);
     bridge.disconnect();
   });
 
@@ -309,9 +334,13 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('}, completionDelayMs);');
     expect(bridge).toContain('question.showNextButton();');
     expect(bridge).not.toContain('No further action is required.');
+    expect(bridge).not.toContain('Your answers have been accepted');
+    expect(bridge).toContain('not recorded yet');
+    expect(bridge).toContain('not confirmed as recorded');
+    expect(bridge).toContain('sendAdvanceFailure(advanceFailureMessage)');
     expect(bridge).toContain('Please keep this page open until the next page appears by itself.');
     expect(bridge).toContain('No backup download is required during this automatic transition.');
-    expect(bridge).toContain('Qualtrics did not open the recorded result page.');
+    expect(bridge).toContain('Qualtrics did not open the recorded result page,');
     expect(bridge).not.toContain('five minutes');
     expect(bridge).toContain('window.clearTimeout(completionTimerId);');
     expect(bridge).toContain('window.clearTimeout(advanceWatchdogTimerId);');
@@ -682,6 +711,15 @@ describe('approved host result sink', () => {
     completionCallback!();
     expect(showNextButton).toHaveBeenCalledOnce();
     expect(dom.status.textContent).toContain('did not open the recorded result page');
+    expect(frameWindow.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: QUALTRICS_ADVANCE_FAILED_MESSAGE,
+        submissionId: 'submission-complete',
+        error: expect.stringContaining('not confirmed as recorded'),
+        bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+      }),
+      'https://sasoup-yr.github.io',
+    );
   });
 
   it('restores Qualtrics navigation when an invalid record cannot be staged', () => {

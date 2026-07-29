@@ -197,6 +197,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
   @state() private completionSavedByHost = false;
+  @state() private remoteRecordingUnconfirmed = false;
   @state() private hostSubmissionFailed = false;
   @state() private hostSinkName = '';
   @state() private hostReceipt: ResultSinkReceipt | null = null;
@@ -292,6 +293,20 @@ export class AccessibleNasaTlx extends LitElement {
         ({ state, message }) => {
           this.hostBridgeState = state;
           this.hostBridgeMessage = message;
+        },
+        (message) => {
+          this.remoteRecordingUnconfirmed = true;
+          this.statusMessage = message;
+          this.announceAutomatic(message);
+          void this.updateComplete.then(() => {
+            const error = this.querySelector<HTMLElement>('#remote-recording-error');
+            if (error) {
+              focusAndReveal(error, {
+                block: 'start',
+                onReveal: () => this.requestParentReveal(error),
+              });
+            }
+          });
         },
       );
     }
@@ -1357,14 +1372,29 @@ export class AccessibleNasaTlx extends LitElement {
             </p>`
           : html`<p>Your responses have been recorded. The study configuration does not display the calculated score on the participant page.</p>`}
         ${this.studyConfig
-          ? this.completionSavedByHost
+          ? this.remoteRecordingUnconfirmed
+            ? html`<div
+                class="error-summary"
+                id="remote-recording-error"
+                role="alert"
+                tabindex="-1"
+              >
+                <h3>Qualtrics has not confirmed a recorded response</h3>
+                <p>
+                  The completed answers are still available in the backup on this device, but the
+                  recorded result page did not open. Reconnect to the internet, keep or download
+                  one backup, and use the restored Qualtrics Next button to try the submission again.
+                </p>
+                <p>Tell the study conductor if the recorded result page still does not appear.</p>
+              </div>`
+            : this.completionSavedByHost
             ? html`<div class="save-status" role="status">
                 <h3>Completing in the study platform — keep this page open</h3>
                 <p>
-                  ${this.hostSinkName} acknowledged submission
+                  ${this.hostSinkName} staged submission
                   <strong>${this.hostReceipt?.receiptId || this.submittedRecord.submissionId}</strong>
-                  and is completing the response now. Please keep this page open until the recorded
-                  result page opens by itself. You do not need to press anything.
+                  in this browser page. It is not a confirmed server record yet. Please keep this page
+                  open until the recorded result page opens by itself. You do not need to press anything.
                 </p>
                 ${this.completionSavedLocally
                   ? nothing
@@ -1387,7 +1417,7 @@ export class AccessibleNasaTlx extends LitElement {
               </div>`
           : html`<p>No response, audio or webcam video has been uploaded. Demonstration results are not retained after this page is closed.</p>`}
         <p>Support and input-route metadata remain separate from the questionnaire score.</p>
-        ${!this.studyConfig || !this.completionSavedByHost
+        ${!this.studyConfig || !this.completionSavedByHost || this.remoteRecordingUnconfirmed
           ? this.renderCompletionReadAloudControl()
           : nothing}
         ${!this.studyConfig
@@ -1427,7 +1457,9 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.studyConfig
           ? html`<p>
               <strong>Participant:</strong>
-              ${this.completionSavedByHost
+              ${this.remoteRecordingUnconfirmed
+                ? 'reconnect to the internet and use the restored Qualtrics Next button. Keep or download a backup until the recorded result page appears.'
+                : this.completionSavedByHost
                 ? 'please keep this page open and wait for the recorded result page to open automatically.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
@@ -1718,7 +1750,9 @@ export class AccessibleNasaTlx extends LitElement {
 
   private ratingVoicePrompt(dimension: TlxDimension) {
     if (this.answerMode !== 'smiley') {
-      const numericPrompt = `Say one shown value from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} in steps of ${this.definition.scale.step}.`;
+      const numericPrompt =
+        `Say one shown value from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} ` +
+        `in steps of ${this.definition.scale.step}. Other numbers are not rounded or guessed.`;
       return this.definition.scale.type === 'magnitude'
         ? numericPrompt
         : `${numericPrompt} You may instead say the exact visible endpoint label: ${dimension.lowAnchor} or ${dimension.highAnchor}.`;
@@ -1950,6 +1984,7 @@ export class AccessibleNasaTlx extends LitElement {
         ? saveCompletedResult(this.submittedRecord)
         : false;
       this.completionSavedByHost = false;
+      this.remoteRecordingUnconfirmed = false;
       this.hostSubmissionFailed = false;
       this.hostSinkName = '';
       this.hostReceipt = null;
@@ -2046,6 +2081,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.submittedRecord = null;
     this.completionSavedLocally = false;
     this.completionSavedByHost = false;
+    this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
     this.hostSinkName = '';
     this.hostReceipt = null;
@@ -2078,6 +2114,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.submittedRecord = null;
     this.completionSavedLocally = false;
     this.completionSavedByHost = false;
+    this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
     this.hostSinkName = '';
     this.hostReceipt = null;
@@ -2198,8 +2235,11 @@ export class AccessibleNasaTlx extends LitElement {
     if (this.stage === 'review') {
       return `Review ${this.dimensions.length} item responses${this.pairs.length ? ` and ${this.pairs.length} comparisons` : ''} before submitting.`;
     }
+    if (this.studyConfig && this.remoteRecordingUnconfirmed) {
+      return 'The response is not confirmed as recorded. Reconnect to the internet, keep or download one backup, and use the restored Qualtrics Next button.';
+    }
     if (this.studyConfig && this.completionSavedByHost) {
-      return 'Answers accepted. The study platform is finishing automatically.';
+      return 'Answers transferred to the Qualtrics page but are not recorded yet. Keep this page open until the recorded result page appears.';
     }
     if (!this.result) return 'Responses calculated.';
     const score = !this.studyConfig || this.studyConfig.showScoreToParticipant
@@ -2869,7 +2909,7 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private requestParentReveal(_element: HTMLElement) {
-    // Qualtrics bridge 0.8.2-q2 gives the participant page the only visible
+    // Qualtrics bridge 0.8.3-q3 gives the participant page the only visible
     // viewport and scrollbar. focusAndReveal therefore scrolls this document
     // directly; a second parent-window scroll request would reintroduce the
     // nested-scroll failure that the full-viewport bridge removes.

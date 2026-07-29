@@ -4,7 +4,7 @@ A public research prototype that separates questionnaire definitions from a shar
 study-conductor, participant, accessibility-support, result and UCL Qualtrics
 workflow.
 
-- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.2-q2)**
+- **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.3-q3)**
 - **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
 Use synthetic codes only. Recruitment remains blocked until the supervisor has
@@ -21,6 +21,12 @@ claim to support any questionnaire.
 | Raw TLX | 6 magnitude items, 0–100 in steps of 5 | ratings only | unweighted arithmetic mean |
 | System Usability Scale | 10 agreement items, 1–5 | ratings only | standard alternating SUS |
 | UEQ-S | 8 semantic differentials, 1–7 | ratings only | centred overall, pragmatic and hedonic means |
+
+For both NASA-TLX definitions, the valid displayed and spoken values are
+`0, 5, 10, …, 100`. Values such as `1`, `2`, `3` or `92` are deliberately
+rejected rather than silently rounded. Raw TLX is the six-item unweighted form;
+the weighted definition is the separate six-rating plus fifteen-comparison
+workflow.
 
 Questionnaire files are discovered from
 [`source/instruments/*.questionnaire.json`](source/instruments/). JSON Schema plus

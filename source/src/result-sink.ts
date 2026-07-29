@@ -4,7 +4,8 @@ export const QUALTRICS_SUBMIT_MESSAGE = 'accessible-questionnaire:qualtrics-subm
 export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-questionnaire:qualtrics-receipt:v2';
 export const QUALTRICS_PARENT_READY_MESSAGE = 'accessible-questionnaire:qualtrics-parent-ready:v2';
 export const QUALTRICS_CHILD_READY_MESSAGE = 'accessible-questionnaire:qualtrics-child-ready:v2';
-export const QUALTRICS_BRIDGE_BUILD = '0.8.2-q2';
+export const QUALTRICS_ADVANCE_FAILED_MESSAGE = 'accessible-questionnaire:qualtrics-advance-failed:v2';
+export const QUALTRICS_BRIDGE_BUILD = '0.8.3-q3';
 
 export type QualtricsBridgeState = 'connecting' | 'connected' | 'failed';
 
@@ -61,12 +62,14 @@ export function installStudyResultSink(
   config: StudyConfig,
   windowRef: Window = window,
   onBridgeStateChange: (detail: QualtricsBridgeStateDetail) => void = () => undefined,
+  onAdvanceFailure: (message: string) => void = () => undefined,
 ): InstalledStudyResultSink | null {
   if (config.collection.mode !== 'qualtrics') return null;
   const bridge = installQualtricsBridgeHandshake(
     config.collection.parentOrigin,
     windowRef,
     onBridgeStateChange,
+    onAdvanceFailure,
   );
   const sink = createQualtricsParentResultSink(
     config.collection.parentOrigin,
@@ -85,6 +88,7 @@ export function installQualtricsBridgeHandshake(
   parentOrigin: string,
   windowRef: Window = window,
   onStateChange: (detail: QualtricsBridgeStateDetail) => void = () => undefined,
+  onAdvanceFailure: (message: string) => void = () => undefined,
 ) {
   let state: QualtricsBridgeState = 'connecting';
   let timeoutId: number | null = null;
@@ -93,13 +97,24 @@ export function installQualtricsBridgeHandshake(
     state = nextState;
     onStateChange({ state, message });
   };
-  const receiveParentReady = (event: MessageEvent<unknown>) => {
+  const receiveParentMessage = (event: MessageEvent<unknown>) => {
     if (event.source !== windowRef.parent || event.origin !== parentOrigin) return;
     const message = event.data as {
       type?: unknown;
       protocolVersion?: unknown;
       bridgeBuild?: unknown;
+      error?: unknown;
     } | null;
+    if (message?.type === QUALTRICS_ADVANCE_FAILED_MESSAGE) {
+      if (
+        message.bridgeBuild === QUALTRICS_BRIDGE_BUILD &&
+        typeof message.error === 'string' &&
+        message.error.trim()
+      ) {
+        onAdvanceFailure(message.error);
+      }
+      return;
+    }
     if (message?.type !== QUALTRICS_PARENT_READY_MESSAGE) return;
     if (
       message.protocolVersion !== 2 ||
@@ -126,7 +141,7 @@ export function installQualtricsBridgeHandshake(
     );
   };
 
-  windowRef.addEventListener('message', receiveParentReady);
+  windowRef.addEventListener('message', receiveParentMessage);
   onStateChange({
     state,
     message: `Checking Qualtrics bridge ${QUALTRICS_BRIDGE_BUILD}.`,
@@ -147,7 +162,7 @@ export function installQualtricsBridgeHandshake(
         windowRef.clearTimeout(timeoutId);
         timeoutId = null;
       }
-      windowRef.removeEventListener('message', receiveParentReady);
+      windowRef.removeEventListener('message', receiveParentMessage);
     },
   };
 }

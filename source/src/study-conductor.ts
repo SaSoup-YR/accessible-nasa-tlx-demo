@@ -546,8 +546,9 @@ export class StudyConductorApp extends LitElement {
         <aside class="boundary-note important-boundary">
           <p>
             <strong>Do not upload these repository files to Qualtrics and do not paste the static HTML template unchanged.</strong>
-            They are four different installation inputs. Only the first block below contains this study's generated
-            participant URL.
+            The first three blocks below are the required installation inputs. Only the first block contains this
+            study's generated participant URL. The fourth block is optional plain text for Qualtrics' final page;
+            it is not code and does not affect whether a response is saved.
           </p>
         </aside>
         <aside class="boundary-note">
@@ -642,12 +643,14 @@ export class StudyConductorApp extends LitElement {
             </button>
           </li>
           <li>
-            <h4>End of Survey: custom message</h4>
+            <h4>Optional: End of Survey plain-text message</h4>
             <p>
-              Create or select a custom End of Survey message, paste this as ordinary text, and do not configure a
-              redirect. If Survey Flow contains a separate End of Survey element, apply the same message there.
+              This step is not required for data collection. Qualtrics' default End of Survey page is acceptable.
+              To provide a clearer final confirmation, create or select a custom message and paste this as ordinary
+              text. Do not add HTML, JavaScript or a redirect. If you selected Show score to participant, use this
+              message if you want the score to remain visible after the automatic transition.
             </p>
-            <label for="qualtrics-end-message"><strong>End of Survey message</strong></label>
+            <label for="qualtrics-end-message"><strong>Optional End of Survey message</strong></label>
             <textarea
               id="qualtrics-end-message"
               data-qualtrics-asset="end-message"
@@ -677,10 +680,10 @@ export class StudyConductorApp extends LitElement {
           do not collect data from that survey.
         </p>
         <p class="support-boundary">
-          After replacing the HTML, JavaScript, Survey Flow fields or End of Survey message, select
-          <strong>Review and Publish</strong>. Preview one new synthetic response after publishing. Draft
-          changes do not update an already active distribution link, and older recorded rows are not
-          backfilled with new <code>__js_AQP_*</code> values.
+          After replacing the three required inputs, and after any optional message change, select
+          <strong>Review and Publish</strong>. Preview one new synthetic response after publishing. Draft changes
+          do not update an already active distribution link, and older recorded rows are not backfilled with new
+          <code>__js_AQP_*</code> values.
         </p>
         <p>
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
