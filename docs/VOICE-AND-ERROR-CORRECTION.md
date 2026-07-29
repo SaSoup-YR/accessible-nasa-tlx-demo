@@ -148,10 +148,13 @@ on one computer and a male voice on an iPhone is therefore not evidence of diffe
 questionnaire content. Device voice availability, volume and quality must be recorded
 as an interoperability observation rather than claimed as application-controlled.
 
-During an accepted Qualtrics handoff, built-in audio now says only that answers were
-accepted and the study platform is finishing automatically. The visible technical
-status remains available until Qualtrics advances, and the persistent End-of-Survey
-page carries the durable completion message.
+During a Qualtrics handoff, built-in audio now says that answers were transferred
+to the Qualtrics page but are not recorded yet, and asks the participant to keep the
+page open. If native advancement fails, a second parent message produces corrective
+visible and spoken feedback. The visible technical
+status remains available until Qualtrics advances, and the persistent Qualtrics
+final page carries the durable completion message. The final page may use either
+Qualtrics' default text or the optional generated wording.
 
 ## Role and file boundary
 

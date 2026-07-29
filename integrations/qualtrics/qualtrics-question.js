@@ -12,7 +12,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var receiptType = 'accessible-questionnaire:qualtrics-receipt:v2';
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
-  var bridgeBuild = '0.8.2-q2';
+  var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
+  var bridgeBuild = '0.8.3-q3';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -188,6 +189,16 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       submissionId: submissionId,
       receiptId: accepted ? 'qualtrics-accepted-' + submissionId : undefined,
       error: error || undefined,
+      bridgeBuild: bridgeBuild
+    }, childOrigin);
+  }
+
+  function sendAdvanceFailure(message) {
+    if (!iframe || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage({
+      type: advanceFailedType,
+      submissionId: acceptedSubmissionId || '',
+      error: message,
       bridgeBuild: bridgeBuild
     }, childOrigin);
   }
@@ -381,7 +392,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your answers have been accepted and Qualtrics is saving your response now. ' +
+        'Your answers have been transferred to this Qualtrics page but are not recorded yet. ' +
+        'Qualtrics is submitting the response now. ' +
         'Please keep this page open until the next page appears by itself. ' +
         'No backup download is required during this automatic transition.',
         true
@@ -396,11 +408,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         advanceWatchdogTimerId = window.setTimeout(function recoverFailedAdvance() {
           advanceWatchdogTimerId = null;
           advancing = false;
-          setStatus(
-            'Qualtrics did not open the recorded result page. Use one backup button ' +
-            'in the questionnaire and tell the study conductor, or use the restored Next button.',
-            false
-          );
+          var advanceFailureMessage =
+            'Qualtrics did not open the recorded result page, so this response is not confirmed as recorded. ' +
+            'Reconnect to the internet, keep or download one backup, and use the restored Next button to try the Qualtrics submission again.';
+          setStatus(advanceFailureMessage, false);
+          sendAdvanceFailure(advanceFailureMessage);
           releaseFullscreenForNativeNavigation();
           question.showNextButton();
         }, 6000);
