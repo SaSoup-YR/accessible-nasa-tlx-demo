@@ -27,17 +27,19 @@ prototype before participant recruitment.
 
 ## Installation inputs
 
-The four files are separate copy-and-paste inputs, not files to upload:
+The first three files are required copy-and-paste inputs, not files to upload.
+The final-page message is optional plain text:
 
-| Content | Qualtrics location |
-| --- | --- |
-| Complete generated question HTML | One Text/Graphic question in HTML/source view |
-| `embedded-data-fields.txt` | Embedded Data element near the beginning of Survey Flow; one line per unset field |
-| `qualtrics-question.js` | JavaScript editor for the same Text/Graphic question, without `script` tags |
-| `end-of-survey-message.txt` | Custom End of Survey message as ordinary text |
+| Content | Status | Qualtrics location |
+| --- | --- | --- |
+| Complete generated question HTML | Required | One Text/Graphic question in HTML/source view |
+| `embedded-data-fields.txt` | Required | Embedded Data element near the beginning of Survey Flow; one line per unset field |
+| `qualtrics-question.js` | Required | JavaScript editor for the same Text/Graphic question, without `script` tags |
+| Generated End of Survey message | Optional | Custom End of Survey message as ordinary text; never paste it into HTML or JavaScript |
 
-`study.html` generates all four labelled blocks for the chosen instrument and
-configuration. Use those blocks rather than uploading repository files.
+`study.html` generates the three required blocks and the optional final-message
+block for the chosen instrument and configuration. Use those blocks rather than
+uploading repository files.
 
 ## One-time setup
 
@@ -45,7 +47,7 @@ configuration. Use those blocks rather than uploading repository files.
 2. Add the approved participant information and consent pages.
 3. Put one Text/Graphic question on its own page.
 4. Open the versioned
-   [`study.html?package=0.8.2-q2`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.2-q2)
+   [`study.html?package=0.8.3-q3`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.3-q3)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 5. Generate the configuration.
@@ -55,14 +57,15 @@ configuration. Use those blocks rather than uploading repository files.
 7. Add an Embedded Data element before the questionnaire block. Declare every line
    of `embedded-data-fields.txt`, including `__js_`, and leave the values unset.
 8. Replace the question's JavaScript with `qualtrics-question.js`.
-9. Configure the custom End of Survey message from
-   `end-of-survey-message.txt`. Do not add a redirect. If a Survey Flow End of
-   Survey element overrides survey options, configure the same message there.
+9. Optional: configure the generated End of Survey message as ordinary text.
+   Qualtrics' default final page is acceptable and this message does not affect
+   collection. Do not add HTML, JavaScript or a redirect. Use the generated
+   message if the participant's score must remain visible after submission.
 10. Save and Preview. After the synthetic checks pass, select **Review and
     Publish**. Draft changes do not update an already active distribution link.
 
 The conductor heading and its Current Qualtrics generator notice must both show
-`0.8.2-q2`. If generated JavaScript shows `0.8.1-q1`, close that stale tab and
+`0.8.3-q3`. If generated JavaScript shows an earlier value, close that stale tab and
 reopen the versioned link above. Do not paste assets from the stale tab.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
@@ -82,7 +85,7 @@ In Preview before submission:
 - the iframe remains hidden until the exact-origin child handshake succeeds, then
   the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`, names bridge `0.8.2-q2` and says the diagnostic fields were staged;
+  connected`, names bridge `0.8.3-q3` and says the diagnostic fields were staged;
 - the participant application fills the browser viewport and exposes one visible
   vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
   create a second scrolling region.
@@ -102,7 +105,7 @@ preflight. Older rows are not backfilled.
 
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Bridge `0.8.2-q2` uses a two-way ready handshake with an exact
+listener exists. Bridge `0.8.3-q3` uses a two-way ready handshake with an exact
 package fingerprint and bounded parent retries. It moves the live wrapper to the
 document body, fixes it to the visual viewport, disables outer-page scrolling and
 lets the participant document own the single scrollbar. It no longer depends on
@@ -111,7 +114,9 @@ measuring and copying a changing child height through Qualtrics theme wrappers.
 ## Handoff and data-loss protection
 
 `setJSEmbeddedData` stages values in the current browser survey session; it does not
-make them durable until the Qualtrics page is submitted. Version 0.8 therefore:
+make them durable until the Qualtrics page is submitted. The receipt sent to the
+participant iframe confirms this staging step, not a server-side record. Version
+0.8 therefore:
 
 1. creates a complete local backup before contacting the parent;
 2. establishes a two-way parent/child readiness handshake;
@@ -129,14 +134,18 @@ in which a participant can close the tab after seeing an acknowledgement but bef
 Qualtrics has submitted the page. Durable completion information belongs on the End
 of Survey page, which remains visible.
 
-The in-frame acknowledgement means that the parent staged the record, not that a
-server-side response is already durable. A local backup is a recovery route, not
-evidence of a Qualtrics row.
+The in-frame acknowledgement says that the parent staged the record and that it is
+not yet recorded. If native advancement fails, the parent sends a second failure
+message to the participant iframe. The visible and spoken status then says that
+remote recording is unconfirmed and directs the participant to reconnect, retain a
+backup and use the restored Qualtrics Next button. A local backup is a recovery
+route, not evidence of a Qualtrics row.
 
-The conductor generates the persistent End of Survey text from the score-display
-policy. It includes the instrument and score only when the conductor selected Show
-score to participant. The repository text file contains a placeholder and is not a
-ready-to-paste substitute for that generated block.
+The conductor generates optional End of Survey text from the score-display policy.
+It includes the instrument and score only when the conductor selected Show score to
+participant. The repository text file contains a placeholder and is not a
+ready-to-paste substitute for that generated block. Omitting this optional text does
+not affect response storage; use the Qualtrics default final page instead.
 
 ## Generic fields
 
@@ -170,7 +179,9 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
 
 1. Complete a weighted NASA-TLX response through a Qualtrics Preview or anonymous
    distribution link on another browser/device.
-2. Confirm automatic advancement and the persistent End of Survey page.
+2. Confirm automatic advancement and the Qualtrics final page. The default final
+   page is sufficient unless the protocol requires the generated custom message or
+   a persistent participant score.
 3. In Data & Analysis verify:
    - `__js_AQP_ACCEPTED = 1`;
    - matching submission ID;
@@ -229,7 +240,7 @@ remain blank in the new columns; they are not evidence that the new package fail
 ## Migration warning
 
 Version 0.7 used `__js_ANTLX_*` fields and a Version 3 result. A Version 0.7
-Qualtrics question must be replaced with the complete Version 0.8 four-part package.
+Qualtrics question must be replaced with the three required Version 0.8 inputs.
 The change is not retroactive: old responses remain in their `__js_ANTLX_*` columns,
 and the new `__js_AQP_*` columns are expected to be blank for those rows. Do not
 delete the old fields until the Version 0.7 rows have been exported and verified.

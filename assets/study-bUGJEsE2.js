@@ -82,7 +82,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var receiptType = 'accessible-questionnaire:qualtrics-receipt:v2';
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
-  var bridgeBuild = '0.8.2-q2';
+  var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
+  var bridgeBuild = '0.8.3-q3';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -258,6 +259,16 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       submissionId: submissionId,
       receiptId: accepted ? 'qualtrics-accepted-' + submissionId : undefined,
       error: error || undefined,
+      bridgeBuild: bridgeBuild
+    }, childOrigin);
+  }
+
+  function sendAdvanceFailure(message) {
+    if (!iframe || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage({
+      type: advanceFailedType,
+      submissionId: acceptedSubmissionId || '',
+      error: message,
       bridgeBuild: bridgeBuild
     }, childOrigin);
   }
@@ -451,7 +462,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       acceptedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Your answers have been accepted and Qualtrics is saving your response now. ' +
+        'Your answers have been transferred to this Qualtrics page but are not recorded yet. ' +
+        'Qualtrics is submitting the response now. ' +
         'Please keep this page open until the next page appears by itself. ' +
         'No backup download is required during this automatic transition.',
         true
@@ -466,11 +478,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         advanceWatchdogTimerId = window.setTimeout(function recoverFailedAdvance() {
           advanceWatchdogTimerId = null;
           advancing = false;
-          setStatus(
-            'Qualtrics did not open the recorded result page. Use one backup button ' +
-            'in the questionnaire and tell the study conductor, or use the restored Next button.',
-            false
-          );
+          var advanceFailureMessage =
+            'Qualtrics did not open the recorded result page, so this response is not confirmed as recorded. ' +
+            'Reconnect to the internet, keep or download one backup, and use the restored Next button to try the Qualtrics submission again.';
+          setStatus(advanceFailureMessage, false);
+          sendAdvanceFailure(advanceFailureMessage);
           releaseFullscreenForNativeNavigation();
           question.showNextButton();
         }, 6000);
@@ -703,7 +715,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 </section>
 <div
   id="accessible-questionnaire-live-question"
-  data-aqp-package-build="0.8.2-q2"
+  data-aqp-package-build="0.8.3-q3"
 >
   <p
     id="accessible-questionnaire-collection-status"
@@ -724,7 +736,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     style="display:block;position:absolute;inset:0;width:100%;height:100%;border:0;overflow:auto;visibility:hidden;background:#eef2f6"
   ></iframe>
 </div>
-`;var $=Object.defineProperty,x=Object.getOwnPropertyDescriptor,i=(e,t,r,a)=>{for(var l=a>1?void 0:a?x(t,r):t,u=e.length-1,p;u>=0;u--)(p=e[u])&&(l=(a?p(t,r,l):p(l))||l);return a&&l&&$(t,r,l),l};const L=_.trim().split(/\r?\n/).filter(Boolean).length,c=y.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function M(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(r=>{if(!r||typeof r!="object")return!1;const a=r;return"study"in a&&"responses"in a&&"result"in a})}function k(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const r=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return O.trim().replace(t,r)}function j(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
+`;var x=Object.defineProperty,$=Object.getOwnPropertyDescriptor,i=(e,t,r,a)=>{for(var l=a>1?void 0:a?$(t,r):t,u=e.length-1,p;u>=0;u--)(p=e[u])&&(l=(a?p(t,r,l):p(l))||l);return a&&l&&x(t,r,l),l};const L=_.trim().split(/\r?\n/).filter(Boolean).length,c=y.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function M(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(r=>{if(!r||typeof r!="object")return!1;const a=r;return"study"in a&&"responses"in a&&"result"in a})}function k(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const r=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return O.trim().replace(t,r)}function F(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
 `):"";return q.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
 
 `).trim()}let n=class extends v{constructor(){super(...arguments),this.instrumentId=A,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,r=f(t);r&&(this.instrumentId=t,r.supports.simplerExplanations||(this.showSimpleLanguage=!1),r.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.message=`${r.name} selected. Generate a new configuration before testing.`)},this.generateParticipantLink=()=>{this.errorMessage="";try{const e=S({instrumentId:this.instrumentId,studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&h(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,r=t.files?.[0];if(r){this.errorMessage="";try{const a=JSON.parse(await r.text()),l=w(a);if(!l)throw M(a)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.message="Configuration imported and participant link regenerated."}catch(a){this.showError(a instanceof Error?a.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=I()},this.exportResultsJson=()=>{this.completedResults.length&&h(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&h(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${P(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(T(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return f(this.instrumentId)}render(){return o`
@@ -1047,7 +1059,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     `}booleanOption(e,t,r,a=""){return o`<label class="toggle-card conductor-toggle">
       <input type="checkbox" .checked=${t} @change=${l=>r(l.currentTarget.checked)} />
       <span><strong>${e}</strong>${a?o`<small>${a}</small>`:d}</span>
-    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=Q(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=C(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":k(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=j(this.generatedConfig?.showScoreToParticipant===!0);return o`
+    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=Q(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=C(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":k(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=F(this.generatedConfig?.showScoreToParticipant===!0);return o`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
         <p>
@@ -1064,8 +1076,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         <aside class="boundary-note important-boundary">
           <p>
             <strong>Do not upload these repository files to Qualtrics and do not paste the static HTML template unchanged.</strong>
-            They are four different installation inputs. Only the first block below contains this study's generated
-            participant URL.
+            The first three blocks below are the required installation inputs. Only the first block contains this
+            study's generated participant URL. The fourth block is optional plain text for Qualtrics' final page;
+            it is not code and does not affect whether a response is saved.
           </p>
         </aside>
         <aside class="boundary-note">
@@ -1160,12 +1173,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             </button>
           </li>
           <li>
-            <h4>End of Survey: custom message</h4>
+            <h4>Optional: End of Survey plain-text message</h4>
             <p>
-              Create or select a custom End of Survey message, paste this as ordinary text, and do not configure a
-              redirect. If Survey Flow contains a separate End of Survey element, apply the same message there.
+              This step is not required for data collection. Qualtrics' default End of Survey page is acceptable.
+              To provide a clearer final confirmation, create or select a custom message and paste this as ordinary
+              text. Do not add HTML, JavaScript or a redirect. If you selected Show score to participant, use this
+              message if you want the score to remain visible after the automatic transition.
             </p>
-            <label for="qualtrics-end-message"><strong>End of Survey message</strong></label>
+            <label for="qualtrics-end-message"><strong>Optional End of Survey message</strong></label>
             <textarea
               id="qualtrics-end-message"
               data-qualtrics-asset="end-message"
@@ -1195,10 +1210,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           do not collect data from that survey.
         </p>
         <p class="support-boundary">
-          After replacing the HTML, JavaScript, Survey Flow fields or End of Survey message, select
-          <strong>Review and Publish</strong>. Preview one new synthetic response after publishing. Draft
-          changes do not update an already active distribution link, and older recorded rows are not
-          backfilled with new <code>__js_AQP_*</code> values.
+          After replacing the three required inputs, and after any optional message change, select
+          <strong>Review and Publish</strong>. Preview one new synthetic response after publishing. Draft changes
+          do not update an already active distribution link, and older recorded rows are not backfilled with new
+          <code>__js_AQP_*</code> values.
         </p>
         <p>
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
