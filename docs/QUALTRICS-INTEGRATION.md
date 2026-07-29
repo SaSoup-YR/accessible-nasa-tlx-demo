@@ -47,7 +47,7 @@ uploading repository files.
 2. Add the approved participant information and consent pages.
 3. Put one Text/Graphic question on its own page.
 4. Open the versioned
-   [`study.html?package=0.8.4-q4`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.4-q4)
+   [`study.html?package=0.8.5-q5`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.5-q5)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 5. Generate the configuration.
@@ -65,7 +65,7 @@ uploading repository files.
     Publish**. Draft changes do not update an already active distribution link.
 
 The conductor heading and its Current Qualtrics generator notice must both show
-`0.8.4-q4`. If generated JavaScript shows an earlier value, close that stale tab and
+`0.8.5-q5`. If generated JavaScript shows an earlier value, close that stale tab and
 reopen the versioned link above. Do not paste assets from the stale tab.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
@@ -85,7 +85,7 @@ In Preview before submission:
 - the iframe remains hidden until the exact-origin child handshake succeeds, then
   the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`, names bridge `0.8.4-q4` and says the diagnostic fields were staged;
+  connected`, names bridge `0.8.5-q5` and says the diagnostic fields were staged;
 - the participant application fills the browser viewport and exposes one visible
   vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
   create a second scrolling region.
@@ -104,7 +104,7 @@ completed synthetic response whose newly dated Data & Analysis row contains
 preflight. Older rows are not backfilled.
 
 Bridge diagnostics use `__js_AQP_BRIDGE_READY = 1` and
-`__js_AQP_BRIDGE_BUILD = 0.8.4-q4`. `__js_AQP_ACCEPTED` is left unset until a
+`__js_AQP_BRIDGE_BUILD = 0.8.5-q5`. `__js_AQP_ACCEPTED` is left unset until a
 complete result has passed validation. This keeps a connection diagnostic separate
 from an accepted response and prevents a failed or abandoned run from being labelled
 as `AQP_ACCEPTED = 0`. Rows created with older bridge packages keep their original
@@ -112,7 +112,7 @@ values and must be interpreted using that package's documentation.
 
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Bridge `0.8.4-q4` uses a two-way ready handshake with an exact
+listener exists. Bridge `0.8.5-q5` uses a two-way ready handshake with an exact
 package fingerprint and bounded parent retries. It moves the live wrapper to the
 document body, fixes it to the visual viewport, disables outer-page scrolling and
 lets the participant document own the single scrollbar. It no longer depends on
@@ -131,9 +131,11 @@ participant iframe confirms this staging step, not a server-side record. Version
 4. requires a receipt with the same submission ID;
 5. keeps JSON and CSV emergency buttons available;
 6. starts native Qualtrics advancement after an 0.8-second technical handoff;
-7. restores native navigation after a missing connection, staging error or a
+7. reports a definite browser-offline state immediately after that handoff,
+   without waiting for Qualtrics' own network-error dialog;
+8. restores native navigation after a missing connection, staging error or a
    failed-advance watchdog;
-8. requires the generated HTML, parent JavaScript and child application to report
+9. requires the generated HTML, parent JavaScript and child application to report
    the same bridge fingerprint before enabling participation or accepting a record.
 
 The 0.8 seconds is not participant reading time. Increasing it enlarges the window
@@ -214,12 +216,15 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
 7. Close immediately after the in-frame acknowledgement. Reopen the same configured
    link on the same device, enter the same synthetic code and confirm that the
    completed local backup is discoverable. Check Data & Analysis separately.
-8. Disconnect the network at submission. After the native-advance watchdog, confirm
-   that the result page changes to a focused failure alert, the Qualtrics Next button
-   is restored and a backup remains available. Reconnect, select Next and verify the
-   newly dated row separately. On a phone and tablet, confirm that the single
-   participant viewport reveals the error rather than leaving it above the visible
-   area.
+8. Disconnect the network at submission. When the browser reports that it is
+   offline, confirm that the result page changes to a focused failure alert after
+   the 0.8-second handoff, without waiting for Qualtrics' network-error dialog.
+   The Qualtrics Next button must be restored and a backup must remain available.
+   Reconnect, select Next and verify the newly dated row separately. Repeat once
+   with a blocked server while the browser still reports online; the six-second
+   watchdog must provide the same recovery route. On a phone and tablet, confirm
+   that the single participant viewport reveals the error rather than leaving it
+   above the visible area.
 9. Reload midway through a recovery-enabled questionnaire. Confirm that the saved
    session restores the exact next step after the pseudonymous code is re-entered.
    The Resume control must receive focus and expose the saved count and Resume/Erase
