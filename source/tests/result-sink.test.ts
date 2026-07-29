@@ -748,7 +748,7 @@ describe('approved host result sink', () => {
     );
 
     const offlineRuntime = createRuntime(false);
-    expect(offlineRuntime.clickNextButton).not.toHaveBeenCalled();
+    expect(offlineRuntime.clickNextButton).toHaveBeenCalledOnce();
     expect(offlineRuntime.showNextButton).toHaveBeenCalledOnce();
     expect(offlineRuntime.dom.status.textContent).toContain('Internet connection unavailable');
     expect(offlineRuntime.dom.status.textContent).toContain('has not recorded this response');

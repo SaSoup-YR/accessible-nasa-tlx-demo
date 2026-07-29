@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.6-q6';
+  var bridgeBuild = '0.8.7-q7';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -225,6 +225,13 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
     sendAdvanceFailure(advanceFailureMessage);
     question.showNextButton();
+    if (reason === 'offline') {
+      // The participant has already selected Calculate and submit. Make the
+      // first native Qualtrics attempt for them so the platform-owned offline
+      // dialog appears without a second, easily missed Next-button action.
+      // The restored Next button remains available for a retry after reconnecting.
+      question.clickNextButton();
+    }
   }
 
   function setField(name, value) {
