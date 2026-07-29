@@ -92,8 +92,13 @@ Measurement-adjacent supports require a definition capability:
 - NASA-TLX currently permits optional simpler explanations and experimental
   smiley landmarks. Their use is logged separately and no psychometric-equivalence
   claim is made.
-- SUS disables both. A facial-valence scale is not an agreement scale, and changing
-  validated SUS statements would require separate evidence.
+- SUS and UEQ-S disable both. A facial-valence scale is not an agreement or semantic-
+  differential scale, and changing validated item wording would require separate
+  evidence.
+- SUS preserves its two official agreement endpoints and UEQ-S preserves each
+  official adjective pair. Intermediate positions remain numeric and deliberately
+  receive no invented verbal category. Screen-reader names and confirmed voice
+  proposals add the official endpoint only to the two endpoint values.
 
 ### 4. Scoring layer
 

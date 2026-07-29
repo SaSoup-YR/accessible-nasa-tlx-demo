@@ -1,15 +1,15 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "candidate; questionnaire-independent supported profile; supervisor review, mobile-device re-test and UCL Qualtrics synthetic re-test pending",
+  "releaseStatus": "candidate; questionnaire-independent supported profile; supervisor review, mobile-device re-test and four-instrument UCL Qualtrics scoring/export verification pending",
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
-  "builtAt": "2026-07-28T17:42:35Z",
+  "builtAt": "2026-07-29T10:44:13Z",
   "qualtricsBridgeBuild": "0.8.2-q2",
   "verification": {
     "testFilesPassed": 16,
-    "testsPassed": 112,
+    "testsPassed": 114,
     "axeStructuralScansPassed": 6,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
