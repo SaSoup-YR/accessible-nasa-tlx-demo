@@ -86,7 +86,8 @@ These values support process analysis and fidelity checks. They do not prove why
 Before any participant data collection:
 
 1. freeze and approve the exact prototype release used by the study;
-2. confirm ethics and information-governance requirements;
+2. confirm that the final procedure remains within the project's existing approval
+   and information-governance requirements;
 3. create the UCL Qualtrics survey and install [`QUALTRICS-INTEGRATION.md`](QUALTRICS-INTEGRATION.md);
 4. complete and export a synthetic cross-device response;
 5. freeze the Git commit, configuration JSON, survey version and test evidence;
