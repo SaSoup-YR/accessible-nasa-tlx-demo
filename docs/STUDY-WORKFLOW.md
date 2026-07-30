@@ -79,7 +79,7 @@ JSON is lossless; CSV is flattened for analysis.
 | --- | --- |
 | Provenance | schema, prototype, study, configuration and submission IDs |
 | Instrument | ID, name, version, definition schema and scoring strategy; full definition snapshot for a researcher-supplied questionnaire |
-| Identity boundary | pseudonymous participant code only |
+| Application identity boundary | pseudonymous participant code only; Qualtrics IP/location metadata follows the separately verified survey anonymisation setting |
 | Timing | start, changes and completion |
 | Answers | generic item responses, optional pairs and presentation order |
 | Score | primary score, declared range and strategy-specific details |

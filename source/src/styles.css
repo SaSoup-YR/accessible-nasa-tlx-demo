@@ -79,7 +79,9 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+.definition-summary:focus,
+.generated-link:focus {
   outline: 3px solid var(--focus-outline);
   outline-offset: 3px;
   box-shadow: 0 0 0 6px var(--focus-halo);
@@ -1081,6 +1083,33 @@ button:disabled {
   padding: 1rem;
   border-left: 5px solid #294c70;
   background: #f6f8fa;
+  scroll-margin-block-start: 1.5rem;
+}
+
+.success-confirmation {
+  border-color: #08783d;
+  background: #e8f5ec;
+}
+
+.success-message {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  margin: 0 0 0.4rem;
+  color: #174d2f;
+}
+
+.success-icon {
+  display: inline-grid;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #08783d;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .field-error {
@@ -1205,6 +1234,10 @@ button:disabled {
   margin-top: 0.5rem;
   min-height: 8rem;
   resize: vertical;
+}
+
+.generated-link {
+  scroll-margin-block-start: 1.5rem;
 }
 
 .qualtrics-install-steps {

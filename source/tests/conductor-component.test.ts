@@ -6,7 +6,14 @@ import {
   buildQualtricsEndOfSurveyMessage,
   buildQualtricsQuestionHtml,
 } from '../src/study-conductor';
-import { readStudyConfigFromHash } from '../src/study';
+import {
+  createCustomItemDraft,
+  createCustomQuestionnaireDefinition,
+  createCustomQuestionnaireDraft,
+} from '../src/custom-questionnaire';
+import { createStudyConfig, readStudyConfigFromHash } from '../src/study';
+
+const scrollIntoView = vi.fn();
 
 async function renderConductor() {
   const component = document.createElement('study-conductor-app');
@@ -22,6 +29,11 @@ function inputFor(component: HTMLElement, labelText: string) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoView,
+  });
+  scrollIntoView.mockClear();
   localStorage.clear();
   window.history.replaceState({}, '', '/study.html');
 });
@@ -32,6 +44,7 @@ afterEach(() => {
   window.history.replaceState({}, '', '/');
   vi.restoreAllMocks();
   Reflect.deleteProperty(navigator, 'clipboard');
+  Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
 });
 
 describe('study conductor defaults and guidance', () => {
@@ -84,6 +97,17 @@ describe('study conductor defaults and guidance', () => {
     expect(config?.collection.mode).toBe('local');
     expect(new URL(link).pathname).toMatch(/index\.html$/);
     expect(component.textContent).toContain('Configuration ready');
+    const readyPanel = component.querySelector<HTMLElement>('#configuration-ready-panel')!;
+    expect(readyPanel.classList).toContain('success-confirmation');
+    expect(readyPanel.textContent).toContain(
+      'Participant link and configuration generated',
+    );
+    expect(document.activeElement).toBe(readyPanel);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'auto',
+      block: 'start',
+      inline: 'nearest',
+    });
   });
 
   it('lets a researcher add a validated questionnaire without editing code', async () => {
@@ -132,6 +156,13 @@ describe('study conductor defaults and guidance', () => {
     expect(component.querySelector('.definition-summary')?.textContent).toContain(
       '2 items',
     );
+    const selectedSummary = component.querySelector<HTMLElement>(
+      '#selected-questionnaire-summary',
+    )!;
+    expect(selectedSummary.classList).toContain('success-confirmation');
+    expect(selectedSummary.textContent).toContain('Questionnaire ready');
+    expect(selectedSummary.textContent).toContain('validated and selected');
+    expect(document.activeElement).toBe(selectedSummary);
 
     for (const [label, value] of [
       ['Study ID', 'CUSTOM-01'],
@@ -155,6 +186,86 @@ describe('study conductor defaults and guidance', () => {
     expect(component.textContent).toContain(
       'full definition is embedded in the configuration',
     );
+  });
+
+  it('reveals and visibly confirms an imported questionnaire definition', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const draft = createCustomQuestionnaireDraft();
+    const definition = createCustomQuestionnaireDefinition({
+      ...draft,
+      name: 'Imported Confidence Check',
+      shortName: 'ICC',
+      items: [
+        createCustomItemDraft({
+          name: 'Confidence',
+          prompt: 'I could complete the task.',
+          lowAnchor: 'Strongly disagree',
+          highAnchor: 'Strongly agree',
+        }),
+      ],
+    });
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-custom-definition-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{ text: async () => JSON.stringify(definition) }],
+    });
+
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    const selectedSummary = component.querySelector<HTMLElement>(
+      '#selected-questionnaire-summary',
+    )!;
+    expect(selectedSummary.classList).toContain('success-confirmation');
+    expect(selectedSummary.textContent).toContain('Imported Confidence Check');
+    expect(selectedSummary.textContent).toContain('imported, validated and selected');
+    expect(document.activeElement).toBe(selectedSummary);
+  });
+
+  it('reveals and visibly confirms an imported study configuration', async () => {
+    const component = await renderConductor();
+    const config = createStudyConfig({
+      studyId: 'IMPORT-01',
+      studyTitle: 'Imported study',
+      taskLabel: 'testing the questionnaire workflow',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-configuration-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{ text: async () => JSON.stringify(config) }],
+    });
+
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    const readyPanel = component.querySelector<HTMLElement>('#configuration-ready-panel')!;
+    expect(readyPanel.classList).toContain('success-confirmation');
+    expect(readyPanel.textContent).toContain('Configuration imported');
+    expect(readyPanel.textContent).toContain(config.configId);
+    expect(document.activeElement).toBe(readyPanel);
   });
 
   it('generates an origin-bound Qualtrics iframe configuration without placing an account token in the link', async () => {
@@ -233,6 +344,12 @@ describe('study conductor defaults and guidance', () => {
     expect(component.textContent).toContain(
       'The first three blocks below are the required installation inputs',
     );
+    expect(component.textContent).toContain(
+      'An anonymous distribution link still records IP address',
+    );
+    expect(component.querySelector<HTMLAnchorElement>(
+      'a[href*="qualtrics.com/support"][href*="AnonymizeResponses"]',
+    )).not.toBeNull();
     expect(component.textContent).toContain('Optional: End of Survey plain-text message');
     expect(component.textContent).toContain('not required for data collection');
     expect(component.textContent).toContain("Qualtrics' default End of Survey page is acceptable");
