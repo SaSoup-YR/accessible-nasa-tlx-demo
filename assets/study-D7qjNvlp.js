@@ -1,4 +1,4 @@
-import{w as we,g as me,x as Se,M as re,a as h,t as Ae,i as Ie,D as Te,m as G,y as qe,z as Ce,u as $e,o as Ee,B as Pe,h as Qe,C as oe,P as X,A as I,l,k as K,j as Re,E as xe,F as Ne,f as ae}from"./shared-DW-EREGI.js";const ee=`__js_AQP_ACCEPTED
+import{w as we,g as me,x as Se,M as re,a as h,t as Ae,i as Ie,D as Te,m as G,y as qe,z as Ce,u as $e,o as Ee,B as Pe,h as Qe,C as oe,P as X,A as I,l,k as K,j as Re,E as xe,F as Ne,f as ae}from"./shared-d6lA0Eal.js";const ee=`__js_AQP_ACCEPTED
 __js_AQP_BRIDGE_READY
 __js_AQP_BRIDGE_BUILD
 __js_AQP_SCHEMA
@@ -1151,9 +1151,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       >
         <h3 id="custom-questionnaire-heading">Add a researcher-supplied questionnaire</h3>
         <p>
-          No code is required. This builder supports 1–${k}
-          required single-choice items that share one whole-number response scale.
-          It can calculate a reviewed mean or sum, including selected reverse-scored items.
+          Choose one of three routes. Import a source-platform export, reuse a definition
+          previously downloaded from this platform, or build a small questionnaire manually.
+          These routes accept different file types and are not interchangeable.
         </p>
         <aside class="boundary-note important-boundary">
           <p>
@@ -1167,7 +1167,48 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
         ${this.renderPlatformQuestionnaireImport()}
 
-        <div class="form-grid custom-definition-fields">
+        <section
+          class="questionnaire-add-route"
+          aria-labelledby="aqp-definition-import-heading"
+        >
+          <h4 id="aqp-definition-import-heading">
+            2. Reuse an AQP questionnaire definition
+          </h4>
+          <p>
+            Choose a <code>.json</code> definition previously downloaded from this
+            Accessible Questionnaire Platform. This skips source-platform conversion,
+            but the definition is validated again before it is selected.
+          </p>
+          <label class="file-import-control">
+            <strong>AQP definition JSON</strong>
+            <span>
+              Use an AQP definition file here—not a Qualtrics <code>.qsf</code> or
+              LimeSurvey <code>.lss</code> export.
+            </span>
+            <input
+              data-custom-definition-import
+              type="file"
+              accept=".json,application/json"
+              @change=${this.importCustomDefinition}
+            />
+          </label>
+        </section>
+
+        <section
+          class="questionnaire-add-route"
+          aria-labelledby="manual-questionnaire-builder-heading"
+        >
+          <h4 id="manual-questionnaire-builder-heading">
+            3. Build a questionnaire manually
+          </h4>
+          <p>
+            No code is required. The manual builder supports
+            1–${k} required single-choice items that
+            share one whole-number response scale. It can calculate a reviewed mean
+            or sum, including selected reverse-scored items.
+          </p>
+
+          <div class="form-grid custom-definition-fields">
           <label>
             <strong>Questionnaire name</strong>
             <span>Full participant-facing name.</span>
@@ -1345,16 +1386,6 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           >
             Validate and use this questionnaire
           </button>
-          <label class="secondary-button file-button">
-            Import questionnaire definition JSON
-            <input
-              class="sr-only"
-              data-custom-definition-import
-              type="file"
-              accept=".json,application/json"
-              @change=${this.importCustomDefinition}
-            />
-          </label>
           <button
             class="secondary-button"
             type="button"
@@ -1365,14 +1396,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         </div>
         <p class="support-boundary">
           Editing these fields does not change the selected questionnaire until you select
-          <strong>Validate and use this questionnaire</strong>. Importing a definition selects it
-          for the study but does not replace this separate builder draft.
+          <strong>Validate and use this questionnaire</strong>.
         </p>
         <p class="support-boundary">
           After validation, the full definition is embedded in the configuration and participant
-          link. Download its JSON for the study protocol. Importing that definition or a saved
-          configuration reproduces the same items, scale and scoring rule without changing source code.
+          link. Download its JSON for the study protocol. Route 2 can later reproduce the same
+          items, scale and scoring rule without changing source code.
         </p>
+        </section>
       </section>
     `}renderPlatformQuestionnaireImport(){const e=this.platformImportReview;return l`
       <section
@@ -1380,7 +1411,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         aria-labelledby="platform-questionnaire-import-heading"
       >
         <h4 id="platform-questionnaire-import-heading">
-          Import from Qualtrics or LimeSurvey
+          1. Import a Qualtrics or LimeSurvey export
         </h4>
         <p>
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey

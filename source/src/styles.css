@@ -1175,7 +1175,8 @@ button:disabled {
   margin-top: 0;
 }
 
-.platform-questionnaire-import {
+.platform-questionnaire-import,
+.questionnaire-add-route {
   margin-top: 1.25rem;
   padding: 1rem;
   border: 2px solid #536a82;
@@ -1183,7 +1184,8 @@ button:disabled {
   background: #fff;
 }
 
-.platform-questionnaire-import h4 {
+.platform-questionnaire-import h4,
+.questionnaire-add-route h4 {
   margin-top: 0;
 }
 

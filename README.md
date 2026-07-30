@@ -19,7 +19,7 @@ Qualtrics bridge **`0.8.7-q7`**. It is intended for technical review and a
 bounded formative evaluation. The tag is an immutable evidence point: any later
 functional change requires a new tag and proportionate re-verification.
 
-The current development branch adds reviewed Qualtrics QSF and LimeSurvey LSS
+The current `main` branch adds reviewed Qualtrics QSF and LimeSurvey LSS
 questionnaire import. It must receive a new release-candidate tag only after the
 automated suite, release build and manual real-export checks pass. The existing
 `v0.8.0-rc.2` tag is not moved.
@@ -123,10 +123,16 @@ functions are an executable allowlist; JSON cannot inject code.
 
 On the conductor page, **Add your own questionnaire** provides:
 
-- a reviewed import route for a Qualtrics `.qsf` survey export or LimeSurvey
-  `.lss` survey-structure export;
-- a no-code manual builder; and
-- validated platform-definition JSON import.
+- **Import a source-platform export:** review and convert a Qualtrics `.qsf`
+  survey export or LimeSurvey `.lss` survey-structure export;
+- **Reuse an AQP definition:** re-import a `.json` definition that this platform
+  previously validated and downloaded; and
+- **Build manually:** enter a bounded questionnaire through the no-code form.
+
+The two file imports are not duplicates. QSF/LSS files are source-platform
+exports that require review and conversion. AQP JSON is the platform's already
+normalised, portable definition and is validated again without repeating source
+conversion.
 
 External import detects the format, extracts only the supported questionnaire
 content and shows three separate lists: imported safely, requires confirmation
