@@ -117,6 +117,19 @@ describe('study conductor defaults and guidance', () => {
       .click();
     await (component as any).updateComplete;
 
+    expect(component.textContent).toContain(
+      '1. Import a Qualtrics or LimeSurvey export',
+    );
+    expect(component.textContent).toContain(
+      '2. Reuse an AQP questionnaire definition',
+    );
+    expect(component.textContent).toContain(
+      '3. Build a questionnaire manually',
+    );
+    expect(component.textContent).toContain(
+      'These routes accept different file types and are not interchangeable',
+    );
+
     const setValue = (selector: string, value: string) => {
       const control = component.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector)!;
       control.value = value;

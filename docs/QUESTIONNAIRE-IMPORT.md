@@ -16,6 +16,21 @@ The selected file is not uploaded.
 Do not rename a response-data export to `.qsf` or `.lss`. Do not hand-edit the
 source export to make it pass.
 
+## Why AQP JSON is a separate import
+
+The conductor offers three different routes:
+
+| Route | Input | Purpose |
+| --- | --- | --- |
+| Qualtrics/LimeSurvey import | `.qsf` or `.lss` | Review and convert an external source-platform export |
+| AQP definition reuse | `.json` downloaded from this platform | Reproduce an already converted and validated questionnaire |
+| Manual builder | Form fields | Create a small questionnaire without a source export |
+
+The JSON input is not a second way to import Qualtrics or LimeSurvey. It is the
+portable output of the conversion process. Keeping it allows another researcher
+or browser to reproduce the same items, values and scoring decision without
+repeating the conversion.
+
 ## Supported conversion profile
 
 All converted items must be required, ordered rating questions that share one
@@ -66,8 +81,8 @@ reported and excluded.
 ## Review and conversion
 
 1. Open `study.html` and choose **Add your own questionnaire**.
-2. Under **Import from Qualtrics or LimeSurvey**, leave **Detect from file**
-   selected unless format checking is part of the test.
+2. Under **1. Import a Qualtrics or LimeSurvey export**, leave **Detect from
+   file** selected unless format checking is part of the test.
 3. Select one `.qsf` or `.lss` export.
 4. The page moves keyboard focus to the import review.
 5. Check all three review sections:
@@ -88,6 +103,84 @@ reported and excluded.
 12. Download the current definition JSON, generate a local study and verify a
     complete response before installing it in a copied Qualtrics collection
     survey.
+
+## Release-candidate acceptance test
+
+Use synthetic data only and record the browser, operating system, tested commit,
+expected result, observed result and Pass/Partial/Fail.
+
+### 1. Known-file check
+
+Run the two sanitised files included with the automated tests:
+
+- [`qualtrics-rating.qsf`](../source/tests/fixtures/qualtrics-rating.qsf)
+- [`limesurvey-rating.lss`](../source/tests/fixtures/limesurvey-rating.lss)
+
+For each file:
+
+1. Open the versioned conductor page in a new private window.
+2. Select **Add your own questionnaire**.
+3. Under **1. Import a Qualtrics or LimeSurvey export**, leave **Detect from
+   file** selected and choose the fixture.
+4. Confirm that the review receives keyboard focus and shows:
+   - source format detected correctly;
+   - two safely imported items in this order: `CLARITY`, then `CONTROL`;
+   - values `1, 2, 3, 4, 5` in order;
+   - labels from **Strongly disagree** to **Strongly agree**;
+   - zero unsupported items.
+5. Choose **Agreement**, **Mean of reviewed item values**, no reverse-scored
+   items, select the final confirmation checkbox, then convert.
+6. Confirm that the page moves to the green **Questionnaire ready** summary.
+7. Generate a local study, answer `4` and `2`, submit, and confirm a primary
+   score of `3.00`.
+8. Export the result and confirm the two raw answers, primary score, instrument
+   definition and source labels are present.
+
+### 2. AQP JSON reproduction
+
+1. Download the current questionnaire definition after either conversion.
+2. Open a new private window and select **Add your own questionnaire**.
+3. Under **2. Reuse an AQP questionnaire definition**, choose the downloaded
+   `.json` file.
+4. Confirm that the same name, two items, 1–5 labels, mean rule and source
+   information are selected without a QSF/LSS conversion review.
+5. Generate and complete the same `4`, `2` local test. The score must again be
+   `3.00`.
+
+### 3. Fresh real-export check
+
+The sanitised fixtures prove deterministic behavior against known structures.
+They do not prove compatibility with the current files exported by the user's
+actual Qualtrics and LimeSurvey accounts.
+
+1. Create the same two-item, required, single-choice 1–5 questionnaire in
+   Qualtrics and export a fresh QSF.
+2. Create the same questionnaire in LimeSurvey and export a fresh LSS survey
+   structure.
+3. Import both files separately.
+4. Compare the source and review line by line: title, item count, item order,
+   wording, answer order, displayed labels and numeric values.
+5. Complete one local result from each converted definition.
+6. Install each generated study in a copied UCL Qualtrics collection survey and
+   verify a newly dated accepted row and CSV export.
+
+A different item count, reordered wording or labels, changed numeric value,
+unreported unsupported content, partial conversion, wrong score, missing result
+field or failed JSON reproduction is a release blocker.
+
+### 4. Automated gate
+
+From the repository:
+
+```bash
+cd source
+npm ci
+npm test
+npm run build:release
+```
+
+All checks must pass on the same commit used for the candidate tag. The existing
+published tag must not be moved.
 
 ## What the importer does not establish
 

@@ -23,7 +23,26 @@ observed result and Pass, Partial, Fail or Not supported.
    focus and is moved to the start of the visible viewport on desktop, iPhone and
    iPad.
 
-## 2. Participant workflows
+## 2. Structured import and definition reproduction
+
+Follow the exact acceptance procedure in
+[`docs/QUESTIONNAIRE-IMPORT.md`](docs/QUESTIONNAIRE-IMPORT.md).
+
+At minimum:
+
+1. Import the repository's sanitised QSF and LSS fixtures separately.
+2. Confirm two items, source order, 1–5 numeric values, visible labels and zero
+   unsupported items.
+3. Convert with reviewed mean scoring, complete answers `4` and `2`, and confirm
+   a score of `3.00`.
+4. Download the AQP definition JSON and re-import it through the separate
+   **Reuse an AQP questionnaire definition** route.
+5. Repeat with one fresh real QSF and one fresh real LSS export.
+6. Verify newly dated local and Qualtrics results and exports.
+7. Treat any silent omission, approximation, order/value mismatch, wrong score
+   or failed round-trip as a release blocker.
+
+## 3. Participant workflows
 
 ### NASA-TLX
 
@@ -55,7 +74,7 @@ observed result and Pass, Partial, Fail or Not supported.
    appears, the overall score is 0, pragmatic quality is 3 and hedonic quality is
    -3.
 
-## 3. Errors, focus and recovery
+## 4. Errors, focus and recovery
 
 1. Leave an item unanswered and press Next. Confirm an explicit error, programmatic
    focus and immediate movement to the start of the visible viewport on desktop,
@@ -73,7 +92,7 @@ observed result and Pass, Partial, Fail or Not supported.
    in-memory JSON/CSV routes.
 4. Test return-to-answer and resubmission after a host failure.
 
-## 4. Voice input
+## 5. Voice input
 
 1. Test displayed numeric values first; these are the recommended cross-device
    utterances.
@@ -90,7 +109,7 @@ observed result and Pass, Partial, Fail or Not supported.
 7. Repeat on every target browser because Web Speech acoustic recognition is
    browser/OS behavior, not controlled by the parser.
 
-## 5. Keyboard, screen reader, colour and reflow
+## 6. Keyboard, screen reader, colour and reflow
 
 1. Complete all four registered instruments keyboard-only.
 2. Confirm radio groups use arrows and Tab leaves the group normally.
@@ -102,7 +121,7 @@ observed result and Pass, Partial, Fail or Not supported.
 7. Verify the contrast values and claim boundary in
    `docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`.
 
-## 6. Spoken guidance and gaze
+## 7. Spoken guidance and gaze
 
 1. Confirm spoken summaries reflect the active instrument and scale.
 2. Trigger a selected answer, voice proposal, simpler help where available, restored
@@ -111,7 +130,7 @@ observed result and Pass, Partial, Fail or Not supported.
    protocol. Test permission, positioning, calibration, proposal, confirmation,
    recalibration and camera stop without claiming independent eye control.
 
-## 7. Qualtrics
+## 8. Qualtrics
 
 Follow every normal and adverse test in
 [`docs/QUALTRICS-INTEGRATION.md`](docs/QUALTRICS-INTEGRATION.md).
