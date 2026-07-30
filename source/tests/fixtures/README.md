@@ -9,6 +9,10 @@ using short, synthetic questionnaire content.
 - `limesurvey-rating.lss` follows LimeSurvey's XML survey-structure export
   (`LimeSurveyDocType` `Survey`, database version 350). It contains one
   language, one group and two mandatory `List (Radio)` questions.
+- `limesurvey-current-rating.lss` is a sanitised current-export regression
+  fixture. It stores wording in localisation tables, declares an incomplete
+  additional language, emits inert default question attributes and uses
+  LimeSurvey's default `A001`–`A005` answer codes.
 
 The fixtures contain no participant responses, credentials, tokens or
 identifying information.
