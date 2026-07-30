@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import '../src/accessible-nasa-tlx';
 import '../src/study-conductor';
@@ -12,9 +14,12 @@ import {
 import {
   buildParticipantUrl,
   createStudyConfig,
+  loadCompletedResults,
   readStudyConfigFromHash,
+  resultsToCsv,
   type StudyResultRecord,
 } from '../src/study';
+import { reviewQuestionnaireExport } from '../src/platform-questionnaire-import';
 
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
@@ -114,6 +119,74 @@ describe('instrument-independent questionnaire workflow', () => {
     expect((completed as unknown as StudyResultRecord).result.primaryScore).toBe(5);
     expect(component.textContent).toContain('Questionnaire score');
     expect(component.textContent).toContain('5.00');
+  });
+
+  it('runs an imported QSF definition through participant completion and result export', async () => {
+    const qsf = readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
+      'utf8',
+    );
+    const review = reviewQuestionnaireExport(qsf, 'task-support.qsf');
+    const definition = createCustomQuestionnaireDefinition(review.draft!);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'QSF-IMPORT-01',
+      studyTitle: 'Imported questionnaire evaluation',
+      taskLabel: 'using the route-planning system',
+      showScoreToParticipant: true,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-QSF-01';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 2 items'))!
+      .click();
+    await component.updateComplete;
+    expect(component.textContent).toContain('Neither agree nor disagree');
+
+    for (const [index, value] of ['4', '2'].entries()) {
+      component.querySelector<HTMLInputElement>(
+        `.rating-option input[value="${value}"]`,
+      )!.click();
+      await component.updateComplete;
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes(
+          index === 1 ? 'Review responses' : 'Next question',
+        ))!
+        .click();
+      await component.updateComplete;
+    }
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit responses'))!
+      .click();
+    await component.updateComplete;
+
+    const records = loadCompletedResults();
+    expect(records).toHaveLength(1);
+    expect(records[0].instrument.definition).toEqual(definition);
+    expect(records[0].result.primaryScore).toBe(3);
+    const csv = resultsToCsv(records);
+    expect(csv).toContain('custom-tsc');
+    expect(csv).toContain('P-QSF-01');
+    expect(csv).toContain('Strongly agree');
   });
 
   it('runs SUS through the same participant component without NASA comparison logic', async () => {

@@ -46,10 +46,12 @@ Version 0.8 therefore supports:
 - versioned item, source and scoring metadata in every result.
 - a no-code custom path for 1–20 items on one shared 0–100-bounded integer
   scale, using reviewed mean or sum scoring.
+- a browser-local review and conversion path for supported Qualtrics QSF and
+  LimeSurvey LSS rating questionnaires.
 
 It does not currently support:
 
-- free-text, multiple-answer, matrix, ranking or date items;
+- free-text, multiple-answer, general matrix, ranking or date items;
 - display or skip logic;
 - arbitrary JavaScript supplied by a definition;
 - an unreviewed scoring expression;
@@ -76,6 +78,19 @@ contract, but only with the generic mean or sum scorer and no pairwise stage.
 The validated definition is embedded in the study configuration, participant
 link and result record. It is bounded to 9,000 UTF-8 bytes and cannot replace a
 built-in ID.
+
+`platform-questionnaire-import.ts` is an adapter before this definition
+boundary. It parses a bounded Qualtrics QSF or LimeSurvey LSS subset, records
+accepted, confirmation-required and unsupported content, and produces a draft
+only when no active content would be silently lost. A Qualtrics single-answer
+Likert matrix can be expanded row-by-row when its row and response order are
+explicit. The researcher still confirms scale meaning, mean/sum scoring and
+reverse-scored items. The resulting object passes through the same custom
+definition validator and scorer allowlist; the adapters cannot bypass them.
+
+Imported markup is reduced to safe visible text. Imported scripts, dynamic
+expressions and formulas are not executed. The file is parsed in the browser
+and is not sent to a server.
 
 `questionnaire-definition.schema.json` publishes the structural contract.
 `validateQuestionnaireDefinition` repeats validation at runtime and adds semantic
@@ -186,6 +201,14 @@ Automated evidence must show more than successful rendering:
     deterministic;
 13. executable fields, built-in-ID replacement, unsupported scoring, invalid
     scales and oversized definitions are rejected.
+14. representative QSF and LSS fixtures preserve item, response and numeric
+    order through conversion;
+15. malformed files, unsupported types, flow logic, dynamic content and mixed
+    scales block the whole conversion;
+16. a reviewed imported definition survives JSON round-trip, participant
+    completion, scoring and result export;
+17. the three-part import review has focus movement, visible status and
+    representative structural accessibility coverage.
 
 These tests establish architectural reuse and data integrity. They do not establish
 that either optional support improves accessibility or preserves psychometric
@@ -194,9 +217,11 @@ properties. Those are evaluation questions.
 ## Extension path
 
 Raw TLX and UEQ-S exercise the registered extension path. The no-code builder
-adds a second path for questionnaires that fit the bounded rating profile. A
-new response type or scoring rule is still accepted only when it is represented
-explicitly in reviewed code and tests. The public build does not execute a
-formula or script supplied by a definition and does not claim that every
-questionnaire is supported. This incremental policy gives each capability a
-testable boundary and preserves scoring provenance.
+adds a second path for questionnaires that fit the bounded rating profile.
+Qualtrics QSF and LimeSurvey LSS adapters add a third path into that same
+profile; they do not broaden the runner or scorer by inference. A new response
+type or scoring rule is still accepted only when it is represented explicitly
+in reviewed code and tests. The public build does not execute a formula or
+script supplied by a definition and does not claim that every questionnaire is
+supported. This incremental policy gives each capability a testable boundary
+and preserves scoring provenance.

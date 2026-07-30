@@ -17,6 +17,7 @@ export interface CustomQuestionnaireItemDraft {
   prompt: string;
   lowAnchor: string;
   highAnchor: string;
+  responseLabels?: Record<string, string>;
   simpleExplanation: string;
   reverseScored: boolean;
 }
@@ -137,6 +138,7 @@ export function createCustomQuestionnaireDefinition(
       shortMeaning: shortMeaning(prompt, simpleExplanation),
       lowAnchor: clean(item.lowAnchor, `Item ${index + 1} low endpoint`),
       highAnchor: clean(item.highAnchor, `Item ${index + 1} high endpoint`),
+      ...(item.responseLabels ? { responseLabels: item.responseLabels } : {}),
     };
   });
   const reverseItemIds = draft.items.flatMap((item, index) =>

@@ -1,0 +1,136 @@
+{
+  "SurveyEntry": {
+    "SurveyID": "SV_SANITISED",
+    "SurveyName": "Task Support Check",
+    "SurveyDescription": "Think about the task you have just completed."
+  },
+  "SurveyElements": [
+    {
+      "SurveyID": "SV_SANITISED",
+      "Element": "BL",
+      "PrimaryAttribute": "Survey Blocks",
+      "Payload": [
+        {
+          "Type": "Default",
+          "Description": "Question block",
+          "ID": "BL_SUPPORTED",
+          "BlockElements": [
+            {
+              "Type": "Question",
+              "QuestionID": "QID_CLARITY"
+            },
+            {
+              "Type": "Question",
+              "QuestionID": "QID_CONTROL"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "SurveyID": "SV_SANITISED",
+      "Element": "FL",
+      "PrimaryAttribute": "Survey Flow",
+      "Payload": {
+        "Flow": [
+          {
+            "ID": "BL_SUPPORTED",
+            "Type": "Block",
+            "FlowID": "FL_1"
+          }
+        ],
+        "Properties": {
+          "Count": 1
+        }
+      }
+    },
+    {
+      "SurveyID": "SV_SANITISED",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID_CLARITY",
+      "Payload": {
+        "QuestionText": "<strong>The instructions were clear.</strong>",
+        "DataExportTag": "CLARITY",
+        "QuestionID": "QID_CLARITY",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Choices": {
+          "1": {
+            "Display": "Strongly disagree"
+          },
+          "2": {
+            "Display": "Disagree"
+          },
+          "3": {
+            "Display": "Neither agree nor disagree"
+          },
+          "4": {
+            "Display": "Agree"
+          },
+          "5": {
+            "Display": "Strongly agree"
+          }
+        },
+        "ChoiceOrder": [1, 2, 3, 4, 5],
+        "RecodeValues": {
+          "1": "1",
+          "2": "2",
+          "3": "3",
+          "4": "4",
+          "5": "5"
+        },
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "ON",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        }
+      }
+    },
+    {
+      "SurveyID": "SV_SANITISED",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID_CONTROL",
+      "Payload": {
+        "QuestionText": "I felt in control.",
+        "DataExportTag": "CONTROL",
+        "QuestionID": "QID_CONTROL",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Choices": {
+          "1": {
+            "Display": "Strongly disagree"
+          },
+          "2": {
+            "Display": "Disagree"
+          },
+          "3": {
+            "Display": "Neither agree nor disagree"
+          },
+          "4": {
+            "Display": "Agree"
+          },
+          "5": {
+            "Display": "Strongly agree"
+          }
+        },
+        "ChoiceOrder": [1, 2, 3, 4, 5],
+        "RecodeValues": {
+          "1": "1",
+          "2": "2",
+          "3": "3",
+          "4": "4",
+          "5": "5"
+        },
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "ON",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        }
+      }
+    }
+  ]
+}

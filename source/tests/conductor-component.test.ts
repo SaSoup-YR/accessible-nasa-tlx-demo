@@ -230,6 +230,101 @@ describe('study conductor defaults and guidance', () => {
     expect(document.activeElement).toBe(selectedSummary);
   });
 
+  it('reviews and confirms a Qualtrics export before converting it', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const qsf = readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
+      'utf8',
+    );
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{ name: 'task-support.qsf', text: async () => qsf }],
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    const review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('Import review ready');
+    expect(review.textContent).toContain('Imported safely (2)');
+    expect(review.textContent).toContain('3 = Neither agree nor disagree');
+    expect(review.textContent).toContain('Requires researcher confirmation');
+    expect(review.textContent).toContain('Unsupported content (0)');
+    expect(document.activeElement).toBe(review);
+    const convert = [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Convert and use this questionnaire')!;
+    expect(convert.disabled).toBe(true);
+
+    const reverse = component.querySelector<HTMLInputElement>(
+      '[data-platform-import-reverse="1"]',
+    )!;
+    reverse.click();
+    const confirmation = component.querySelector<HTMLInputElement>(
+      '[data-platform-import-confirm]',
+    )!;
+    confirmation.click();
+    await (component as any).updateComplete;
+    expect(convert.disabled).toBe(false);
+    convert.click();
+    await (component as any).updateComplete;
+
+    const summary = component.querySelector<HTMLElement>('#selected-questionnaire-summary')!;
+    expect(summary.textContent).toContain('Task Support Check');
+    expect(summary.textContent).toContain('imported, validated and selected');
+    expect(document.activeElement).toBe(summary);
+    const definition = (component as any).customDefinition;
+    expect(definition.items[0].responseLabels['3']).toBe(
+      'Neither agree nor disagree',
+    );
+    expect(definition.scoring.reverseItemIds).toEqual(['item-02']);
+  });
+
+  it('shows unsupported exported content and does not offer partial conversion', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const qsf = JSON.parse(readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
+      'utf8',
+    ));
+    qsf.SurveyElements.find(
+      (element: any) => element.PrimaryAttribute === 'QID_CONTROL',
+    ).Payload.Selector = 'MAVR';
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{
+        name: 'unsupported.qsf',
+        text: async () => JSON.stringify(qsf),
+      }],
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    const review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('Conversion blocked');
+    expect(review.textContent).toContain('Unsupported content (1)');
+    expect(review.textContent).toContain('MAVR');
+    expect(component.textContent).toContain('has not created a partial questionnaire');
+    expect([...component.querySelectorAll<HTMLButtonElement>('button')]
+      .some((button) =>
+        button.textContent?.trim() === 'Convert and use this questionnaire')).toBe(false);
+  });
+
   it('reveals and visibly confirms an imported study configuration', async () => {
     const component = await renderConductor();
     const config = createStudyConfig({
