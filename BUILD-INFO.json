@@ -1,7 +1,7 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "candidate; bounded no-code researcher-supplied questionnaire workflow added; local and bridge 0.8.7-q7 UCL custom-definition verification passed; novice-conductor evaluation pending",
+  "releaseStatus": "evaluation-ready release candidate; technical verification complete for the bounded questionnaire profile and Qualtrics bridge 0.8.7-q7; novice-conductor and questionnaire-user evaluation pending",
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag that contains this file.",
@@ -43,5 +43,15 @@
   ],
   "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
   "claimBoundary": "Questionnaire-independent within the published integer single-choice profile and allowlisted workflows/scorers. The no-code path supports 1-20 items on one shared integer scale with mean, sum and optional reverse scoring. It is not compatible with every questionnaire and is not evidence of permission, psychometric validity, equivalence or disability-group benefit.",
-  "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history."
+  "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
+  "releaseCandidate": "v0.8.0-rc.2",
+  "evaluationStatus": "Ready for bounded formative evaluation; participant evidence has not yet been collected.",
+  "manualVerification": {
+    "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed",
+    "researcherSuppliedDefinitionLocalJsonRoundTripAndQualtricsResult": "passed",
+    "normalOnlineSubmissionAndAutomaticHandoff": "passed",
+    "offlineWarningBackupReconnectAndRetry": "passed",
+    "reloadInterruptionAndSameDeviceRecovery": "passed",
+    "phoneAndTabletRecovery": "passed"
+  }
 }

@@ -1,4 +1,4 @@
-# Accessible Questionnaire Platform Version 0.8 candidate
+# Accessible Questionnaire Platform v0.8.0-rc.2
 
 A public research prototype that separates questionnaire definitions from a shared
 study-conductor, participant, accessibility-support, result and UCL Qualtrics
@@ -11,6 +11,66 @@ Use synthetic codes during technical verification. Before real recruitment,
 freeze the exact release, configuration and Qualtrics survey; complete the
 cross-device preflight; and confirm that the final procedure is covered by the
 project's existing approved protocol and data-management plan.
+
+## Release candidate status
+
+The current evaluation-ready candidate is **`v0.8.0-rc.2`**, paired with
+Qualtrics bridge **`0.8.7-q7`**. It is intended for supervisor review and a
+bounded formative evaluation. The tag is an immutable evidence point: any later
+functional change requires a new tag and proportionate re-verification.
+
+### Verification recorded for this candidate
+
+Automated verification:
+
+- 17 test files passed, containing 130 passing tests;
+- 8 axe structural accessibility scans passed;
+- TypeScript, production, standalone and synchronized release builds passed;
+- the local HTTP entry-point smoke test passed;
+- the high-level production dependency audit reported 0 vulnerabilities.
+
+Manual workflow verification:
+
+- Weighted NASA-TLX, Raw TLX, SUS and UEQ-S were each reinstalled, completed and
+  exported through UCL Qualtrics;
+- a researcher-supplied questionnaire was created without code, downloaded as
+  JSON, imported again and reproduced with the same items, scoring and result
+  fields;
+- its local result and Qualtrics accepted row, primary score, answers and raw JSON
+  reconstruction were checked;
+- normal online submission, automatic hand-off, disconnected submission warning,
+  local backup, reconnect/retry, reload/interruption recovery and phone/tablet
+  recovery paths were exercised.
+
+These checks establish that the release behaves as specified in the tested
+technical workflows. They do not establish that the platform is universally
+accessible or that it improves a questionnaire's psychometric properties.
+
+### Known limitations
+
+- Novice-conductor and questionnaire-user evaluation is still pending. The current
+  evidence supports an evaluation-ready prototype, not a completed user-study
+  claim.
+- The no-code custom path is deliberately bounded to 1–20 required single-choice
+  items on one shared integer scale, with reviewed mean or sum scoring and optional
+  reverse scoring. It does not support free text, matrices, multiple answers,
+  branching or arbitrary formulas.
+- Structural validation cannot determine copyright permission, measurement
+  validity, population suitability or equivalence to an original instrument.
+- Passing automated and manual technical checks is not a claim of complete WCAG
+  2.2 conformance or coverage of every browser, screen reader and assistive-
+  technology combination.
+- Voice recognition depends on browser support and accepts only allowed displayed
+  values or exact endpoint labels. Webcam gaze input remains experimental and
+  requires conventional keyboard/pointer fallbacks.
+- A disconnected submission is not centrally recorded until the connection is
+  restored and Qualtrics accepts the response. The recovery copy remains on the
+  same browser and device, so it should be downloaded before that local state is
+  cleared.
+- GitHub Pages hosts the application but does not store participant records.
+  Remote collection requires the matching exact-origin Qualtrics bridge.
+- Qualtrics may record IP address and approximate location unless the survey's
+  anonymisation setting is enabled and confirmed in a new export.
 
 ## Supported scope
 
