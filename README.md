@@ -7,8 +7,10 @@ workflow.
 - **[Prepare a study](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.7-q7)**
 - **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/)**
 
-Use synthetic codes only. Do not recruit until the candidate release, study
-protocol, ethics route and real UCL Qualtrics verification are approved.
+Use synthetic codes during technical verification. Before real recruitment,
+freeze the exact release, configuration and Qualtrics survey; complete the
+cross-device preflight; and confirm that the final procedure is covered by the
+project's existing approved protocol and data-management plan.
 
 ## Supported scope
 
@@ -45,11 +47,14 @@ This remains a bounded definition profile, not an arbitrary survey uploader.
 Free text, multiple answers, branching, matrices, custom formula strings and
 executable code are rejected. The platform validates structure and calculation;
 the conductor remains responsible for permission, provenance, psychometric
-validity and ethics approval.
+validity and fit with the project's existing approval scope.
 
 See
 [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md)
 for the decision, evidence and explicit limits.
+Use
+[`docs/CUSTOM-QUESTIONNAIRE-TEST.md`](docs/CUSTOM-QUESTIONNAIRE-TEST.md)
+for a fixed-input local, JSON round-trip and Qualtrics test.
 
 ## Roles and collection
 
@@ -120,6 +125,7 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Current standalone participant runner | [`source/demo/accessible-questionnaire-platform-v0.8.html`](source/demo/accessible-questionnaire-platform-v0.8.html) |
 | Historical v0.7 baseline | [`source/demo/accessible-nasa-tlx-v0.7.html`](source/demo/accessible-nasa-tlx-v0.7.html) |
 | Architecture and extension rules | [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md), [`docs/INSTRUMENT-DEFINITION-GUIDE.md`](docs/INSTRUMENT-DEFINITION-GUIDE.md) |
+| No-code custom-questionnaire test | [`docs/CUSTOM-QUESTIONNAIRE-TEST.md`](docs/CUSTOM-QUESTIONNAIRE-TEST.md) |
 | Migration | [`docs/MIGRATION-V0.7-V0.8.md`](docs/MIGRATION-V0.7-V0.8.md) |
 | Colour and WCAG audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md), [`docs/WCAG-2.2-COMPONENT-AUDIT.md`](docs/WCAG-2.2-COMPONENT-AUDIT.md) |
 | Technical risk register | [`docs/TECHNICAL-RISK-REGISTER.md`](docs/TECHNICAL-RISK-REGISTER.md) |

@@ -1107,7 +1107,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             Version ${v} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
             exact HTTPS origin stored by the conductor; Qualtrics writes the fields into the current response and returns a
             matching receipt before advancing. A failed save leaves the answers on Review for retry. Platform selection,
-            consent, retention and access must still match the approved ethics and data-management documents.
+            consent, retention and access must still match the project's existing approved protocol and data-management documents.
           </p>
         </section>
       </main>

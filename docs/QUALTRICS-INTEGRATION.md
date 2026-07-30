@@ -21,11 +21,12 @@ No token, password or database credential is placed in GitHub, the participant U
 or browser storage. A raw GitHub participant link cannot collect centrally.
 Participants must receive the activated Qualtrics distribution link.
 
-Use the integration only under the approved ethics, consent, retention and
-information-governance plan. The supplied participant code is pseudonymous. Do not
-add names, email addresses, diagnoses or highly confidential linked fields without
-UCL information-governance approval. Freeze and approve the exact prototype and
-study protocol before participant recruitment.
+Use the integration only within the project's existing approved protocol,
+participant-information, consent, retention and information-governance plan. The
+supplied participant code is pseudonymous. Do not add names, email addresses,
+diagnoses or highly confidential linked fields without the required UCL
+information-governance review. Freeze the exact prototype, configuration and
+survey before participant recruitment.
 
 ## Installation inputs
 
@@ -46,7 +47,7 @@ uploading repository files.
 ## One-time setup
 
 1. Create a blank UCL Qualtrics survey.
-2. Add the approved participant information and consent pages.
+2. Add the participant information and consent pages covered by the study protocol.
 3. Put one Text/Graphic question on its own page.
 4. Open the versioned
    [`study.html?package=0.8.7-q7`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.7-q7)

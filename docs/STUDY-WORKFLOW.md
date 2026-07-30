@@ -94,6 +94,7 @@ accepted.
 
 Technical tests establish deterministic software behavior. They do not establish
 that a support is helpful, that the workflow is easier, that optional presentation
-is psychometrically equivalent, or that WebGazer is accurate. Recruitment remains
-blocked until the frozen release, study protocol, participant group and ethics/data
-route are approved.
+is psychometrically equivalent, or that WebGazer is accurate. Real recruitment
+uses a frozen release, a successful synthetic Qualtrics preflight and final
+materials and procedures confirmed as covered by the project's existing approved
+protocol and data-management route.

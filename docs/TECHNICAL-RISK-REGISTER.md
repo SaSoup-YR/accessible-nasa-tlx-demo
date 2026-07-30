@@ -10,9 +10,10 @@ the tested implementation. They cannot establish browser speech-recognition accu
 WebGazer accuracy, assistive-technology usability, psychometric equivalence or benefit
 for people with impairments.
 
-The current build is a release candidate. Recruitment remains blocked until the
-re-tested prototype and actual UCL Qualtrics survey export a complete synthetic
-response, and the approved protocol and data-management route are in place.
+The current build is a release candidate. Real recruitment uses the re-tested
+prototype only after the actual UCL Qualtrics survey exports a complete synthetic
+response and the final procedure is confirmed as covered by the project's
+existing approved protocol and data-management route.
 
 ## Current risks and controls
 

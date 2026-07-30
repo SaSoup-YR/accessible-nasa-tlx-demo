@@ -11,8 +11,9 @@ Prototype: Accessible NASA-TLX Version 0.7 release candidate
 These checks test whether foreseeable failures remain detectable and recoverable. They
 do not prove that Qualtrics has stored a response, that the interface is accessible to
 a disability group, or that participant data are safe to collect. A recorded
-Qualtrics row must be verified in Data & Analysis. Participant recruitment remains
-blocked until the frozen release, study protocol and ethics/data route are approved.
+Qualtrics row must be verified in Data & Analysis. Real recruitment uses a frozen
+release and procedures covered by the project's existing approved protocol and
+data-management route.
 
 The submission states are deliberately separated:
 
