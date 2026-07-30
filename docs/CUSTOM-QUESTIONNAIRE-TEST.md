@@ -42,7 +42,12 @@ Select **Validate and use this questionnaire**.
 
 Required result:
 
-- a confirmation says that `Task Support Check 1.0.0` was validated and selected;
+- the page immediately moves to the selected-questionnaire summary;
+- the summary has a visible green confirmation with a check mark and the words
+  **Questionnaire ready**; colour is not the only success cue;
+- keyboard focus is on that summary, so a keyboard or screen-reader user receives
+  the same confirmation;
+- the confirmation says that `Task Support Check 1.0.0` was validated and selected;
 - the questionnaire selector shows it as researcher supplied;
 - the summary reports 3 items, 5 agreement response values, 0 comparisons and
   `Task support score`;
@@ -100,11 +105,13 @@ retyping the questionnaire.
 2. Open **Add your own questionnaire**.
 3. Select **Import questionnaire definition JSON** and choose the definition file
    downloaded above.
-4. Confirm that Task Support Check is selected with the same three items, 1–5
-   scale and mean rule.
+4. Confirm that the page moves to the visible **Questionnaire ready** summary and
+   that Task Support Check is selected with the same three items, 1–5 scale and
+   mean rule.
 5. Separately select **Import configuration JSON** and choose the downloaded
    configuration.
-6. Confirm that the same Study ID, task label, configuration ID and participant
+6. Confirm that the page moves to the visibly highlighted **Configuration ready**
+   panel and that the same Study ID, task label, configuration ID and participant
    link are restored.
 
 Keep both JSON files as test evidence. The definition proves the questionnaire
@@ -126,6 +133,10 @@ Use a blank or copied synthetic survey, not a live recruitment survey.
 6. Open the active distribution link in another browser or device.
 7. Use participant code `TEST-CUSTOM-Q-001` and answers `5`, `3`, `2`.
 8. In **Data & Analysis**, inspect the newly dated row, not an older row.
+9. If the study uses the documented pseudonymous-code route, enable
+   **Anonymize responses** before this run and confirm that the exported row has
+   blank IP address and location fields. An anonymous link alone still records
+   these fields by default.
 
 Required fields:
 
@@ -185,7 +196,11 @@ Create a new release candidate only after:
 4. a newly dated Qualtrics row passes the field checks;
 5. the deliberate rejection checks fail safely;
 6. GitHub Pages serves the same assets as the tested commit;
-7. no known blocking issue remains.
+7. successful questionnaire validation and both JSON imports move focus to a
+   visible, textual success confirmation;
+8. the intended Qualtrics anonymisation setting is published and verified in a
+   newly exported row;
+9. no known blocking issue remains.
 
 If the current candidate is `v0.8.0-rc.1`, the next candidate is
 `v0.8.0-rc.2`. A published tag is immutable evidence: do not move or overwrite it.
