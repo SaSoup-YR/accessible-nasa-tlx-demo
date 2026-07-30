@@ -106,6 +106,8 @@ export class StudyConductorApp extends LitElement {
   @state() private generatedConfig: StudyConfig | null = null;
   @state() private participantUrl = '';
   @state() private message = '';
+  @state() private definitionConfirmation = '';
+  @state() private configurationConfirmation = '';
   @state() private errorMessage = '';
   @state() private completedResults: StudyResultRecord[] = [];
 
@@ -148,6 +150,10 @@ export class StudyConductorApp extends LitElement {
     if (!definition.supports.smileyLandmarks) this.answerMode = 'standard';
     this.generatedConfig = null;
     this.participantUrl = '';
+    this.definitionConfirmation =
+      `${definition.name} ${definition.version} selected. ` +
+      'Complete the study details, then generate a new configuration.';
+    this.configurationConfirmation = '';
     this.message = `${definition.name} selected. Generate a new configuration before testing.`;
   };
 
@@ -221,7 +227,25 @@ export class StudyConductorApp extends LitElement {
                 )}
               </select>
             </label>
-            <aside class="definition-summary full-width">
+            <aside
+              class=${`definition-summary full-width${this.definitionConfirmation
+                ? ' success-confirmation'
+                : ''}`}
+              id="selected-questionnaire-summary"
+              tabindex="-1"
+              aria-describedby=${this.definitionConfirmation
+                ? 'definition-confirmation-message'
+                : nothing}
+            >
+              ${this.definitionConfirmation
+                  ? html`<p
+                    class="success-message"
+                    id="definition-confirmation-message"
+                  >
+                    <span class="success-icon" aria-hidden="true">✓</span>
+                    <span><strong>Questionnaire ready.</strong> ${this.definitionConfirmation}</span>
+                  </p>`
+                : nothing}
               <strong>${this.definition.shortName}</strong>
               <span>
                 ${this.definition.items.length} items,
@@ -429,7 +453,13 @@ export class StudyConductorApp extends LitElement {
             <button class="primary-button large-answer-button" type="button" @click=${this.generateParticipantLink}>Generate link</button>
             <label class="file-button secondary-button">
               Import configuration JSON
-              <input class="sr-only" type="file" accept="application/json,.json" @change=${this.importConfiguration} />
+              <input
+                class="sr-only"
+                data-configuration-import
+                type="file"
+                accept="application/json,.json"
+                @change=${this.importConfiguration}
+              />
             </label>
           </div>
           <p class="support-boundary">
@@ -438,7 +468,27 @@ export class StudyConductorApp extends LitElement {
           </p>
 
           ${this.generatedConfig
-            ? html`<div class="generated-link" role="region" aria-labelledby="generated-link-heading">
+            ? html`<div
+                class=${`generated-link${this.configurationConfirmation
+                  ? ' success-confirmation'
+                  : ''}`}
+                id="configuration-ready-panel"
+                role="region"
+                aria-labelledby="generated-link-heading"
+                aria-describedby=${this.configurationConfirmation
+                  ? 'configuration-confirmation-message'
+                  : nothing}
+                tabindex="-1"
+              >
+                ${this.configurationConfirmation
+                  ? html`<p
+                      class="success-message"
+                      id="configuration-confirmation-message"
+                    >
+                      <span class="success-icon" aria-hidden="true">✓</span>
+                      <span><strong>Success.</strong> ${this.configurationConfirmation}</span>
+                    </p>`
+                  : nothing}
                 <h3 id="generated-link-heading">Configuration ready</h3>
                 <dl class="study-details">
                   <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
@@ -770,6 +820,11 @@ export class StudyConductorApp extends LitElement {
           </button>
         </div>
         <p class="support-boundary">
+          Editing these fields does not change the selected questionnaire until you select
+          <strong>Validate and use this questionnaire</strong>. Importing a definition selects it
+          for the study but does not replace this separate builder draft.
+        </p>
+        <p class="support-boundary">
           After validation, the full definition is embedded in the configuration and participant
           link. Download its JSON for the study protocol. Importing that definition or a saved
           configuration reproduces the same items, scale and scoring rule without changing source code.
@@ -942,23 +997,35 @@ export class StudyConductorApp extends LitElement {
     };
   }
 
-  private activateCustomDefinition(definition: QuestionnaireDefinition) {
+  private activateCustomDefinition(
+    definition: QuestionnaireDefinition,
+    action: 'validated' | 'imported',
+  ) {
     this.customDefinition = definition;
     this.instrumentId = definition.id;
     if (!definition.supports.simplerExplanations) this.showSimpleLanguage = false;
     this.answerMode = 'standard';
     this.generatedConfig = null;
     this.participantUrl = '';
-    this.message =
-      `${definition.name} ${definition.version} validated and selected. ` +
+    const completedAction =
+      action === 'imported'
+        ? 'imported, validated and selected'
+        : 'validated and selected';
+    this.definitionConfirmation =
+      `${definition.name} ${definition.version} ${completedAction}. ` +
       'Complete the study details, then generate a new configuration.';
+    this.configurationConfirmation = '';
+    this.message = '';
+    this.revealConductorResult('#selected-questionnaire-summary');
   }
 
   private useCustomDraft = () => {
     this.errorMessage = '';
+    this.definitionConfirmation = '';
     try {
       this.activateCustomDefinition(
         createCustomQuestionnaireDefinition(this.customDraft),
+        'validated',
       );
     } catch (error) {
       this.showError(
@@ -974,13 +1041,12 @@ export class StudyConductorApp extends LitElement {
     const file = input.files?.[0];
     if (!file) return;
     this.errorMessage = '';
+    this.definitionConfirmation = '';
     try {
       const definition = validateCustomQuestionnaireDefinition(
         JSON.parse(await file.text()) as unknown,
       );
-      this.activateCustomDefinition(definition);
-      this.message =
-        `${definition.name} ${definition.version} imported, validated and selected.`;
+      this.activateCustomDefinition(definition, 'imported');
     } catch (error) {
       this.showError(
         error instanceof Error
@@ -1103,6 +1169,23 @@ export class StudyConductorApp extends LitElement {
             questionnaire-independent <code>__js_AQP_*</code> columns and does not rewrite old rows. Keep the old
             fields until those rows have been exported and verified. Use a copied synthetic survey for the first
             Version 0.8 installation test.
+          </p>
+        </aside>
+        <aside class="boundary-note important-boundary">
+          <p>
+            <strong>Check Qualtrics response anonymisation before recruitment.</strong>
+            An anonymous distribution link still records IP address and approximate location by
+            default. If the approved study does not require those fields, enable
+            <strong>Anonymize responses</strong> in Qualtrics Survey Options before the synthetic
+            test, publish the change, and confirm that a newly exported row has blank IP and
+            location fields. This setting is not retroactive.
+          </p>
+          <p>
+            <a
+              href="https://www.qualtrics.com/support/survey-platform/survey-module/survey-options/survey-protection/#AnonymizeResponses"
+              target="_blank"
+              rel="noopener"
+            >Open the official Qualtrics anonymisation guidance</a>.
           </p>
         </aside>
         <aside class="boundary-note important-boundary">
@@ -1239,6 +1322,7 @@ export class StudyConductorApp extends LitElement {
 
   private generateParticipantLink = () => {
     this.errorMessage = '';
+    this.configurationConfirmation = '';
     try {
       const config = createStudyConfig({
         instrumentId: this.instrumentId,
@@ -1253,7 +1337,10 @@ export class StudyConductorApp extends LitElement {
         collection: this.currentCollectionConfig(),
       });
       this.useConfiguration(config);
-      this.message = 'Participant link and configuration generated.';
+      this.configurationConfirmation =
+        'Participant link and configuration generated. The ready-to-use files and link are shown below.';
+      this.message = '';
+      this.revealConductorResult('#configuration-ready-panel');
     } catch (error) {
       this.showError(error instanceof Error ? error.message : 'The study configuration could not be generated.');
     }
@@ -1288,6 +1375,7 @@ export class StudyConductorApp extends LitElement {
     const file = input.files?.[0];
     if (!file) return;
     this.errorMessage = '';
+    this.configurationConfirmation = '';
     try {
       const candidate = JSON.parse(await file.text()) as unknown;
       const config = normaliseStudyConfig(candidate);
@@ -1300,7 +1388,10 @@ export class StudyConductorApp extends LitElement {
         throw new Error('This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.');
       }
       this.useConfiguration(config);
-      this.message = 'Configuration imported and participant link regenerated.';
+      this.configurationConfirmation =
+        'Configuration imported and participant link reproduced. The configuration ID and files are shown below.';
+      this.message = '';
+      this.revealConductorResult('#configuration-ready-panel');
     } catch (error) {
       this.showError(error instanceof Error ? error.message : 'The configuration file could not be read.');
     } finally {
@@ -1314,6 +1405,14 @@ export class StudyConductorApp extends LitElement {
       const summary = this.querySelector<HTMLElement>('#conductor-error');
       if (!summary) return;
       focusAndReveal(summary);
+    });
+  }
+
+  private revealConductorResult(selector: string) {
+    void this.updateComplete.then(() => {
+      const target = this.querySelector<HTMLElement>(selector);
+      if (!target) return;
+      focusAndReveal(target, { block: 'start' });
     });
   }
 
