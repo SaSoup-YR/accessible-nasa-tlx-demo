@@ -30,7 +30,12 @@ record within the documented transport allocation.
 
 The builder verifies technical structure and deterministic scoring only. Before
 use, the researcher must separately verify permission, primary-source wording,
-population/task validity, interpretation, ethics and data management.
+population/task validity, interpretation, fit with the project's existing
+approved protocol and data management.
+
+Follow [`CUSTOM-QUESTIONNAIRE-TEST.md`](CUSTOM-QUESTIONNAIRE-TEST.md) for a
+fixed-input test with a known reverse-scored result, JSON reproduction and a
+Qualtrics accepted-row check.
 
 ## Adding a registered instrument
 
