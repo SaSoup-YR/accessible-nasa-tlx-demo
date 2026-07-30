@@ -11,7 +11,19 @@ import {
   buildRatingValues,
   builtInQuestionnaires,
   getQuestionnaireDefinition,
+  resolveQuestionnaireDefinition,
+  type QuestionnaireDefinition,
 } from './questionnaire-definition';
+import {
+  MAX_CUSTOM_QUESTIONNAIRE_ITEMS,
+  createCustomItemDraft,
+  createCustomQuestionnaireDefinition,
+  createCustomQuestionnaireDraft,
+  customDefinitionFileName,
+  validateCustomQuestionnaireDefinition,
+  type CustomQuestionnaireDraft,
+  type CustomQuestionnaireItemDraft,
+} from './custom-questionnaire';
 import {
   PROTOTYPE_VERSION,
   buildParticipantUrl,
@@ -73,6 +85,10 @@ export function buildQualtricsEndOfSurveyMessage(showScore: boolean) {
 @customElement('study-conductor-app')
 export class StudyConductorApp extends LitElement {
   @state() private instrumentId = DEFAULT_QUESTIONNAIRE_ID;
+  @state() private customDefinition: QuestionnaireDefinition | null = null;
+  @state() private customDraft: CustomQuestionnaireDraft =
+    createCustomQuestionnaireDraft();
+  @state() private customBuilderOpen = false;
   @state() private studyId = '';
   @state() private studyTitle = '';
   @state() private taskLabel = '';
@@ -109,12 +125,23 @@ export class StudyConductorApp extends LitElement {
   }
 
   private get definition() {
-    return getQuestionnaireDefinition(this.instrumentId)!;
+    return resolveQuestionnaireDefinition(
+      this.instrumentId,
+      this.customDefinition ?? undefined,
+    )!;
+  }
+
+  private get availableDefinitions() {
+    return this.customDefinition
+      ? [...builtInQuestionnaires, this.customDefinition]
+      : builtInQuestionnaires;
   }
 
   private selectInstrument = (event: Event) => {
     const instrumentId = (event.currentTarget as HTMLSelectElement).value;
-    const definition = getQuestionnaireDefinition(instrumentId);
+    const definition =
+      this.availableDefinitions.find((candidate) => candidate.id === instrumentId) ??
+      null;
     if (!definition) return;
     this.instrumentId = instrumentId;
     if (!definition.supports.simplerExplanations) this.showSimpleLanguage = false;
@@ -182,12 +209,14 @@ export class StudyConductorApp extends LitElement {
                 definition; accessibility supports are configured separately.
               </span>
               <select @change=${this.selectInstrument}>
-                ${builtInQuestionnaires.map(
+                ${this.availableDefinitions.map(
                   (definition) => html`<option
                     value=${definition.id}
                     .selected=${definition.id === this.instrumentId}
                   >
-                    ${definition.name} · ${definition.version}
+                    ${definition.name} · ${definition.version}${getQuestionnaireDefinition(definition.id)
+                      ? ''
+                      : ' · researcher supplied'}
                   </option>`,
                 )}
               </select>
@@ -201,10 +230,35 @@ export class StudyConductorApp extends LitElement {
                 ${buildQuestionnairePairs(this.definition).length} comparisons,
                 ${this.definition.scoring.scoreName}.
               </span>
-              <a href=${this.definition.source.url} target="_blank" rel="noopener">
-                Instrument source: ${this.definition.source.label}
-              </a>
+              ${this.definition.source.url
+                ? html`<a href=${this.definition.source.url} target="_blank" rel="noopener">
+                    Instrument source: ${this.definition.source.label}
+                  </a>`
+                : html`<span>Instrument source: ${this.definition.source.label}</span>`}
             </aside>
+            <div class="full-width button-row compact">
+              <button
+                class="secondary-button"
+                type="button"
+                aria-expanded=${String(this.customBuilderOpen)}
+                aria-controls="custom-questionnaire-builder"
+                @click=${() => { this.customBuilderOpen = !this.customBuilderOpen; }}
+              >
+                ${this.customBuilderOpen ? 'Close custom questionnaire builder' : 'Add your own questionnaire'}
+              </button>
+              ${this.customDefinition
+                ? html`
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      @click=${this.downloadCustomDefinition}
+                    >
+                      Download current questionnaire definition
+                    </button>
+                  `
+                : nothing}
+            </div>
+            ${this.customBuilderOpen ? this.renderCustomQuestionnaireBuilder() : nothing}
             <label>
               <strong>Study ID</strong>
               <span>Internal label shared by records from one study or condition. Example: ACCESS-TECH-01. Do not use a participant name.</span>
@@ -226,7 +280,7 @@ export class StudyConductorApp extends LitElement {
         <section class="panel conductor-panel" aria-labelledby="support-config-heading">
           <h2 id="support-config-heading">2. Prepare the participant questionnaire</h2>
           <p>
-            These are starting settings. The selected definition keeps its official items, values,
+            These are starting settings. The selected definition keeps its declared items, values,
             workflow and allowlisted scoring rule unchanged.
           </p>
           <div class="config-grid">
@@ -465,6 +519,494 @@ export class StudyConductorApp extends LitElement {
     `;
   }
 
+  private renderCustomQuestionnaireBuilder() {
+    return html`
+      <section
+        class="custom-questionnaire-builder full-width"
+        id="custom-questionnaire-builder"
+        aria-labelledby="custom-questionnaire-heading"
+      >
+        <h3 id="custom-questionnaire-heading">Add a researcher-supplied questionnaire</h3>
+        <p>
+          No code is required. This builder supports 1–${MAX_CUSTOM_QUESTIONNAIRE_ITEMS}
+          required single-choice items that share one whole-number response scale.
+          It can calculate a reviewed mean or sum, including selected reverse-scored items.
+        </p>
+        <aside class="boundary-note important-boundary">
+          <p>
+            <strong>Check permission and measurement validity before use.</strong>
+            The platform validates structure and calculation, but it cannot decide whether a
+            questionnaire is licensed, validated for the study population, or suitable for the
+            research question. Free text, branching, multiple answers, custom formulas and
+            executable code are deliberately not accepted.
+          </p>
+        </aside>
+
+        <div class="form-grid custom-definition-fields">
+          <label>
+            <strong>Questionnaire name</strong>
+            <span>Full participant-facing name.</span>
+            <input
+              data-custom-field="name"
+              maxlength="120"
+              .value=${this.customDraft.name}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('name', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label>
+            <strong>Short name</strong>
+            <span>Short label used in results, for example WAI.</span>
+            <input
+              data-custom-field="short-name"
+              maxlength="40"
+              .value=${this.customDraft.shortName}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('shortName', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label>
+            <strong>Questionnaire version</strong>
+            <span>Version of the wording and scoring definition.</span>
+            <input
+              data-custom-field="version"
+              maxlength="40"
+              .value=${this.customDraft.version}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('version', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label>
+            <strong>Source or authorship label</strong>
+            <span>Primary source, author, or “Researcher-supplied questionnaire”.</span>
+            <input
+              data-custom-field="source-label"
+              maxlength="240"
+              .value=${this.customDraft.sourceLabel}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('sourceLabel', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label class="full-width">
+            <strong>Source URL (optional)</strong>
+            <span>Use an HTTPS link to the primary instrument source when one is available.</span>
+            <input
+              data-custom-field="source-url"
+              type="url"
+              inputmode="url"
+              maxlength="500"
+              placeholder="https://example.org/questionnaire"
+              .value=${this.customDraft.sourceUrl}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('sourceUrl', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label class="full-width">
+            <strong>Description</strong>
+            <span>Short explanation shown under the questionnaire title.</span>
+            <textarea
+              data-custom-field="description"
+              rows="3"
+              maxlength="400"
+              .value=${this.customDraft.description}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('description', (event.currentTarget as HTMLTextAreaElement).value)}
+            ></textarea>
+          </label>
+          <label class="full-width">
+            <strong>Participant instruction</strong>
+            <span>What participants should think about before answering.</span>
+            <textarea
+              data-custom-field="intro-prompt"
+              rows="3"
+              maxlength="400"
+              .value=${this.customDraft.introPrompt}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('introPrompt', (event.currentTarget as HTMLTextAreaElement).value)}
+            ></textarea>
+          </label>
+          <label>
+            <strong>Scale type</strong>
+            <span>Controls how the shared response scale is described.</span>
+            <select
+              data-custom-field="scale-type"
+              .value=${this.customDraft.scaleType}
+              @change=${(event: Event) =>
+                this.updateCustomDraft(
+                  'scaleType',
+                  (event.currentTarget as HTMLSelectElement)
+                    .value as CustomQuestionnaireDraft['scaleType'],
+                )}
+            >
+              <option value="agreement">Agreement</option>
+              <option value="magnitude">Magnitude</option>
+              <option value="semantic-differential">Semantic differential</option>
+            </select>
+          </label>
+          <label>
+            <strong>Score calculation</strong>
+            <span>Mean keeps the scale range; sum adds adjusted item values.</span>
+            <select
+              data-custom-field="aggregation"
+              .value=${this.customDraft.aggregation}
+              @change=${(event: Event) =>
+                this.updateCustomDraft(
+                  'aggregation',
+                  (event.currentTarget as HTMLSelectElement)
+                    .value as CustomQuestionnaireDraft['aggregation'],
+                )}
+            >
+              <option value="mean">Mean of item values</option>
+              <option value="sum">Sum of item values</option>
+            </select>
+          </label>
+          <label>
+            <strong>Minimum response value</strong>
+            <span>Whole number from 0 to 99.</span>
+            <input
+              data-custom-field="minimum"
+              type="number"
+              min="0"
+              max="99"
+              step="1"
+              .value=${String(this.customDraft.minimum)}
+              @input=${(event: Event) =>
+                this.updateCustomDraft(
+                  'minimum',
+                  (event.currentTarget as HTMLInputElement).valueAsNumber,
+                )}
+            />
+          </label>
+          <label>
+            <strong>Maximum response value</strong>
+            <span>Whole number up to 100.</span>
+            <input
+              data-custom-field="maximum"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              .value=${String(this.customDraft.maximum)}
+              @input=${(event: Event) =>
+                this.updateCustomDraft(
+                  'maximum',
+                  (event.currentTarget as HTMLInputElement).valueAsNumber,
+                )}
+            />
+          </label>
+          <label>
+            <strong>Response step</strong>
+            <span>The range must divide exactly by this positive whole number.</span>
+            <input
+              data-custom-field="step"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              .value=${String(this.customDraft.step)}
+              @input=${(event: Event) =>
+                this.updateCustomDraft(
+                  'step',
+                  (event.currentTarget as HTMLInputElement).valueAsNumber,
+                )}
+            />
+          </label>
+          <label>
+            <strong>Score name</strong>
+            <span>Label used on review, result and export pages.</span>
+            <input
+              data-custom-field="score-name"
+              maxlength="120"
+              .value=${this.customDraft.scoreName}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('scoreName', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+        </div>
+
+        <fieldset class="custom-items">
+          <legend>Questionnaire items</legend>
+          <p>
+            Each item uses the shared numeric range but may have different visible endpoint labels.
+            A reverse-scored response is transformed as minimum + maximum − response before the
+            mean or sum is calculated.
+          </p>
+          ${this.customDraft.items.map((item, index) =>
+            this.renderCustomQuestionnaireItem(item, index))}
+          <button
+            class="secondary-button"
+            type="button"
+            ?disabled=${this.customDraft.items.length >= MAX_CUSTOM_QUESTIONNAIRE_ITEMS}
+            @click=${this.addCustomItem}
+          >
+            Add another item
+          </button>
+        </fieldset>
+
+        <div class="button-row compact">
+          <button
+            class="primary-button"
+            type="button"
+            @click=${this.useCustomDraft}
+          >
+            Validate and use this questionnaire
+          </button>
+          <label class="secondary-button file-button">
+            Import questionnaire definition JSON
+            <input
+              class="sr-only"
+              data-custom-definition-import
+              type="file"
+              accept=".json,application/json"
+              @change=${this.importCustomDefinition}
+            />
+          </label>
+          <button
+            class="secondary-button"
+            type="button"
+            @click=${this.resetCustomDraft}
+          >
+            Reset builder fields
+          </button>
+        </div>
+        <p class="support-boundary">
+          After validation, the full definition is embedded in the configuration and participant
+          link. Download its JSON for the study protocol. Importing that definition or a saved
+          configuration reproduces the same items, scale and scoring rule without changing source code.
+        </p>
+      </section>
+    `;
+  }
+
+  private renderCustomQuestionnaireItem(
+    item: CustomQuestionnaireItemDraft,
+    index: number,
+  ) {
+    return html`
+      <section class="custom-item-editor" aria-labelledby=${`custom-item-${index + 1}-heading`}>
+        <div class="custom-item-heading">
+          <h4 id=${`custom-item-${index + 1}-heading`}>Item ${index + 1}</h4>
+          <button
+            class="secondary-button"
+            type="button"
+            ?disabled=${this.customDraft.items.length === 1}
+            aria-label=${`Remove item ${index + 1}`}
+            @click=${() => this.removeCustomItem(index)}
+          >
+            Remove item
+          </button>
+        </div>
+        <div class="form-grid">
+          <label>
+            <strong>Item label</strong>
+            <span>Short name shown on review and export.</span>
+            <input
+              data-custom-item=${index}
+              data-custom-item-field="name"
+              maxlength="120"
+              .value=${item.name}
+              @input=${(event: Event) =>
+                this.updateCustomItem(
+                  index,
+                  'name',
+                  (event.currentTarget as HTMLInputElement).value,
+                )}
+            />
+          </label>
+          <label class="custom-reverse-option">
+            <input
+              data-custom-item=${index}
+              data-custom-item-field="reverse-scored"
+              type="checkbox"
+              .checked=${item.reverseScored}
+              @change=${(event: Event) =>
+                this.updateCustomItem(
+                  index,
+                  'reverseScored',
+                  (event.currentTarget as HTMLInputElement).checked,
+                )}
+            />
+            <span>
+              <strong>Reverse this item for scoring</strong>
+              <small>The displayed and stored answer is unchanged; only score calculation is reversed.</small>
+            </span>
+          </label>
+          <label class="full-width">
+            <strong>Question or statement</strong>
+            <textarea
+              data-custom-item=${index}
+              data-custom-item-field="prompt"
+              rows="3"
+              maxlength="1000"
+              .value=${item.prompt}
+              @input=${(event: Event) =>
+                this.updateCustomItem(
+                  index,
+                  'prompt',
+                  (event.currentTarget as HTMLTextAreaElement).value,
+                )}
+            ></textarea>
+          </label>
+          <label>
+            <strong>Low endpoint label</strong>
+            <input
+              data-custom-item=${index}
+              data-custom-item-field="low-anchor"
+              maxlength="80"
+              .value=${item.lowAnchor}
+              @input=${(event: Event) =>
+                this.updateCustomItem(
+                  index,
+                  'lowAnchor',
+                  (event.currentTarget as HTMLInputElement).value,
+                )}
+            />
+          </label>
+          <label>
+            <strong>High endpoint label</strong>
+            <input
+              data-custom-item=${index}
+              data-custom-item-field="high-anchor"
+              maxlength="80"
+              .value=${item.highAnchor}
+              @input=${(event: Event) =>
+                this.updateCustomItem(
+                  index,
+                  'highAnchor',
+                  (event.currentTarget as HTMLInputElement).value,
+                )}
+            />
+          </label>
+          <label class="full-width">
+            <strong>Simpler explanation (optional)</strong>
+            <span>
+              This support is offered only when every item has an explanation. Do not paraphrase a
+              validated instrument without evidence and approval.
+            </span>
+            <textarea
+              data-custom-item=${index}
+              data-custom-item-field="simple-explanation"
+              rows="2"
+              maxlength="1000"
+              .value=${item.simpleExplanation}
+              @input=${(event: Event) =>
+                this.updateCustomItem(
+                  index,
+                  'simpleExplanation',
+                  (event.currentTarget as HTMLTextAreaElement).value,
+                )}
+            ></textarea>
+          </label>
+        </div>
+      </section>
+    `;
+  }
+
+  private updateCustomDraft<K extends keyof CustomQuestionnaireDraft>(
+    field: K,
+    value: CustomQuestionnaireDraft[K],
+  ) {
+    this.customDraft = { ...this.customDraft, [field]: value };
+  }
+
+  private updateCustomItem<K extends keyof CustomQuestionnaireItemDraft>(
+    index: number,
+    field: K,
+    value: CustomQuestionnaireItemDraft[K],
+  ) {
+    this.customDraft = {
+      ...this.customDraft,
+      items: this.customDraft.items.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item),
+    };
+  }
+
+  private addCustomItem = () => {
+    if (this.customDraft.items.length >= MAX_CUSTOM_QUESTIONNAIRE_ITEMS) return;
+    this.customDraft = {
+      ...this.customDraft,
+      items: [
+        ...this.customDraft.items,
+        createCustomItemDraft({
+          name: `Item ${this.customDraft.items.length + 1}`,
+        }),
+      ],
+    };
+  };
+
+  private removeCustomItem(index: number) {
+    if (this.customDraft.items.length === 1) return;
+    this.customDraft = {
+      ...this.customDraft,
+      items: this.customDraft.items.filter((_, itemIndex) => itemIndex !== index),
+    };
+  }
+
+  private activateCustomDefinition(definition: QuestionnaireDefinition) {
+    this.customDefinition = definition;
+    this.instrumentId = definition.id;
+    if (!definition.supports.simplerExplanations) this.showSimpleLanguage = false;
+    this.answerMode = 'standard';
+    this.generatedConfig = null;
+    this.participantUrl = '';
+    this.message =
+      `${definition.name} ${definition.version} validated and selected. ` +
+      'Complete the study details, then generate a new configuration.';
+  }
+
+  private useCustomDraft = () => {
+    this.errorMessage = '';
+    try {
+      this.activateCustomDefinition(
+        createCustomQuestionnaireDefinition(this.customDraft),
+      );
+    } catch (error) {
+      this.showError(
+        error instanceof Error
+          ? error.message
+          : 'The custom questionnaire could not be validated.',
+      );
+    }
+  };
+
+  private importCustomDefinition = async (event: Event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.errorMessage = '';
+    try {
+      const definition = validateCustomQuestionnaireDefinition(
+        JSON.parse(await file.text()) as unknown,
+      );
+      this.activateCustomDefinition(definition);
+      this.message =
+        `${definition.name} ${definition.version} imported, validated and selected.`;
+    } catch (error) {
+      this.showError(
+        error instanceof Error
+          ? error.message
+          : 'The questionnaire definition file could not be read.',
+      );
+    } finally {
+      input.value = '';
+    }
+  };
+
+  private downloadCustomDefinition = () => {
+    if (!this.customDefinition) return;
+    downloadTextFile(
+      customDefinitionFileName(this.customDefinition),
+      JSON.stringify(this.customDefinition, null, 2),
+      'application/json',
+    );
+  };
+
+  private resetCustomDraft = () => {
+    this.customDraft = createCustomQuestionnaireDraft();
+    this.message =
+      'Custom questionnaire builder fields reset. The selected questionnaire is unchanged until you validate a new definition.';
+  };
+
   private booleanOption(label: string, checked: boolean, update: (value: boolean) => void, help = '') {
     return html`<label class="toggle-card conductor-toggle">
       <input type="checkbox" .checked=${checked} @change=${(event: Event) => update((event.currentTarget as HTMLInputElement).checked)} />
@@ -500,6 +1042,9 @@ export class StudyConductorApp extends LitElement {
   }
 
   private useConfiguration(config: StudyConfig) {
+    if (config.questionnaireDefinition) {
+      this.customDefinition = config.questionnaireDefinition;
+    }
     this.generatedConfig = config;
     this.instrumentId = config.instrumentId;
     this.studyId = config.studyId;
@@ -697,6 +1242,9 @@ export class StudyConductorApp extends LitElement {
     try {
       const config = createStudyConfig({
         instrumentId: this.instrumentId,
+        ...(this.customDefinition?.id === this.instrumentId
+          ? { questionnaireDefinition: this.customDefinition }
+          : {}),
         studyId: this.studyId,
         studyTitle: this.studyTitle,
         taskLabel: this.taskLabel,

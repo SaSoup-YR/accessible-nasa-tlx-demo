@@ -18,10 +18,19 @@ The implementation must make explicit:
 - a generated `index.html#study=...` route is the participant page.
 - the participant runner loads a validated, versioned questionnaire definition.
 
-The conductor chooses the registered instrument, study context, support defaults,
+The conductor chooses a built-in instrument or validates a bounded
+researcher-supplied definition, then sets study context, support defaults,
 participant-adjustment policy, input routes, score-display policy and collection
-mode. The participant link contains configuration only, never identity, answers or
-secrets.
+mode. The participant link contains configuration and, for a custom instrument,
+its data-only definition. It never contains participant identity, answers,
+account tokens or executable code.
+
+For a new questionnaire, the conductor uses the no-code builder or imports a
+previously downloaded definition JSON. The supported profile is 1–20 required
+single-choice items on one shared whole-number scale, with reviewed mean or sum
+scoring and optional reverse-scored items. The builder validates before a link
+can be generated. The study protocol should retain the downloaded definition and
+the generated configuration.
 
 ## Local technical workflow
 
@@ -69,7 +78,7 @@ JSON is lossless; CSV is flattened for analysis.
 | Area | Contents |
 | --- | --- |
 | Provenance | schema, prototype, study, configuration and submission IDs |
-| Instrument | ID, name, version, definition schema and scoring strategy |
+| Instrument | ID, name, version, definition schema and scoring strategy; full definition snapshot for a researcher-supplied questionnaire |
 | Identity boundary | pseudonymous participant code only |
 | Timing | start, changes and completion |
 | Answers | generic item responses, optional pairs and presentation order |

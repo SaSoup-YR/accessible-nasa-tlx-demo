@@ -3,7 +3,9 @@ export type ScoringStrategy =
   | 'nasa-tlx-weighted-v1'
   | 'nasa-tlx-raw-v1'
   | 'sus-standard-v1'
-  | 'ueqs-standard-v1';
+  | 'ueqs-standard-v1'
+  | 'mean-v1'
+  | 'sum-v1';
 export type ResponseScaleType = 'magnitude' | 'agreement' | 'semantic-differential';
 export type LandmarkPosition = 'low' | 'closer-low' | 'middle' | 'closer-high' | 'high';
 
@@ -42,7 +44,7 @@ export interface QuestionnaireDefinition {
   officialContentNotice: string;
   source: {
     label: string;
-    url: string;
+    url?: string;
   };
   scale: {
     type: ResponseScaleType;
@@ -63,6 +65,7 @@ export interface QuestionnaireDefinition {
     scoreName: string;
     minimum: number;
     maximum: number;
+    reverseItemIds?: ItemId[];
   };
   supports: {
     simplerExplanations: boolean;
@@ -156,12 +159,15 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
   const id = text(root.id, 'id', 64, /^[a-z][a-z0-9-]*$/);
   const source = record(root.source, 'source');
   onlyKeys(source, ['label', 'url'], 'source');
-  const sourceUrl = text(source.url, 'source.url', 500);
-  try {
-    const parsed = new URL(sourceUrl);
-    if (parsed.protocol !== 'https:') throw new Error();
-  } catch {
-    throw new Error('source.url must be an absolute HTTPS URL.');
+  let sourceUrl: string | undefined;
+  if (source.url !== undefined) {
+    sourceUrl = text(source.url, 'source.url', 500);
+    try {
+      const parsed = new URL(sourceUrl);
+      if (parsed.protocol !== 'https:') throw new Error();
+    } catch {
+      throw new Error('source.url must be an absolute HTTPS URL.');
+    }
   }
 
   const scale = record(root.scale, 'scale');
@@ -274,18 +280,42 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
   }
 
   const scoring = record(root.scoring, 'scoring');
-  onlyKeys(scoring, ['strategy', 'scoreName', 'minimum', 'maximum'], 'scoring');
+  onlyKeys(
+    scoring,
+    ['strategy', 'scoreName', 'minimum', 'maximum', 'reverseItemIds'],
+    'scoring',
+  );
   if (
     scoring.strategy !== 'nasa-tlx-weighted-v1' &&
     scoring.strategy !== 'nasa-tlx-raw-v1' &&
     scoring.strategy !== 'sus-standard-v1' &&
-    scoring.strategy !== 'ueqs-standard-v1'
+    scoring.strategy !== 'ueqs-standard-v1' &&
+    scoring.strategy !== 'mean-v1' &&
+    scoring.strategy !== 'sum-v1'
   ) {
     throw new Error('scoring.strategy is not in the executable scorer allowlist.');
   }
   const scoringMinimum = integer(scoring.minimum, 'scoring.minimum');
   const scoringMaximum = integer(scoring.maximum, 'scoring.maximum');
   if (scoringMinimum >= scoringMaximum) throw new Error('scoring score range must increase.');
+  let reverseItemIds: string[] | undefined;
+  if (scoring.reverseItemIds !== undefined) {
+    if (
+      !Array.isArray(scoring.reverseItemIds) ||
+      scoring.reverseItemIds.some((itemId) => typeof itemId !== 'string')
+    ) {
+      throw new Error('scoring.reverseItemIds must be a list of item IDs.');
+    }
+    reverseItemIds = scoring.reverseItemIds.map((itemId) =>
+      text(itemId, 'scoring.reverseItemIds', 64, /^[a-z][a-z0-9_-]*$/));
+    if (new Set(reverseItemIds).size !== reverseItemIds.length) {
+      throw new Error('scoring.reverseItemIds must not contain duplicates.');
+    }
+    const itemIds = new Set(items.map((item) => item.id));
+    if (reverseItemIds.some((itemId) => !itemIds.has(itemId))) {
+      throw new Error('scoring.reverseItemIds contains an unknown item ID.');
+    }
+  }
   if (scoring.strategy === 'nasa-tlx-weighted-v1') {
     if (
       scale.type !== 'magnitude' ||
@@ -340,6 +370,33 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
       throw new Error('The UEQ-S scorer requires the ordered ueqs01–ueqs08 items on a 1–7 semantic-differential scale without comparisons.');
     }
   }
+  if (
+    scoring.strategy !== 'mean-v1' &&
+    scoring.strategy !== 'sum-v1' &&
+    reverseItemIds?.length
+  ) {
+    throw new Error('Reverse-scored item IDs are only supported by the generic mean and sum scorers.');
+  }
+  if (scoring.strategy === 'mean-v1' || scoring.strategy === 'sum-v1') {
+    if (pairwise) {
+      throw new Error('The generic mean and sum scorers do not support pairwise comparisons.');
+    }
+    if (items.length > 20) {
+      throw new Error('A researcher-supplied questionnaire may contain no more than 20 items.');
+    }
+    if (minimum < 0 || maximum > 100) {
+      throw new Error('A researcher-supplied response scale must remain between 0 and 100.');
+    }
+    const expectedMinimum =
+      scoring.strategy === 'mean-v1' ? minimum : minimum * items.length;
+    const expectedMaximum =
+      scoring.strategy === 'mean-v1' ? maximum : maximum * items.length;
+    if (scoringMinimum !== expectedMinimum || scoringMaximum !== expectedMaximum) {
+      throw new Error(
+        `The ${scoring.strategy === 'mean-v1' ? 'mean' : 'sum'} scorer range must be ${expectedMinimum}–${expectedMaximum}.`,
+      );
+    }
+  }
 
   const supports = record(root.supports, 'supports');
   onlyKeys(supports, ['simplerExplanations', 'smileyLandmarks'], 'supports');
@@ -367,7 +424,7 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
     officialContentNotice: text(root.officialContentNotice, 'officialContentNotice', 400),
     source: {
       label: text(source.label, 'source.label', 240),
-      url: sourceUrl,
+      ...(sourceUrl ? { url: sourceUrl } : {}),
     },
     scale: { type: scale.type, minimum, maximum, step },
     items,
@@ -378,6 +435,7 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
       scoreName: text(scoring.scoreName, 'scoring.scoreName', 120),
       minimum: scoringMinimum,
       maximum: scoringMaximum,
+      ...(reverseItemIds?.length ? { reverseItemIds } : {}),
     },
     supports: {
       simplerExplanations: supports.simplerExplanations,
@@ -421,7 +479,47 @@ const questionnaireById = new Map(
 );
 
 export const DEFAULT_QUESTIONNAIRE_ID = 'nasa-tlx-weighted';
+export const MAX_EMBEDDED_DEFINITION_BYTES = 9000;
 
 export function getQuestionnaireDefinition(id: string) {
   return questionnaireById.get(id) ?? null;
+}
+
+export function questionnaireDefinitionSize(definition: QuestionnaireDefinition) {
+  return new TextEncoder().encode(JSON.stringify(definition)).byteLength;
+}
+
+/**
+ * Resolve either an immutable built-in definition or a validated definition
+ * embedded in a study configuration. An embedded definition may not replace a
+ * built-in ID, and its bounded size keeps participant links and Qualtrics raw
+ * records within the documented transport allocation.
+ */
+export function resolveQuestionnaireDefinition(
+  id: string,
+  embeddedDefinition?: unknown,
+): QuestionnaireDefinition | null {
+  const builtIn = getQuestionnaireDefinition(id);
+  if (embeddedDefinition === undefined) return builtIn;
+  if (builtIn) return null;
+  try {
+    const definition = validateQuestionnaireDefinition(embeddedDefinition);
+    if (
+      definition.id !== id ||
+      !definition.id.startsWith('custom-') ||
+      (
+        definition.scoring.strategy !== 'mean-v1' &&
+        definition.scoring.strategy !== 'sum-v1'
+      ) ||
+      Boolean(definition.pairwise) ||
+      Boolean(definition.landmarks) ||
+      definition.supports.smileyLandmarks ||
+      questionnaireDefinitionSize(definition) > MAX_EMBEDDED_DEFINITION_BYTES
+    ) {
+      return null;
+    }
+    return definition;
+  } catch {
+    return null;
+  }
 }

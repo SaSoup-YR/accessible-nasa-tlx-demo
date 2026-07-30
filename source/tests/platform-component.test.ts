@@ -5,6 +5,11 @@ import '../src/study-conductor';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 import type { StudyConductorApp } from '../src/study-conductor';
 import {
+  createCustomItemDraft,
+  createCustomQuestionnaireDefinition,
+  createCustomQuestionnaireDraft,
+} from '../src/custom-questionnaire';
+import {
   buildParticipantUrl,
   createStudyConfig,
   readStudyConfigFromHash,
@@ -26,6 +31,91 @@ afterEach(() => {
 });
 
 describe('instrument-independent questionnaire workflow', () => {
+  it('runs a researcher-supplied definition through the same participant, result and recovery model', async () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.name = 'Work Assistance Inventory';
+    draft.shortName = 'WAI';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Clarity',
+        prompt: 'The instructions were clear.',
+        lowAnchor: 'Strongly disagree',
+        highAnchor: 'Strongly agree',
+      }),
+      createCustomItemDraft({
+        name: 'Difficulty',
+        prompt: 'The task was difficult.',
+        lowAnchor: 'Strongly disagree',
+        highAnchor: 'Strongly agree',
+        reverseScored: true,
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'CUSTOM-PLATFORM-01',
+      studyTitle: 'Custom questionnaire evaluation',
+      taskLabel: 'using the route-planning system',
+      showScoreToParticipant: true,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    let completed: StudyResultRecord | null = null;
+    component.addEventListener('questionnaire-complete', (event) => {
+      completed = (event as CustomEvent<StudyResultRecord>).detail;
+    });
+    document.body.append(component);
+    await component.updateComplete;
+
+    expect(component.querySelector('h1')?.textContent).toBe('Work Assistance Inventory');
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-CUSTOM-01';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 2 items'))!
+      .click();
+    await component.updateComplete;
+
+    for (const value of ['5', '1']) {
+      component.querySelector<HTMLInputElement>(
+        `.rating-option input[value="${value}"]`,
+      )!.click();
+      await component.updateComplete;
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) =>
+          button.textContent?.includes(value === '1' ? 'Review responses' : 'Next question'))!
+        .click();
+      await component.updateComplete;
+    }
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit responses'))!
+      .click();
+    await component.updateComplete;
+
+    expect(completed).not.toBeNull();
+    expect((completed as unknown as StudyResultRecord).instrument.id).toBe('custom-wai');
+    expect((completed as unknown as StudyResultRecord).instrument.definition).toEqual(
+      definition,
+    );
+    expect((completed as unknown as StudyResultRecord).result.primaryScore).toBe(5);
+    expect(component.textContent).toContain('Questionnaire score');
+    expect(component.textContent).toContain('5.00');
+  });
+
   it('runs SUS through the same participant component without NASA comparison logic', async () => {
     const config = createStudyConfig({
       instrumentId: 'system-usability-scale',

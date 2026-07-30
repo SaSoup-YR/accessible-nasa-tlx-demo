@@ -9,10 +9,12 @@ npm test
 The exact checkpoint count is recorded in the root `BUILD-INFO.json` after each
 verified release build.
 
-- `questionnaire-definition.test.ts` — discovery, four definitions, semantic
+- `questionnaire-definition.test.ts` — discovery, four built-in definitions, semantic
   rejection, and weighted NASA-TLX, Raw TLX, SUS and UEQ-S scoring.
-- `platform-component.test.ts` — complete SUS, Raw TLX and UEQ-S participant flows
-  plus conductor link generation through the shared components.
+- `custom-questionnaire.test.ts` — no-code definition creation, bounded embedding,
+  mean/sum and reverse scoring, and executable/oversize rejection.
+- `platform-component.test.ts` — complete researcher-supplied, SUS, Raw TLX and UEQ-S
+  participant flows plus conductor link generation through the shared components.
 - `content.test.ts` and `scoring.test.ts` — NASA content, pair invariants and
   weighted scoring compatibility.
 - `voice-input.test.ts` — displayed values/labels, conservative ranked alternatives,
@@ -30,9 +32,9 @@ verified release build.
 - `result-sink.test.ts` — exact-origin and exact-build handshakes, full-viewport
   one-scroll presentation, generic 60-field SUS staging, bounded handoff, watchdog
   and failure navigation.
-- `conductor-component.test.ts` — role separation, two-instrument configuration,
+- `conductor-component.test.ts` — role separation, no-code custom definition,
   generated Qualtrics package, score-display-aware completion text and error focus.
-- `accessibility.test.ts` — five axe structural scans including SUS.
+- `accessibility.test.ts` — structural axe scans including the custom builder and SUS.
 - `focus-style.test.ts` — authored focus, control, selected, gaze and link contrast.
 - `standalone.test.ts` — Version 0.8 single-file packaging and component boot.
 - `webgazer-adapter.test.ts` — secure-context and dwell-state boundaries.

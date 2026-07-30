@@ -47,7 +47,40 @@ const digitWords = new Map<string, string>([
   ['nine', '9'],
 ]);
 
-for (const value of nasaRatingValues) {
+const smallNumberWords = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'eleven',
+  'twelve',
+  'thirteen',
+  'fourteen',
+  'fifteen',
+  'sixteen',
+  'seventeen',
+  'eighteen',
+  'nineteen',
+] as const;
+const tensWords = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'] as const;
+
+function integerWords(value: number) {
+  if (value < 20) return smallNumberWords[value];
+  if (value === 100) return 'one hundred';
+  const tens = Math.floor(value / 10);
+  const units = value % 10;
+  return units === 0 ? tensWords[tens] : `${tensWords[tens]} ${smallNumberWords[units]}`;
+}
+
+for (let value = 0; value <= 100; value += 1) {
+  spokenNumbers.set(integerWords(value), value);
   const digits = String(value)
     .split('')
     .map((digit) => [...digitWords].find(([, mapped]) => mapped === digit)?.[0])
