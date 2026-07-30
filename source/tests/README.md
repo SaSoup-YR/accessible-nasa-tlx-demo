@@ -14,7 +14,8 @@ verified release build.
 - `custom-questionnaire.test.ts` — no-code definition creation, bounded embedding,
   mean/sum and reverse scoring, and executable/oversize rejection.
 - `platform-questionnaire-import.test.ts` — bounded QSF/LSS format detection,
-  question/answer order, recoded values, safe conversion, malformed input,
+  current default recode/code shapes, base-language selection, inert versus
+  active attributes, question/answer order, safe conversion, malformed input,
   unsupported content, code rejection and JSON round-trip.
 - `platform-component.test.ts` — complete researcher-supplied, SUS, Raw TLX and UEQ-S
   participant flows, imported-QSF completion/export and conductor link generation

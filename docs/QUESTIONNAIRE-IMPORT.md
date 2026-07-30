@@ -43,14 +43,23 @@ Qualtrics support:
 - single-answer Likert matrices when row order, answer order and numeric recodes
   are explicit; each row becomes one item;
 - explicit `ChoiceOrder` or `AnswerOrder`; and
-- explicit whole-number `RecodeValues`.
+- explicit whole-number `RecodeValues`, or an omitted recode table only when the
+  file explicitly orders unchanged default choice IDs `1` through `N`. The
+  researcher must confirm that default-value conversion.
 
 LimeSurvey support:
 
-- one language and one question group;
+- one base language and one question group. If the LSS also contains additional
+  languages, only the declared base language is proposed and the omission is
+  shown for explicit confirmation;
 - mandatory `List (Radio)` (`L`) questions with explicit increasing numeric
-  answer codes or assessment values; and
+  answer codes or assessment values, or current default `A001` through `A00N`
+  codes converted to ordered positions `1` through `N` after confirmation;
 - mandatory `5 Point Choice` (`5`) questions.
+
+Empty and known inert/default LimeSurvey question attributes are reported for
+confirmation but do not block conversion. Active or unknown validation,
+randomisation, timing, visibility or presentation attributes still block it.
 
 The source question order, response order, displayed labels and accepted numeric
 values are preserved. Imported response labels remain visible in the participant
@@ -65,7 +74,8 @@ blocked when the export contains unsupported items or behaviour, including:
 - optional questions or “Other” free-text answers;
 - branching, skip/display/relevance logic, randomisation or carry-forward;
 - question help or group text that would otherwise be lost;
-- mixed item scales, missing order or missing/unsafe numeric recodes;
+- mixed item scales, missing order, unsafe recodes or non-default opaque answer
+  codes;
 - custom JavaScript, executable markup, event handlers, JavaScript URLs,
   expression text or arbitrary formulas;
 - participant-visible media, tables or interactive controls embedded in item
@@ -115,6 +125,7 @@ Run the two sanitised files included with the automated tests:
 
 - [`qualtrics-rating.qsf`](../source/tests/fixtures/qualtrics-rating.qsf)
 - [`limesurvey-rating.lss`](../source/tests/fixtures/limesurvey-rating.lss)
+- [`limesurvey-current-rating.lss`](../source/tests/fixtures/limesurvey-current-rating.lss)
 
 For each file:
 
@@ -128,12 +139,15 @@ For each file:
    - values `1, 2, 3, 4, 5` in order;
    - labels from **Strongly disagree** to **Strongly agree**;
    - zero unsupported items.
-5. Choose **Agreement**, **Mean of reviewed item values**, no reverse-scored
+5. For the current LimeSurvey fixture, also confirm that the English base
+   language, omitted additional language, default question attributes and
+   positional conversion of `A001`–`A005` are all reported rather than hidden.
+6. Choose **Agreement**, **Mean of reviewed item values**, no reverse-scored
    items, select the final confirmation checkbox, then convert.
-6. Confirm that the page moves to the green **Questionnaire ready** summary.
-7. Generate a local study, answer `4` and `2`, submit, and confirm a primary
+7. Confirm that the page moves to the green **Questionnaire ready** summary.
+8. Generate a local study, answer `4` and `2`, submit, and confirm a primary
    score of `3.00`.
-8. Export the result and confirm the two raw answers, primary score, instrument
+9. Export the result and confirm the two raw answers, primary score, instrument
    definition and source labels are present.
 
 ### 2. AQP JSON reproduction
