@@ -12,7 +12,18 @@ reviews supported QSF/LSS rating questions, blocks unsupported active content,
 and sends the confirmed result through the same definition validator described
 below.
 
-Open `study.html` and select **Add your own questionnaire**. A researcher can:
+Open `study.html` and select **Add your own questionnaire**. The page separates
+three routes:
+
+1. convert a reviewed Qualtrics QSF or LimeSurvey LSS source export;
+2. reproduce an AQP definition JSON previously downloaded from this platform; or
+3. build a bounded questionnaire manually.
+
+QSF/LSS and AQP JSON are not interchangeable. The first route converts external
+source-platform structure. The second revalidates an already normalised platform
+definition.
+
+With the manual route, a researcher can:
 
 1. enter the questionnaire name, version, description, participant instruction
    and source or authorship label;

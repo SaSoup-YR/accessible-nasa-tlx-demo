@@ -103,8 +103,8 @@ retyping the questionnaire.
 
 1. Open the versioned conductor page in a new private browser window.
 2. Open **Add your own questionnaire**.
-3. Select **Import questionnaire definition JSON** and choose the definition file
-   downloaded above.
+3. Under **2. Reuse an AQP questionnaire definition**, choose the definition
+   file downloaded above. Do not use the separate QSF/LSS source-export input.
 4. Confirm that the page moves to the visible **Questionnaire ready** summary and
    that Task Support Check is selected with the same three items, 1–5 scale and
    mean rule.
@@ -202,17 +202,18 @@ Create a new release candidate only after:
    newly exported row;
 9. no known blocking issue remains.
 
-If the current candidate is `v0.8.0-rc.1`, the next candidate is
-`v0.8.0-rc.2`. A published tag is immutable evidence: do not move or overwrite it.
-If a later defect is found, fix it and create `rc.3`.
+Choose the next unused release-candidate number after the latest published tag.
+A published tag is immutable evidence: do not move or overwrite it. If a defect
+is found after publication, correct it, repeat proportionate verification and
+create another candidate.
 
 To create the candidate in the GitHub interface:
 
 1. merge the verified changes into `main`;
 2. open **Releases** and select **Draft a new release**;
-3. select **Choose a tag**, enter `v0.8.0-rc.2`, and create it from the current
-   `main` commit;
-4. use release title `Accessible Questionnaire Platform v0.8.0-rc.2`;
+3. select **Choose a tag**, enter the next unused candidate tag, and create it
+   from the exact verified `main` commit;
+4. use release title `Accessible Questionnaire Platform <candidate tag>`;
 5. mark it as a **pre-release**;
 6. list the tested commit, bridge build, checks passed, known limits and exact
    conductor URL in the notes;
