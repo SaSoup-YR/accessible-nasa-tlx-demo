@@ -14,34 +14,38 @@ project's existing approved protocol and data-management plan.
 
 ## Release status
 
-The immutable evaluation baseline is **`v0.8.0-rc.2`**, paired with
+The immutable evaluation baseline is **`v0.8.0-rc.3`**, paired with
 Qualtrics bridge **`0.8.7-q7`**. It is intended for technical review and a
 bounded formative evaluation. The tag is an immutable evidence point: any later
-functional change requires a new tag and proportionate re-verification.
+functional change requires a new tag and proportionate re-verification. The
+earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
 
-The current `main` branch adds reviewed Qualtrics QSF and LimeSurvey LSS
-questionnaire import. It must receive a new release-candidate tag only after the
-automated suite, release build and manual real-export checks pass. The existing
-`v0.8.0-rc.2` tag is not moved.
+### Verification recorded for `v0.8.0-rc.3`
 
-### Structured-import candidate verification
+Automated verification:
 
-The current structured-import candidate passes:
+- a clean lock-file installation completed;
+- 18 test files passed, containing 149 passing tests;
+- 9 representative axe structural accessibility scans passed; and
+- TypeScript, production, standalone and synchronized release builds passed.
 
-- a clean lock-file installation;
-- 18 test files containing 149 passing tests;
-- 9 representative axe structural accessibility scans;
-- TypeScript, production, standalone and synchronized release builds; and
-- QSF/LSS fixture checks for order, values, labels, malformed input, unsupported
-  types, logic, executable content, conversion, JSON round-trip, participant
-  completion, scoring and result export.
+Manual structured-import verification:
 
-Exact fresh exports supplied from Qualtrics and LimeSurvey now pass direct
-regression checks against the importer. Before a new tag is created, repeat both
-conversions through the deployed conductor interface, compare each review and
-downloaded definition with its source, then complete a synthetic local and
-Qualtrics result. Record any limitation discovered; otherwise the next immutable
-candidate may be tagged `v0.8.0-rc.3`.
+- fresh Qualtrics QSF and LimeSurvey LSS exports were imported through the
+  deployed conductor page;
+- questionnaire title, item order, wording, response labels and numeric values
+  were checked against each source export before conversion;
+- both converted definitions generated working participant questionnaires, and
+  responses 4 and 2 produced the reviewed mean score 3.00;
+- the converted LSS definition was installed with the matching Qualtrics bridge
+  and completed through an activated UCL Qualtrics distribution link; and
+- two exported Qualtrics rows each contained `AQP_ACCEPTED = 1`, schema 4,
+  instrument ID `custom-tsc`, ratings 4 and 2, and primary score 3.00.
+
+Unsupported or uncertain source content remains visible and blocks conversion
+rather than being silently removed or approximated. These checks establish the
+tested technical workflow; they do not establish universal accessibility,
+psychometric equivalence or benefit for a disability group.
 
 ### Verification recorded for `v0.8.0-rc.2`
 
