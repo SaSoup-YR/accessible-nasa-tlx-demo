@@ -40,6 +40,46 @@ describe('structured questionnaire export import', () => {
     );
   });
 
+  it('imports a current Qualtrics QSF that omits unchanged default recodes', () => {
+    const qsf = JSON.parse(fixture('qualtrics-rating.qsf'));
+    qsf.SurveyElements
+      .filter((element: any) => element.Element === 'SQ')
+      .forEach((element: any) => {
+        delete element.Payload.RecodeValues;
+      });
+
+    const review = reviewQuestionnaireExport(
+      JSON.stringify(qsf),
+      'current-task-support.qsf',
+    );
+
+    expect(review.canConvert).toBe(true);
+    expect(review.unsupported).toEqual([]);
+    expect(review.draft?.minimum).toBe(1);
+    expect(review.draft?.maximum).toBe(5);
+    expect(review.confirmations.map(({ code }) => code)).toContain(
+      'qualtrics-default-recodes',
+    );
+  });
+
+  it('does not infer Qualtrics values from non-default choice IDs', () => {
+    const qsf = JSON.parse(fixture('qualtrics-rating.qsf'));
+    const question = qsf.SurveyElements.find(
+      (element: any) => element.PrimaryAttribute === 'QID_CONTROL',
+    );
+    delete question.Payload.RecodeValues;
+    question.Payload.Choices['7'] = question.Payload.Choices['5'];
+    delete question.Payload.Choices['5'];
+    question.Payload.ChoiceOrder = [1, 2, 3, 4, 7];
+
+    const review = reviewQuestionnaireExport(JSON.stringify(qsf), 'unsafe-values.qsf');
+
+    expect(review.canConvert).toBe(false);
+    expect(review.unsupported.map(({ code }) => code)).toContain(
+      'qualtrics-missing-scale',
+    );
+  });
+
   it('imports ordered LimeSurvey LSS questions and answer labels', () => {
     const review = reviewQuestionnaireExport(
       fixture('limesurvey-rating.lss'),
@@ -57,6 +97,47 @@ describe('structured questionnaire export import', () => {
     expect(review.draft?.maximum).toBe(5);
     expect(review.draft?.step).toBe(1);
     expect(review.draft?.items[1].responseLabels?.['4']).toBe('Agree');
+  });
+
+  it('imports the current LimeSurvey base-language, localisation and default-code shape', () => {
+    const review = reviewQuestionnaireExport(
+      fixture('limesurvey-current-rating.lss'),
+      'current-task-support.lss',
+    );
+
+    expect(review.canConvert).toBe(true);
+    expect(review.unsupported).toEqual([]);
+    expect(review.draft?.items.map(({ name, prompt }) => ({ name, prompt }))).toEqual([
+      { name: 'CLARITY', prompt: 'The task instructions were clear.' },
+      { name: 'CONTROL', prompt: 'I felt in control while completing the task.' },
+    ]);
+    expect(review.draft?.items[0].responseLabels?.['5']).toBe('Strongly agree');
+    expect(review.confirmations.map(({ code }) => code)).toEqual(
+      expect.arrayContaining([
+        'limesurvey-base-language-only',
+        'limesurvey-default-question-attributes',
+        'limesurvey-positional-values',
+      ]),
+    );
+  });
+
+  it('still blocks active LimeSurvey attributes and scripts', () => {
+    const lss = fixture('limesurvey-current-rating.lss')
+      .replace(
+        '<attribute><![CDATA[answer_order]]></attribute><value><![CDATA[normal]]></value>',
+        '<attribute><![CDATA[random_group]]></attribute><value><![CDATA[group-a]]></value>',
+      )
+      .replace('<script/>', '<script><![CDATA[alert(1)]]></script>');
+
+    const review = reviewQuestionnaireExport(lss, 'unsafe-current.lss');
+
+    expect(review.canConvert).toBe(false);
+    expect(review.unsupported.map(({ code }) => code)).toEqual(
+      expect.arrayContaining([
+        'limesurvey-question-attributes',
+        'limesurvey-question-script',
+      ]),
+    );
   });
 
   it('expands an explicitly ordered Qualtrics single-answer Likert matrix', () => {

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+ <LimeSurveyDocType>Survey</LimeSurveyDocType>
+ <DBVersion>650</DBVersion>
+ <languages>
+  <language>zh-Hant-HK</language>
+  <language>en</language>
+ </languages>
+ <answers>
+  <rows>
+   <row><aid><![CDATA[101]]></aid><qid><![CDATA[201]]></qid><code><![CDATA[A001]]></code><sortorder><![CDATA[0]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[102]]></aid><qid><![CDATA[201]]></qid><code><![CDATA[A002]]></code><sortorder><![CDATA[1]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[103]]></aid><qid><![CDATA[201]]></qid><code><![CDATA[A003]]></code><sortorder><![CDATA[2]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[104]]></aid><qid><![CDATA[201]]></qid><code><![CDATA[A004]]></code><sortorder><![CDATA[3]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[105]]></aid><qid><![CDATA[201]]></qid><code><![CDATA[A005]]></code><sortorder><![CDATA[4]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[106]]></aid><qid><![CDATA[202]]></qid><code><![CDATA[A001]]></code><sortorder><![CDATA[0]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[107]]></aid><qid><![CDATA[202]]></qid><code><![CDATA[A002]]></code><sortorder><![CDATA[1]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[108]]></aid><qid><![CDATA[202]]></qid><code><![CDATA[A003]]></code><sortorder><![CDATA[2]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[109]]></aid><qid><![CDATA[202]]></qid><code><![CDATA[A004]]></code><sortorder><![CDATA[3]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+   <row><aid><![CDATA[110]]></aid><qid><![CDATA[202]]></qid><code><![CDATA[A005]]></code><sortorder><![CDATA[4]]></sortorder><assessment_value><![CDATA[0]]></assessment_value><scale_id><![CDATA[0]]></scale_id></row>
+  </rows>
+ </answers>
+ <answer_l10ns>
+  <rows>
+   <row><aid><![CDATA[101]]></aid><answer><![CDATA[<p>Strongly disagree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[102]]></aid><answer><![CDATA[<p>Disagree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[103]]></aid><answer><![CDATA[<p>Neither agree nor disagree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[104]]></aid><answer><![CDATA[<p>Agree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[105]]></aid><answer><![CDATA[<p>Strongly agree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[106]]></aid><answer><![CDATA[<p>Strongly disagree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[107]]></aid><answer><![CDATA[<p>Disagree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[108]]></aid><answer><![CDATA[<p>Neither agree nor disagree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[109]]></aid><answer><![CDATA[<p>Agree</p>]]></answer><language><![CDATA[en]]></language></row>
+   <row><aid><![CDATA[110]]></aid><answer><![CDATA[<p>Strongly agree</p>]]></answer><language><![CDATA[en]]></language></row>
+  </rows>
+ </answer_l10ns>
+ <groups>
+  <rows>
+   <row><gid><![CDATA[10]]></gid><sid><![CDATA[100001]]></sid><group_order><![CDATA[1]]></group_order><randomization_group/><grelevance><![CDATA[1]]></grelevance></row>
+  </rows>
+ </groups>
+ <group_l10ns>
+  <rows>
+   <row><gid><![CDATA[10]]></gid><group_name><![CDATA[Task support]]></group_name><description/><language><![CDATA[en]]></language></row>
+   <row><gid><![CDATA[10]]></gid><group_name><![CDATA[Task support]]></group_name><description/><language><![CDATA[zh-Hant-HK]]></language></row>
+  </rows>
+ </group_l10ns>
+ <questions>
+  <rows>
+   <row><qid><![CDATA[201]]></qid><parent_qid><![CDATA[0]]></parent_qid><sid><![CDATA[100001]]></sid><gid><![CDATA[10]]></gid><type><![CDATA[L]]></type><title><![CDATA[CLARITY]]></title><other><![CDATA[N]]></other><mandatory><![CDATA[Y]]></mandatory><question_order><![CDATA[1]]></question_order><relevance><![CDATA[1]]></relevance></row>
+   <row><qid><![CDATA[202]]></qid><parent_qid><![CDATA[0]]></parent_qid><sid><![CDATA[100001]]></sid><gid><![CDATA[10]]></gid><type><![CDATA[L]]></type><title><![CDATA[CONTROL]]></title><other><![CDATA[N]]></other><mandatory><![CDATA[Y]]></mandatory><question_order><![CDATA[2]]></question_order><relevance><![CDATA[1]]></relevance></row>
+  </rows>
+ </questions>
+ <question_l10ns>
+  <rows>
+   <row><qid><![CDATA[201]]></qid><question><![CDATA[<p>The task instructions were clear.</p>]]></question><help><![CDATA[<br>]]></help><script/><language><![CDATA[en]]></language></row>
+   <row><qid><![CDATA[201]]></qid><question/><help/><script/><language><![CDATA[zh-Hant-HK]]></language></row>
+   <row><qid><![CDATA[202]]></qid><question><![CDATA[<p>I felt in control while completing the task.</p>]]></question><help/><script/><language><![CDATA[en]]></language></row>
+   <row><qid><![CDATA[202]]></qid><question/><help/><script/><language><![CDATA[zh-Hant-HK]]></language></row>
+  </rows>
+ </question_l10ns>
+ <question_attributes>
+  <rows>
+   <row><qid><![CDATA[201]]></qid><attribute><![CDATA[answer_order]]></attribute><value><![CDATA[normal]]></value><language/></row>
+   <row><qid><![CDATA[201]]></qid><attribute><![CDATA[array_filter]]></attribute><value/><language/></row>
+   <row><qid><![CDATA[201]]></qid><attribute><![CDATA[hidden]]></attribute><value><![CDATA[0]]></value><language/></row>
+   <row><qid><![CDATA[201]]></qid><attribute><![CDATA[statistics_showgraph]]></attribute><value><![CDATA[1]]></value><language/></row>
+   <row><qid><![CDATA[201]]></qid><attribute><![CDATA[time_limit]]></attribute><value/><language/></row>
+   <row><qid><![CDATA[201]]></qid><attribute><![CDATA[time_limit_action]]></attribute><value><![CDATA[1]]></value><language/></row>
+   <row><qid><![CDATA[202]]></qid><attribute><![CDATA[answer_order]]></attribute><value><![CDATA[normal]]></value><language/></row>
+   <row><qid><![CDATA[202]]></qid><attribute><![CDATA[array_filter]]></attribute><value/><language/></row>
+   <row><qid><![CDATA[202]]></qid><attribute><![CDATA[hidden]]></attribute><value><![CDATA[0]]></value><language/></row>
+   <row><qid><![CDATA[202]]></qid><attribute><![CDATA[statistics_showgraph]]></attribute><value><![CDATA[1]]></value><language/></row>
+   <row><qid><![CDATA[202]]></qid><attribute><![CDATA[time_limit]]></attribute><value/><language/></row>
+   <row><qid><![CDATA[202]]></qid><attribute><![CDATA[time_limit_action]]></attribute><value><![CDATA[1]]></value><language/></row>
+  </rows>
+ </question_attributes>
+ <surveys>
+  <rows>
+   <row><sid><![CDATA[100001]]></sid><language><![CDATA[en]]></language><additional_languages><![CDATA[zh-Hant-HK]]></additional_languages></row>
+  </rows>
+ </surveys>
+ <surveys_languagesettings>
+  <rows>
+   <row><surveyls_survey_id><![CDATA[100001]]></surveyls_survey_id><surveyls_language><![CDATA[en]]></surveyls_language><surveyls_title><![CDATA[Task Support Check]]></surveyls_title><surveyls_description/><surveyls_welcometext/></row>
+   <row><surveyls_survey_id><![CDATA[100001]]></surveyls_survey_id><surveyls_language><![CDATA[zh-Hant-HK]]></surveyls_language><surveyls_title><![CDATA[Task Support Check]]></surveyls_title><surveyls_description/><surveyls_welcometext/></row>
+  </rows>
+ </surveys_languagesettings>
+</document>
