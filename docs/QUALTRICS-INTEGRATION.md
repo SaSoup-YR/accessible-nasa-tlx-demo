@@ -11,9 +11,11 @@ question validates and stages generic `AQP_*` Embedded Data, acknowledges the sa
 submission ID, then invokes Qualtrics native navigation. The researcher receives the
 record through Qualtrics Data & Analysis.
 
-The bridge supports every registered Version 0.8 definition because it stores
-instrument identity, generic item/pair responses, scoring metadata and the lossless
-raw record. It does not hard-code NASA dimension fields.
+The bridge supports every validated Version 0.8 definition, including the bounded
+researcher-supplied profile, because it stores instrument identity, generic
+item/pair responses, scoring metadata and the lossless raw record. A custom raw
+record also contains its complete definition snapshot. The bridge does not
+hard-code NASA dimension fields.
 
 No token, password or database credential is placed in GitHub, the participant URL
 or browser storage. A raw GitHub participant link cannot collect centrally.
@@ -166,6 +168,7 @@ The normalized fields include:
 - bridge-ready state and the exact bridge build;
 - submission, study, participant, timing and prototype identifiers;
 - instrument ID, name, version and scoring strategy;
+- the complete definition snapshot inside the raw record when the questionnaire is researcher supplied;
 - score name, primary score and defined range;
 - item and pair responses;
 - configured/final support, support changes and input routes;
@@ -179,6 +182,12 @@ raw chunks retain the lossless record. Reconstruct it by concatenating
 answers. They preserve one complete JSON record when a single Qualtrics field is too
 short. Keep them in Survey Flow, but hide them from the ordinary Data Table view
 with Column chooser if they make manual inspection difficult.
+
+The no-code builder limits a custom definition to 20 items and 9,000 UTF-8 bytes
+so the complete record can remain inside this allocation. Before recruitment,
+complete the longest planned custom questionnaire in the actual UCL survey and
+confirm that the resulting row has `AQP_ACCEPTED = 1` and reconstructable raw
+chunks.
 
 The recorded-response/PDF view replaces the fresh iframe with a read-only generic
 summary whenever `__js_AQP_ACCEPTED = 1`. The raw JSON and CSV export remain the

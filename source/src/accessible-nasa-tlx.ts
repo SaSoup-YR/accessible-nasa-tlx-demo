@@ -6,6 +6,7 @@ import {
   buildQuestionnairePairs,
   buildRatingValues,
   getQuestionnaireDefinition,
+  resolveQuestionnaireDefinition,
   type ItemId as DimensionId,
   type QuestionnaireDefinition,
   type QuestionnaireItem as TlxDimension,
@@ -320,8 +321,10 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private get definition() {
-    return getQuestionnaireDefinition(
-      this.studyConfig?.instrumentId ?? DEFAULT_QUESTIONNAIRE_ID,
+    const instrumentId = this.studyConfig?.instrumentId ?? DEFAULT_QUESTIONNAIRE_ID;
+    return resolveQuestionnaireDefinition(
+      instrumentId,
+      this.studyConfig?.questionnaireDefinition,
     )!;
   }
 
@@ -339,6 +342,10 @@ export class AccessibleNasaTlx extends LitElement {
 
   private get smileyLandmarks() {
     return this.definition.landmarks ?? [];
+  }
+
+  private get isResearcherSuppliedDefinition() {
+    return Boolean(this.studyConfig?.questionnaireDefinition);
   }
 
   private get dimensionById() {
@@ -482,7 +489,9 @@ export class AccessibleNasaTlx extends LitElement {
         </ol>
 
         <div class="boundary-note">
-          <h3>Official questionnaire and optional support</h3>
+          <h3>${this.isResearcherSuppliedDefinition
+            ? 'Questionnaire definition and optional support'
+            : 'Official questionnaire and optional support'}</h3>
           <p>
             ${this.definition.officialContentNotice}
             Optional accessibility supports remain separate from the scored response.
@@ -495,7 +504,11 @@ export class AccessibleNasaTlx extends LitElement {
         </div>
 
         <details class="factor-reference">
-          <summary>Review the ${this.dimensions.length} official ${this.pairs.length ? 'factor definitions' : 'items'}</summary>
+          <summary>
+            Review the ${this.dimensions.length}
+            ${this.isResearcherSuppliedDefinition ? '' : 'official '}
+            ${this.pairs.length ? 'factor definitions' : 'items'}
+          </summary>
           ${this.dimensions.map(
             (dimension) => html`
               <div class="reference-item">
@@ -646,7 +659,11 @@ export class AccessibleNasaTlx extends LitElement {
             />
             <span>
               <strong>Show simpler explanations</strong>
-              <small>The official item remains visible once, without being duplicated inside the help.</small>
+              <small>
+                ${this.isResearcherSuppliedDefinition
+                  ? 'The questionnaire item remains visible once, without being duplicated inside the help.'
+                  : 'The official item remains visible once, without being duplicated inside the help.'}
+              </small>
             </span>
           </label>`
           : nothing}
@@ -963,7 +980,11 @@ export class AccessibleNasaTlx extends LitElement {
         <p class="step-label">Rating ${this.ratingIndex + 1} of ${this.dimensions.length}</p>
         <h2 id="rating-heading">${dimension.name}</h2>
         <p class="official-definition">
-          <strong>${this.pairs.length ? 'Official definition' : 'Official item'}:</strong>
+          <strong>${this.isResearcherSuppliedDefinition
+            ? 'Questionnaire item'
+            : this.pairs.length
+            ? 'Official definition'
+            : 'Official item'}:</strong>
           ${dimension.prompt}
         </p>
 
@@ -973,7 +994,9 @@ export class AccessibleNasaTlx extends LitElement {
           ? html`<aside class="simple-language-panel" aria-label="Simpler explanation">
               <p class="support-label">Simpler explanation</p>
               <p>${dimension.simpleExplanation}</p>
-              <p class="support-boundary">Use the official scale when choosing your response.</p>
+              <p class="support-boundary">
+                Use the declared response scale when choosing your response.
+              </p>
             </aside>`
           : html`<details
               class="optional-explanation"
@@ -983,7 +1006,9 @@ export class AccessibleNasaTlx extends LitElement {
               <summary>Show a simpler explanation</summary>
               <div class="explanation-block">
                 <p>${dimension.simpleExplanation}</p>
-                <p class="support-boundary">This help does not replace the official definition.</p>
+                <p class="support-boundary">
+                  This help does not replace the questionnaire item.
+                </p>
               </div>
             </details>`}
 
@@ -1628,6 +1653,8 @@ export class AccessibleNasaTlx extends LitElement {
     this.announceAutomatic(
       value
         ? this.currentSimpleExplanationSpeech()
+        : this.isResearcherSuppliedDefinition
+        ? 'Simpler explanations are off. The questionnaire item wording remains available.'
         : 'Simpler explanations are off. The official questionnaire wording remains available.',
     );
   }
@@ -2246,7 +2273,9 @@ export class AccessibleNasaTlx extends LitElement {
     if (this.stage === 'ratings') {
       const dimension = this.dimensions[this.ratingIndex];
       return dimension.simpleExplanation
-        ? `Simpler explanation for ${dimension.name}. ${dimension.simpleExplanation} Use the official scale when choosing your response.`
+        ? `Simpler explanation for ${dimension.name}. ${dimension.simpleExplanation} Use the ${
+            this.isResearcherSuppliedDefinition ? 'declared' : 'official'
+          } scale when choosing your response.`
         : 'This questionnaire definition does not provide reworded item text.';
     }
     if (this.stage === 'pairs') {

@@ -86,6 +86,77 @@ describe('study conductor defaults and guidance', () => {
     expect(component.textContent).toContain('Configuration ready');
   });
 
+  it('lets a researcher add a validated questionnaire without editing code', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const setValue = (selector: string, value: string) => {
+      const control = component.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector)!;
+      control.value = value;
+      control.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    setValue('[data-custom-field="name"]', 'Work Assistance Inventory');
+    setValue('[data-custom-field="short-name"]', 'WAI');
+    for (const [index, prompt] of [
+      [0, 'The instructions were clear.'],
+      [1, 'The task was easy.'],
+    ] as const) {
+      setValue(
+        `[data-custom-item="${index}"][data-custom-item-field="prompt"]`,
+        prompt,
+      );
+      setValue(
+        `[data-custom-item="${index}"][data-custom-item-field="low-anchor"]`,
+        'Strongly disagree',
+      );
+      setValue(
+        `[data-custom-item="${index}"][data-custom-item-field="high-anchor"]`,
+        'Strongly agree',
+      );
+    }
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Validate and use this questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const questionnaireDefinition = component.querySelector<HTMLSelectElement>(
+      'label select',
+    )!;
+    expect(questionnaireDefinition.value).toBe('custom-wai');
+    expect(questionnaireDefinition.selectedOptions[0]?.textContent).toContain(
+      'researcher supplied',
+    );
+    expect(component.querySelector('.definition-summary')?.textContent).toContain(
+      '2 items',
+    );
+
+    for (const [label, value] of [
+      ['Study ID', 'CUSTOM-01'],
+      ['Study title', 'Custom questionnaire study'],
+      ['Task label', 'using the route-planning prototype'],
+    ] as const) {
+      const input = inputFor(component, label);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Generate link')!
+      .click();
+    await (component as any).updateComplete;
+
+    const link = component.querySelector<HTMLTextAreaElement>('#participant-link')!.value;
+    const config = readStudyConfigFromHash(new URL(link).hash);
+    expect(config?.instrumentId).toBe('custom-wai');
+    expect(config?.questionnaireDefinition?.items).toHaveLength(2);
+    expect(config?.questionnaireDefinition?.scoring.strategy).toBe('mean-v1');
+    expect(component.textContent).toContain(
+      'full definition is embedded in the configuration',
+    );
+  });
+
   it('generates an origin-bound Qualtrics iframe configuration without placing an account token in the link', async () => {
     const component = await renderConductor();
     inputFor(component, 'UCL Qualtrics central collection').click();

@@ -34,6 +34,13 @@ export interface QuestionnaireScore {
         contributions: Record<DimensionId, number>;
         pragmaticQuality: number;
         hedonicQuality: number;
+      }
+    | {
+        kind: 'generic-aggregate';
+        aggregation: 'mean' | 'sum';
+        contributions: Record<DimensionId, number>;
+        adjustedRatings: Record<DimensionId, number>;
+        reversedItemIds: DimensionId[];
       };
 }
 
@@ -205,6 +212,46 @@ function scoreUeqs(
   };
 }
 
+function scoreGenericAggregate(
+  definition: QuestionnaireDefinition,
+  ratings: Ratings,
+): QuestionnaireScore {
+  validateRatings(definition, ratings);
+  const aggregation = definition.scoring.strategy === 'mean-v1' ? 'mean' : 'sum';
+  const reversedItemIds = definition.scoring.reverseItemIds ?? [];
+  const reversed = new Set(reversedItemIds);
+  const { minimum, maximum } = definition.scale;
+  const adjustedRatings = Object.fromEntries(
+    definition.items.map(({ id }) => [
+      id,
+      reversed.has(id) ? minimum + maximum - ratings[id] : ratings[id],
+    ]),
+  ) as Record<DimensionId, number>;
+  const divisor = aggregation === 'mean' ? definition.items.length : 1;
+  const contributions = Object.fromEntries(
+    definition.items.map(({ id }) => [id, adjustedRatings[id] / divisor]),
+  ) as Record<DimensionId, number>;
+  const primaryScore = Object.values(contributions).reduce(
+    (sum, contribution) => sum + contribution,
+    0,
+  );
+  return {
+    strategy: definition.scoring.strategy,
+    scoreName: definition.scoring.scoreName,
+    primaryScore,
+    scoreMinimum: definition.scoring.minimum,
+    scoreMaximum: definition.scoring.maximum,
+    ratings,
+    details: {
+      kind: 'generic-aggregate',
+      aggregation,
+      contributions,
+      adjustedRatings,
+      reversedItemIds: [...reversedItemIds],
+    },
+  };
+}
+
 export function scoreQuestionnaire(
   definition: QuestionnaireDefinition,
   ratings: Ratings,
@@ -221,6 +268,12 @@ export function scoreQuestionnaire(
   }
   if (definition.scoring.strategy === 'ueqs-standard-v1') {
     return scoreUeqs(definition, ratings);
+  }
+  if (
+    definition.scoring.strategy === 'mean-v1' ||
+    definition.scoring.strategy === 'sum-v1'
+  ) {
+    return scoreGenericAggregate(definition, ratings);
   }
   const exhaustive: never = definition.scoring.strategy;
   throw new Error(`Unsupported scoring strategy: ${exhaustive}`);

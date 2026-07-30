@@ -1060,6 +1060,7 @@ button:disabled {
 .participant-code-field input,
 .form-grid input,
 .form-grid select,
+.form-grid textarea,
 .generated-link textarea {
   width: 100%;
   min-height: 3rem;
@@ -1068,6 +1069,10 @@ button:disabled {
   border-radius: 6px;
   background: #fff;
   color: #1d2733;
+}
+
+.form-grid textarea {
+  resize: vertical;
 }
 
 .definition-summary {
@@ -1117,6 +1122,75 @@ button:disabled {
 
 .conductor-answer-mode {
   margin-top: 1.25rem;
+}
+
+.custom-questionnaire-builder {
+  padding: 1.25rem;
+  border: 3px solid var(--control-border);
+  border-radius: 10px;
+  background: #f6f8fa;
+}
+
+.custom-questionnaire-builder h3 {
+  margin-top: 0;
+}
+
+.custom-definition-fields,
+.custom-items {
+  margin-top: 1.25rem;
+}
+
+.custom-items {
+  padding: 1rem;
+  border: 2px solid var(--control-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.custom-items > legend {
+  padding: 0 0.4rem;
+  font-weight: 700;
+}
+
+.custom-item-editor {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 2px solid #6f8092;
+  border-radius: 8px;
+  background: #f6f8fa;
+}
+
+.custom-item-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.custom-item-heading h4 {
+  margin: 0;
+}
+
+.custom-reverse-option {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  padding: 0.65rem;
+  border: 2px solid #6f8092;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.custom-reverse-option input {
+  width: 1.35rem;
+  min-height: 1.35rem;
+  margin-top: 0.2rem;
+}
+
+.custom-reverse-option span {
+  display: grid;
+  gap: 0.25rem;
 }
 
 .file-button,

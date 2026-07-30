@@ -4,6 +4,7 @@ import axe from 'axe-core';
 import '../src/accessible-nasa-tlx';
 import '../src/study-conductor';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
+import type { StudyConductorApp } from '../src/study-conductor';
 import {
   DEFAULT_QUESTIONNAIRE_ID,
   buildQuestionnairePairs,
@@ -74,9 +75,24 @@ describe('automated structural accessibility scan', () => {
   });
 
   it('finds no detectable violations on the study-conductor setup page', async () => {
-    const conductor = document.createElement('study-conductor-app') as any;
+    const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
     document.body.append(conductor);
     await conductor.updateComplete;
+    const result = await axe.run(conductor, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations).toEqual([]);
+  });
+
+  it('finds no detectable violations in the no-code custom questionnaire builder', async () => {
+    const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
+    document.body.append(conductor);
+    await conductor.updateComplete;
+    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await conductor.updateComplete;
+    expect(conductor.querySelector('#custom-questionnaire-builder')).not.toBeNull();
     const result = await axe.run(conductor, {
       rules: { 'color-contrast': { enabled: false } },
     });

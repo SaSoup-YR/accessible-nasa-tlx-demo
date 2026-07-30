@@ -5,6 +5,11 @@ import {
   getQuestionnaireDefinition,
 } from '../src/questionnaire-definition';
 import {
+  createCustomItemDraft,
+  createCustomQuestionnaireDefinition,
+  createCustomQuestionnaireDraft,
+} from '../src/custom-questionnaire';
+import {
   parsePairAlternatives,
   parsePairTranscript,
   parseRatingAlternatives,
@@ -19,6 +24,29 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('one zero zero', dimensions[0])).toBe(100);
     expect(parseRatingTranscript('I choose 73', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('twenty three', dimensions[0])).toBeNull();
+  });
+
+  it('recognises an exact whole-number value when a custom scale displays it', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.name = 'Custom magnitude check';
+    draft.shortName = 'CMC';
+    draft.scaleType = 'magnitude';
+    draft.minimum = 0;
+    draft.maximum = 30;
+    draft.step = 1;
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Amount',
+        prompt: 'Choose an amount.',
+        lowAnchor: 'None',
+        highAnchor: 'Maximum',
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const values = buildRatingValues(definition);
+    expect(parseRatingTranscript('twenty three', definition.items[0], values, [])).toBe(23);
+    expect(parseRatingTranscript('two three', definition.items[0], values, [])).toBe(23);
+    expect(parseRatingTranscript('thirty one', definition.items[0], values, [])).toBeNull();
   });
 
   it('rejects negated or ambiguous anchors instead of guessing', () => {

@@ -1,4 +1,4 @@
-import{a as s,t as b,i as v,D as A,g as f,u as w,l as h,w as S,q as I,n as T,x as P,P as m,A as d,k as o,y as E,j as g,h as R,z as Q,B as C,f as N}from"./shared-BcpyGktZ.js";const y=`__js_AQP_ACCEPTED
+import{w as D,g as Q,x as O,M as T,a as r,t as x,i as k,D as M,m as y,y as L,z as F,u as j,o as U,B,h as J,C as P,P as v,A as c,l as o,k as _,j as G,E as H,F as W,f as V}from"./shared-Dht3iifw.js";const w=`__js_AQP_ACCEPTED
 __js_AQP_BRIDGE_READY
 __js_AQP_BRIDGE_BUILD
 __js_AQP_SCHEMA
@@ -60,7 +60,7 @@ __js_AQP_RAW_21
 __js_AQP_RAW_22
 __js_AQP_RAW_23
 __js_AQP_RAW_24
-`,q=`Questionnaire complete
+`,z=`Questionnaire complete
 
 {{OPTIONAL_SCORE_BLOCK}}
 
@@ -70,7 +70,7 @@ Any accessibility-support choices and input-route information have been saved se
 
 No further action is required.
 You may now close this page.
-`,_=`/*
+`,A=`/*
  * Accessible Questionnaire Platform Version 0.8 Qualtrics question bridge.
  *
  * Paste this complete file into the JavaScript editor of the Qualtrics
@@ -610,7 +610,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     window.removeEventListener('message', receiveResult);
   });
 });
-`,O=`<!--
+`,Y=`<!--
   REFERENCE TEMPLATE ONLY.
   Do not paste this file into Qualtrics unchanged. Use the complete generated
   question HTML from study.html so the iframe has the configured participant URL.
@@ -770,27 +770,27 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     style="display:block;position:absolute;inset:0;width:100%;height:100%;border:0;overflow:auto;visibility:hidden;background:#eef2f6"
   ></iframe>
 </div>
-`;var x=Object.defineProperty,L=Object.getOwnPropertyDescriptor,i=(e,t,a,r)=>{for(var l=r>1?void 0:r?L(t,a):t,u=e.length-1,p;u>=0;u--)(p=e[u])&&(l=(r?p(t,a,l):p(l))||l);return r&&l&&x(t,a,l),l};const $=y.trim().split(/\r?\n/).filter(Boolean).length,c=_.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function k(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(a=>{if(!a||typeof a!="object")return!1;const r=a;return"study"in r&&"responses"in r&&"result"in r})}function M(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const a=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return O.trim().replace(t,a)}function F(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
-`):"";return q.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
+`,f=20;let E=0;function S(e={}){return E+=1,{key:`custom-item-${E}`,name:"",prompt:"",lowAnchor:"",highAnchor:"",simpleExplanation:"",reverseScored:!1,...e}}function C(){return{name:"",shortName:"",version:"1.0.0",description:"A researcher-supplied questionnaire.",introPrompt:"Answer each item about the task that you have just completed.",sourceLabel:"Researcher-supplied questionnaire",sourceUrl:"",scaleType:"agreement",minimum:1,maximum:5,step:1,scoreName:"Questionnaire score",aggregation:"mean",items:[S({name:"Item 1"}),S({name:"Item 2"})]}}function d(e,t){const n=e.trim().replace(/\s+/g," ");if(!n)throw new Error(`${t} is required.`);return n}function X(e){return e.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,50)}function K(e,t){const n=t.trim()||e.trim();return n.length<=240?n:`${n.slice(0,237).trimEnd()}...`}function Z(e){if(!Number.isInteger(e.minimum)||!Number.isInteger(e.maximum)||!Number.isInteger(e.step))throw new Error("Scale minimum, maximum and step must be whole numbers.");if(!Array.isArray(e.items)||e.items.length<1||e.items.length>f)throw new Error(`Add between 1 and ${f} questionnaire items.`);const t=d(e.name,"Questionnaire name"),n=d(e.shortName,"Short name"),i=X(n||t);if(!i)throw new Error("Questionnaire name must contain at least one Latin letter or number for its stable ID.");const l=e.items.map((u,p)=>{const I=d(u.prompt,`Item ${p+1} question`),b=u.simpleExplanation.trim().replace(/\s+/g," ");return{id:`item-${String(p+1).padStart(2,"0")}`,name:d(u.name,`Item ${p+1} label`),prompt:I,...b?{simpleExplanation:b}:{},shortMeaning:K(I,b),lowAnchor:d(u.lowAnchor,`Item ${p+1} low endpoint`),highAnchor:d(u.highAnchor,`Item ${p+1} high endpoint`)}}),m=e.items.flatMap((u,p)=>u.reverseScored?[`item-${String(p+1).padStart(2,"0")}`]:[]),g=l.every(u=>u.simpleExplanation),$=e.aggregation==="mean"?e.minimum:e.minimum*l.length,N=e.aggregation==="mean"?e.maximum:e.maximum*l.length,q={schemaVersion:1,id:`custom-${i}`,version:d(e.version,"Questionnaire version"),name:t,shortName:n,description:d(e.description,"Questionnaire description"),introPrompt:d(e.introPrompt,"Participant instruction"),officialContentNotice:"This questionnaire definition was supplied by the study conductor. Its wording, use and interpretation must match the approved study protocol.",source:{label:d(e.sourceLabel,"Source or authorship label"),...e.sourceUrl.trim()?{url:e.sourceUrl.trim()}:{}},scale:{type:e.scaleType,minimum:e.minimum,maximum:e.maximum,step:e.step},items:l,scoring:{strategy:e.aggregation==="mean"?"mean-v1":"sum-v1",scoreName:d(e.scoreName,"Score name"),minimum:$,maximum:N,...m.length?{reverseItemIds:m}:{}},supports:{simplerExplanations:g,smileyLandmarks:!1}};return R(q)}function R(e){const t=D(e);if(Q(t.id))throw new Error("A custom questionnaire cannot replace a built-in questionnaire ID.");if(!t.id.startsWith("custom-"))throw new Error("A custom questionnaire ID must start with custom-.");if(t.scoring.strategy!=="mean-v1"&&t.scoring.strategy!=="sum-v1")throw new Error("A custom questionnaire must use the reviewed mean or sum scorer.");if(t.pairwise)throw new Error("Custom questionnaires do not support pairwise comparisons.");if(t.landmarks||t.supports.smileyLandmarks)throw new Error("Custom questionnaires do not support smiley landmarks.");const n=O(t);if(n>T)throw new Error(`The questionnaire definition is ${n} bytes; the participant-link limit is ${T} bytes.`);return t}function ee(e){return`${e.id}-${e.version.replace(/[^A-Za-z0-9._-]+/g,"-")}.questionnaire.json`}var te=Object.defineProperty,ne=Object.getOwnPropertyDescriptor,a=(e,t,n,i)=>{for(var l=i>1?void 0:i?ne(t,n):t,m=e.length-1,g;m>=0;m--)(g=e[m])&&(l=(i?g(t,n,l):g(l))||l);return i&&l&&te(t,n,l),l};const ie=w.trim().split(/\r?\n/).filter(Boolean).length,h=A.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function se(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(n=>{if(!n||typeof n!="object")return!1;const i=n;return"study"in i&&"responses"in i&&"result"in i})}function ae(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const n=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return Y.trim().replace(t,n)}function re(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
+`):"";return z.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
 
-`).trim()}let n=class extends v{constructor(){super(...arguments),this.instrumentId=A,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,a=f(t);a&&(this.instrumentId=t,a.supports.simplerExplanations||(this.showSimpleLanguage=!1),a.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.message=`${a.name} selected. Generate a new configuration before testing.`)},this.generateParticipantLink=()=>{this.errorMessage="";try{const e=w({instrumentId:this.instrumentId,studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&h(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,a=t.files?.[0];if(a){this.errorMessage="";try{const r=JSON.parse(await a.text()),l=S(r);if(!l)throw k(r)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.message="Configuration imported and participant link regenerated."}catch(r){this.showError(r instanceof Error?r.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=I()},this.exportResultsJson=()=>{this.completedResults.length&&h(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&h(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${T(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(P(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return f(this.instrumentId)}render(){return o`
+`).trim()}let s=class extends k{constructor(){super(...arguments),this.instrumentId=M,this.customDefinition=null,this.customDraft=C(),this.customBuilderOpen=!1,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,n=this.availableDefinitions.find(i=>i.id===t)??null;n&&(this.instrumentId=t,n.supports.simplerExplanations||(this.showSimpleLanguage=!1),n.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.message=`${n.name} selected. Generate a new configuration before testing.`)},this.addCustomItem=()=>{this.customDraft.items.length>=f||(this.customDraft={...this.customDraft,items:[...this.customDraft.items,S({name:`Item ${this.customDraft.items.length+1}`})]})},this.useCustomDraft=()=>{this.errorMessage="";try{this.activateCustomDefinition(Z(this.customDraft))}catch(e){this.showError(e instanceof Error?e.message:"The custom questionnaire could not be validated.")}},this.importCustomDefinition=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="";try{const i=R(JSON.parse(await n.text()));this.activateCustomDefinition(i),this.message=`${i.name} ${i.version} imported, validated and selected.`}catch(i){this.showError(i instanceof Error?i.message:"The questionnaire definition file could not be read.")}finally{t.value=""}}},this.downloadCustomDefinition=()=>{this.customDefinition&&y(ee(this.customDefinition),JSON.stringify(this.customDefinition,null,2),"application/json")},this.resetCustomDraft=()=>{this.customDraft=C(),this.message="Custom questionnaire builder fields reset. The selected questionnaire is unchanged until you validate a new definition."},this.generateParticipantLink=()=>{this.errorMessage="";try{const e=L({instrumentId:this.instrumentId,...this.customDefinition?.id===this.instrumentId?{questionnaireDefinition:this.customDefinition}:{},studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.message="Participant link and configuration generated."}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&y(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="";try{const i=JSON.parse(await n.text()),l=F(i);if(!l)throw se(i)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.message="Configuration imported and participant link regenerated."}catch(i){this.showError(i instanceof Error?i.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=j()},this.exportResultsJson=()=>{this.completedResults.length&&y(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&y(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${U(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(B(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return J(this.instrumentId,this.customDefinition??void 0)}get availableDefinitions(){return this.customDefinition?[...P,this.customDefinition]:P}render(){return o`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
           <p class="eyebrow">
-            Study conductor · Version ${m} · Qualtrics package ${c}
+            Study conductor · Version ${v} · Qualtrics package ${h}
           </p>
           <h1>Prepare an accessible questionnaire study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
 
         <aside class="boundary-note important-boundary" aria-labelledby="current-generator-heading">
-          <h2 id="current-generator-heading">Current Qualtrics generator: ${c}</h2>
+          <h2 id="current-generator-heading">Current Qualtrics generator: ${h}</h2>
           <p>
             Every generated JavaScript block must contain
-            <code>var bridgeBuild = '${c}';</code>. If it shows another value, that browser tab is
+            <code>var bridgeBuild = '${h}';</code>. If it shows another value, that browser tab is
             running a stale conductor build. Close that tab and reopen the versioned
-            <a href="study.html?package=${c}">Prepare a study page</a> before copying anything.
+            <a href="study.html?package=${h}">Prepare a study page</a> before copying anything.
           </p>
         </aside>
 
@@ -811,7 +811,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
         ${this.errorMessage?o`<div class="error-summary" role="alert" tabindex="-1" id="conductor-error">
               <h2>There is a problem</h2><p>${this.errorMessage}</p>
-            </div>`:d}
+            </div>`:c}
         <p class="sr-only" aria-live="polite">${this.message}</p>
 
         <section class="panel conductor-panel" aria-labelledby="study-details-heading">
@@ -828,11 +828,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 definition; accessibility supports are configured separately.
               </span>
               <select @change=${this.selectInstrument}>
-                ${E.map(e=>o`<option
+                ${this.availableDefinitions.map(e=>o`<option
                     value=${e.id}
                     .selected=${e.id===this.instrumentId}
                   >
-                    ${e.name} · ${e.version}
+                    ${e.name} · ${e.version}${Q(e.id)?"":" · researcher supplied"}
                   </option>`)}
               </select>
             </label>
@@ -840,15 +840,36 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               <strong>${this.definition.shortName}</strong>
               <span>
                 ${this.definition.items.length} items,
-                ${g(this.definition).length}
+                ${_(this.definition).length}
                 ${this.definition.scale.type.replace("-"," ")} response values,
-                ${R(this.definition).length} comparisons,
+                ${G(this.definition).length} comparisons,
                 ${this.definition.scoring.scoreName}.
               </span>
-              <a href=${this.definition.source.url} target="_blank" rel="noopener">
-                Instrument source: ${this.definition.source.label}
-              </a>
+              ${this.definition.source.url?o`<a href=${this.definition.source.url} target="_blank" rel="noopener">
+                    Instrument source: ${this.definition.source.label}
+                  </a>`:o`<span>Instrument source: ${this.definition.source.label}</span>`}
             </aside>
+            <div class="full-width button-row compact">
+              <button
+                class="secondary-button"
+                type="button"
+                aria-expanded=${String(this.customBuilderOpen)}
+                aria-controls="custom-questionnaire-builder"
+                @click=${()=>{this.customBuilderOpen=!this.customBuilderOpen}}
+              >
+                ${this.customBuilderOpen?"Close custom questionnaire builder":"Add your own questionnaire"}
+              </button>
+              ${this.customDefinition?o`
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      @click=${this.downloadCustomDefinition}
+                    >
+                      Download current questionnaire definition
+                    </button>
+                  `:c}
+            </div>
+            ${this.customBuilderOpen?this.renderCustomQuestionnaireBuilder():c}
             <label>
               <strong>Study ID</strong>
               <span>Internal label shared by records from one study or condition. Example: ACCESS-TECH-01. Do not use a participant name.</span>
@@ -870,7 +891,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         <section class="panel conductor-panel" aria-labelledby="support-config-heading">
           <h2 id="support-config-heading">2. Prepare the participant questionnaire</h2>
           <p>
-            These are starting settings. The selected definition keeps its official items, values,
+            These are starting settings. The selected definition keeps its declared items, values,
             workflow and allowlisted scoring rule unchanged.
           </p>
           <div class="config-grid">
@@ -942,7 +963,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 <label>
                   <input type="radio" name="conductor-answer-mode" value="standard" .checked=${this.answerMode==="standard"} @change=${()=>{this.answerMode="standard"}} />
                   <span>
-                    <strong>Standard ${g(this.definition).length}-value scale</strong>
+                    <strong>Standard ${_(this.definition).length}-value scale</strong>
                     <small>Recommended default.</small>
                   </span>
                 </label>
@@ -951,7 +972,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                   <span><strong>Experimental smiley landmarks</strong><small>Use only when this presentation is part of the approved protocol.</small></span>
                 </label>
               </fieldset>`:o`<p class="support-boundary">
-                ${this.definition.shortName} uses its standard ${g(this.definition).length}-value
+                ${this.definition.shortName} uses its standard ${_(this.definition).length}-value
                 response scale. Smiley landmarks are disabled because facial valence is not equivalent to agreement.
               </p>`}
         </section>
@@ -1004,7 +1025,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               <p class="support-boundary">
                 Participants must receive the Qualtrics distribution link, not the embedded GitHub page URL. Complete the
                 one-question bridge setup and verify a synthetic record in Qualtrics Data &amp; Analysis before recruitment.
-              </p>`:d}
+              </p>`:c}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="link-heading">
@@ -1035,15 +1056,15 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 <textarea id="participant-link" readonly rows="5" .value=${this.participantUrl}></textarea>
                 <div class="button-row compact">
                   <button class="secondary-button" type="button" @click=${this.copyParticipantLink}>Copy link</button>
-                  ${this.generatedConfig.collection.mode==="local"?o`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`:d}
+                  ${this.generatedConfig.collection.mode==="local"?o`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`:c}
                   <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
                 </div>
-                ${this.generatedConfig.collection.mode==="qualtrics"?this.renderQualtricsSetup():d}
+                ${this.generatedConfig.collection.mode==="qualtrics"?this.renderQualtricsSetup():c}
                 <p class="support-boundary">
                   Save the JSON with the study protocol. Importing it later regenerates the same configuration ID and participant link.
                   The link contains settings only; it contains no participant name, email or answer.
                 </p>
-              </div>`:d}
+              </div>`:c}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="results-heading">
@@ -1083,17 +1104,328 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             as the normal study procedure.
           </p>
           <p>
-            Version ${m} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
+            Version ${v} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
             exact HTTPS origin stored by the conductor; Qualtrics writes the fields into the current response and returns a
             matching receipt before advancing. A failed save leaves the answers on Review for retry. Platform selection,
             consent, retention and access must still match the approved ethics and data-management documents.
           </p>
         </section>
       </main>
-    `}booleanOption(e,t,a,r=""){return o`<label class="toggle-card conductor-toggle">
-      <input type="checkbox" .checked=${t} @change=${l=>a(l.currentTarget.checked)} />
-      <span><strong>${e}</strong>${r?o`<small>${r}</small>`:d}</span>
-    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=Q(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=C(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":M(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=F(this.generatedConfig?.showScoreToParticipant===!0);return o`
+    `}renderCustomQuestionnaireBuilder(){return o`
+      <section
+        class="custom-questionnaire-builder full-width"
+        id="custom-questionnaire-builder"
+        aria-labelledby="custom-questionnaire-heading"
+      >
+        <h3 id="custom-questionnaire-heading">Add a researcher-supplied questionnaire</h3>
+        <p>
+          No code is required. This builder supports 1–${f}
+          required single-choice items that share one whole-number response scale.
+          It can calculate a reviewed mean or sum, including selected reverse-scored items.
+        </p>
+        <aside class="boundary-note important-boundary">
+          <p>
+            <strong>Check permission and measurement validity before use.</strong>
+            The platform validates structure and calculation, but it cannot decide whether a
+            questionnaire is licensed, validated for the study population, or suitable for the
+            research question. Free text, branching, multiple answers, custom formulas and
+            executable code are deliberately not accepted.
+          </p>
+        </aside>
+
+        <div class="form-grid custom-definition-fields">
+          <label>
+            <strong>Questionnaire name</strong>
+            <span>Full participant-facing name.</span>
+            <input
+              data-custom-field="name"
+              maxlength="120"
+              .value=${this.customDraft.name}
+              @input=${e=>this.updateCustomDraft("name",e.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <strong>Short name</strong>
+            <span>Short label used in results, for example WAI.</span>
+            <input
+              data-custom-field="short-name"
+              maxlength="40"
+              .value=${this.customDraft.shortName}
+              @input=${e=>this.updateCustomDraft("shortName",e.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <strong>Questionnaire version</strong>
+            <span>Version of the wording and scoring definition.</span>
+            <input
+              data-custom-field="version"
+              maxlength="40"
+              .value=${this.customDraft.version}
+              @input=${e=>this.updateCustomDraft("version",e.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <strong>Source or authorship label</strong>
+            <span>Primary source, author, or “Researcher-supplied questionnaire”.</span>
+            <input
+              data-custom-field="source-label"
+              maxlength="240"
+              .value=${this.customDraft.sourceLabel}
+              @input=${e=>this.updateCustomDraft("sourceLabel",e.currentTarget.value)}
+            />
+          </label>
+          <label class="full-width">
+            <strong>Source URL (optional)</strong>
+            <span>Use an HTTPS link to the primary instrument source when one is available.</span>
+            <input
+              data-custom-field="source-url"
+              type="url"
+              inputmode="url"
+              maxlength="500"
+              placeholder="https://example.org/questionnaire"
+              .value=${this.customDraft.sourceUrl}
+              @input=${e=>this.updateCustomDraft("sourceUrl",e.currentTarget.value)}
+            />
+          </label>
+          <label class="full-width">
+            <strong>Description</strong>
+            <span>Short explanation shown under the questionnaire title.</span>
+            <textarea
+              data-custom-field="description"
+              rows="3"
+              maxlength="400"
+              .value=${this.customDraft.description}
+              @input=${e=>this.updateCustomDraft("description",e.currentTarget.value)}
+            ></textarea>
+          </label>
+          <label class="full-width">
+            <strong>Participant instruction</strong>
+            <span>What participants should think about before answering.</span>
+            <textarea
+              data-custom-field="intro-prompt"
+              rows="3"
+              maxlength="400"
+              .value=${this.customDraft.introPrompt}
+              @input=${e=>this.updateCustomDraft("introPrompt",e.currentTarget.value)}
+            ></textarea>
+          </label>
+          <label>
+            <strong>Scale type</strong>
+            <span>Controls how the shared response scale is described.</span>
+            <select
+              data-custom-field="scale-type"
+              .value=${this.customDraft.scaleType}
+              @change=${e=>this.updateCustomDraft("scaleType",e.currentTarget.value)}
+            >
+              <option value="agreement">Agreement</option>
+              <option value="magnitude">Magnitude</option>
+              <option value="semantic-differential">Semantic differential</option>
+            </select>
+          </label>
+          <label>
+            <strong>Score calculation</strong>
+            <span>Mean keeps the scale range; sum adds adjusted item values.</span>
+            <select
+              data-custom-field="aggregation"
+              .value=${this.customDraft.aggregation}
+              @change=${e=>this.updateCustomDraft("aggregation",e.currentTarget.value)}
+            >
+              <option value="mean">Mean of item values</option>
+              <option value="sum">Sum of item values</option>
+            </select>
+          </label>
+          <label>
+            <strong>Minimum response value</strong>
+            <span>Whole number from 0 to 99.</span>
+            <input
+              data-custom-field="minimum"
+              type="number"
+              min="0"
+              max="99"
+              step="1"
+              .value=${String(this.customDraft.minimum)}
+              @input=${e=>this.updateCustomDraft("minimum",e.currentTarget.valueAsNumber)}
+            />
+          </label>
+          <label>
+            <strong>Maximum response value</strong>
+            <span>Whole number up to 100.</span>
+            <input
+              data-custom-field="maximum"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              .value=${String(this.customDraft.maximum)}
+              @input=${e=>this.updateCustomDraft("maximum",e.currentTarget.valueAsNumber)}
+            />
+          </label>
+          <label>
+            <strong>Response step</strong>
+            <span>The range must divide exactly by this positive whole number.</span>
+            <input
+              data-custom-field="step"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              .value=${String(this.customDraft.step)}
+              @input=${e=>this.updateCustomDraft("step",e.currentTarget.valueAsNumber)}
+            />
+          </label>
+          <label>
+            <strong>Score name</strong>
+            <span>Label used on review, result and export pages.</span>
+            <input
+              data-custom-field="score-name"
+              maxlength="120"
+              .value=${this.customDraft.scoreName}
+              @input=${e=>this.updateCustomDraft("scoreName",e.currentTarget.value)}
+            />
+          </label>
+        </div>
+
+        <fieldset class="custom-items">
+          <legend>Questionnaire items</legend>
+          <p>
+            Each item uses the shared numeric range but may have different visible endpoint labels.
+            A reverse-scored response is transformed as minimum + maximum − response before the
+            mean or sum is calculated.
+          </p>
+          ${this.customDraft.items.map((e,t)=>this.renderCustomQuestionnaireItem(e,t))}
+          <button
+            class="secondary-button"
+            type="button"
+            ?disabled=${this.customDraft.items.length>=f}
+            @click=${this.addCustomItem}
+          >
+            Add another item
+          </button>
+        </fieldset>
+
+        <div class="button-row compact">
+          <button
+            class="primary-button"
+            type="button"
+            @click=${this.useCustomDraft}
+          >
+            Validate and use this questionnaire
+          </button>
+          <label class="secondary-button file-button">
+            Import questionnaire definition JSON
+            <input
+              class="sr-only"
+              data-custom-definition-import
+              type="file"
+              accept=".json,application/json"
+              @change=${this.importCustomDefinition}
+            />
+          </label>
+          <button
+            class="secondary-button"
+            type="button"
+            @click=${this.resetCustomDraft}
+          >
+            Reset builder fields
+          </button>
+        </div>
+        <p class="support-boundary">
+          After validation, the full definition is embedded in the configuration and participant
+          link. Download its JSON for the study protocol. Importing that definition or a saved
+          configuration reproduces the same items, scale and scoring rule without changing source code.
+        </p>
+      </section>
+    `}renderCustomQuestionnaireItem(e,t){return o`
+      <section class="custom-item-editor" aria-labelledby=${`custom-item-${t+1}-heading`}>
+        <div class="custom-item-heading">
+          <h4 id=${`custom-item-${t+1}-heading`}>Item ${t+1}</h4>
+          <button
+            class="secondary-button"
+            type="button"
+            ?disabled=${this.customDraft.items.length===1}
+            aria-label=${`Remove item ${t+1}`}
+            @click=${()=>this.removeCustomItem(t)}
+          >
+            Remove item
+          </button>
+        </div>
+        <div class="form-grid">
+          <label>
+            <strong>Item label</strong>
+            <span>Short name shown on review and export.</span>
+            <input
+              data-custom-item=${t}
+              data-custom-item-field="name"
+              maxlength="120"
+              .value=${e.name}
+              @input=${n=>this.updateCustomItem(t,"name",n.currentTarget.value)}
+            />
+          </label>
+          <label class="custom-reverse-option">
+            <input
+              data-custom-item=${t}
+              data-custom-item-field="reverse-scored"
+              type="checkbox"
+              .checked=${e.reverseScored}
+              @change=${n=>this.updateCustomItem(t,"reverseScored",n.currentTarget.checked)}
+            />
+            <span>
+              <strong>Reverse this item for scoring</strong>
+              <small>The displayed and stored answer is unchanged; only score calculation is reversed.</small>
+            </span>
+          </label>
+          <label class="full-width">
+            <strong>Question or statement</strong>
+            <textarea
+              data-custom-item=${t}
+              data-custom-item-field="prompt"
+              rows="3"
+              maxlength="1000"
+              .value=${e.prompt}
+              @input=${n=>this.updateCustomItem(t,"prompt",n.currentTarget.value)}
+            ></textarea>
+          </label>
+          <label>
+            <strong>Low endpoint label</strong>
+            <input
+              data-custom-item=${t}
+              data-custom-item-field="low-anchor"
+              maxlength="80"
+              .value=${e.lowAnchor}
+              @input=${n=>this.updateCustomItem(t,"lowAnchor",n.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <strong>High endpoint label</strong>
+            <input
+              data-custom-item=${t}
+              data-custom-item-field="high-anchor"
+              maxlength="80"
+              .value=${e.highAnchor}
+              @input=${n=>this.updateCustomItem(t,"highAnchor",n.currentTarget.value)}
+            />
+          </label>
+          <label class="full-width">
+            <strong>Simpler explanation (optional)</strong>
+            <span>
+              This support is offered only when every item has an explanation. Do not paraphrase a
+              validated instrument without evidence and approval.
+            </span>
+            <textarea
+              data-custom-item=${t}
+              data-custom-item-field="simple-explanation"
+              rows="2"
+              maxlength="1000"
+              .value=${e.simpleExplanation}
+              @input=${n=>this.updateCustomItem(t,"simpleExplanation",n.currentTarget.value)}
+            ></textarea>
+          </label>
+        </div>
+      </section>
+    `}updateCustomDraft(e,t){this.customDraft={...this.customDraft,[e]:t}}updateCustomItem(e,t,n){this.customDraft={...this.customDraft,items:this.customDraft.items.map((i,l)=>l===e?{...i,[t]:n}:i)}}removeCustomItem(e){this.customDraft.items.length!==1&&(this.customDraft={...this.customDraft,items:this.customDraft.items.filter((t,n)=>n!==e)})}activateCustomDefinition(e){this.customDefinition=e,this.instrumentId=e.id,e.supports.simplerExplanations||(this.showSimpleLanguage=!1),this.answerMode="standard",this.generatedConfig=null,this.participantUrl="",this.message=`${e.name} ${e.version} validated and selected. Complete the study details, then generate a new configuration.`}booleanOption(e,t,n,i=""){return o`<label class="toggle-card conductor-toggle">
+      <input type="checkbox" .checked=${t} @change=${l=>n(l.currentTarget.checked)} />
+      <span><strong>${e}</strong>${i?o`<small>${i}</small>`:c}</span>
+    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=H(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){e.questionnaireDefinition&&(this.customDefinition=e.questionnaireDefinition),this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=W(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":ae(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=re(this.generatedConfig?.showScoreToParticipant===!0);return o`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
         <p>
@@ -1104,7 +1436,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         </p>
         <p>
           <strong>Installation fingerprint:</strong>
-          platform ${m}; Qualtrics bridge ${c}.
+          platform ${v}; Qualtrics bridge ${h}.
           Replace both the complete HTML and complete JavaScript together whenever this fingerprint changes.
         </p>
         <aside class="boundary-note important-boundary">
@@ -1128,7 +1460,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           <p>
             <strong>A rendered iframe is not a data-collection pass.</strong>
             In Preview, the status above the questionnaire must name bridge
-            ${c} and say that diagnostic fields were staged. Then complete one
+            ${h} and say that diagnostic fields were staged. Then complete one
             <em>new</em> synthetic response and confirm that its newly dated row contains
             <code>__js_AQP_ACCEPTED = 1</code>, <code>__js_AQP_SCHEMA = 4</code> and the selected
             instrument ID. Rows collected before these fields were installed remain blank and are
@@ -1166,19 +1498,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               into the question body.
             </p>
             <label for="qualtrics-embedded-fields">
-              <strong>${$} Embedded Data field names</strong>
+              <strong>${ie} Embedded Data field names</strong>
             </label>
             <textarea
               id="qualtrics-embedded-fields"
               data-qualtrics-asset="embedded-data"
               readonly
               rows="10"
-              .value=${y.trim()}
+              .value=${w.trim()}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(y.trim(),"Embedded Data field list")}
+              @click=${()=>this.copySetupAsset(w.trim(),"Embedded Data field list")}
             >
               Copy Embedded Data field list
             </button>
@@ -1196,12 +1528,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               data-qualtrics-asset="question-javascript"
               readonly
               rows="10"
-              .value=${_.trim()}
+              .value=${A.trim()}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(_.trim(),"question JavaScript")}
+              @click=${()=>this.copySetupAsset(A.trim(),"question JavaScript")}
             >
               Copy complete question JavaScript
             </button>
@@ -1253,4 +1585,4 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
         </p>
       </div>
-    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&N(t)})}};i([s()],n.prototype,"instrumentId",2);i([s()],n.prototype,"studyId",2);i([s()],n.prototype,"studyTitle",2);i([s()],n.prototype,"taskLabel",2);i([s()],n.prototype,"showScoreToParticipant",2);i([s()],n.prototype,"showSimpleLanguage",2);i([s()],n.prototype,"answerMode",2);i([s()],n.prototype,"largeText",2);i([s()],n.prototype,"audioGuidance",2);i([s()],n.prototype,"recoveryEnabled",2);i([s()],n.prototype,"participantAdjustmentPolicy",2);i([s()],n.prototype,"voiceInputAvailable",2);i([s()],n.prototype,"gazeInputAvailable",2);i([s()],n.prototype,"collectionMode",2);i([s()],n.prototype,"qualtricsSurveyUrl",2);i([s()],n.prototype,"generatedConfig",2);i([s()],n.prototype,"participantUrl",2);i([s()],n.prototype,"message",2);i([s()],n.prototype,"errorMessage",2);i([s()],n.prototype,"completedResults",2);n=i([b("study-conductor-app")],n);
+    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&V(t)})}};a([r()],s.prototype,"instrumentId",2);a([r()],s.prototype,"customDefinition",2);a([r()],s.prototype,"customDraft",2);a([r()],s.prototype,"customBuilderOpen",2);a([r()],s.prototype,"studyId",2);a([r()],s.prototype,"studyTitle",2);a([r()],s.prototype,"taskLabel",2);a([r()],s.prototype,"showScoreToParticipant",2);a([r()],s.prototype,"showSimpleLanguage",2);a([r()],s.prototype,"answerMode",2);a([r()],s.prototype,"largeText",2);a([r()],s.prototype,"audioGuidance",2);a([r()],s.prototype,"recoveryEnabled",2);a([r()],s.prototype,"participantAdjustmentPolicy",2);a([r()],s.prototype,"voiceInputAvailable",2);a([r()],s.prototype,"gazeInputAvailable",2);a([r()],s.prototype,"collectionMode",2);a([r()],s.prototype,"qualtricsSurveyUrl",2);a([r()],s.prototype,"generatedConfig",2);a([r()],s.prototype,"participantUrl",2);a([r()],s.prototype,"message",2);a([r()],s.prototype,"errorMessage",2);a([r()],s.prototype,"completedResults",2);s=a([x("study-conductor-app")],s);

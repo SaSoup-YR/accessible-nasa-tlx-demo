@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { dimensions, pairs, type DimensionId } from '../src/nasa-tlx';
+import {
+  createCustomItemDraft,
+  createCustomQuestionnaireDefinition,
+  createCustomQuestionnaireDraft,
+} from '../src/custom-questionnaire';
 import { getQuestionnaireDefinition } from '../src/questionnaire-definition';
 import { calculateResult, scoreQuestionnaire } from '../src/scoring';
 import {
@@ -136,6 +141,50 @@ describe('study configuration', () => {
       collection: { mode: 'local' },
     })).toThrow(/not compatible/i);
   });
+
+  it('round-trips a researcher-supplied definition inside the reproducible participant configuration', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.name = 'Two-item task check';
+    draft.shortName = 'TTC';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Clear',
+        prompt: 'The task was clear.',
+        lowAnchor: 'Not clear',
+        highAnchor: 'Very clear',
+      }),
+      createCustomItemDraft({
+        name: 'Easy',
+        prompt: 'The task was easy.',
+        lowAnchor: 'Not easy',
+        highAnchor: 'Very easy',
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const customConfig = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'CUSTOM-01',
+      studyTitle: 'Custom questionnaire study',
+      taskLabel: 'using the prototype',
+      showScoreToParticipant: false,
+      support: {
+        ...support,
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+      },
+      collection: { mode: 'local' },
+    });
+    expect(decodeStudyConfig(encodeStudyConfig(customConfig))).toEqual(customConfig);
+    expect(customConfig.questionnaireDefinition).toEqual(definition);
+    expect(() => createStudyConfig({
+      ...customConfig,
+      questionnaireDefinition: {
+        ...definition,
+        id: 'custom-different',
+      },
+    })).toThrow(/supported questionnaire/i);
+  });
 });
 
 describe('completed result records', () => {
@@ -254,5 +303,58 @@ describe('completed result records', () => {
     expect(header).toContain('score_contribution_sus01');
     expect(nasaRow).toContain('nasa-tlx-weighted');
     expect(susRow).toContain('system-usability-scale');
+  });
+
+  it('validates and exports a custom questionnaire record with its immutable definition snapshot', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.name = 'Task confidence check';
+    draft.shortName = 'TCC';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Confidence',
+        prompt: 'I was confident.',
+        lowAnchor: 'Not confident',
+        highAnchor: 'Very confident',
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const customConfig = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'CUSTOM-RESULT-01',
+      studyTitle: 'Custom result study',
+      taskLabel: 'using the test system',
+      showScoreToParticipant: false,
+      support: {
+        ...support,
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+      },
+      collection: { mode: 'local' },
+    });
+    const customRecord = createStudyResultRecord({
+      config: customConfig,
+      participantCode: 'P-CUSTOM-01',
+      startedAt: '2026-07-29T12:00:00.000Z',
+      completedAt: '2026-07-29T12:01:00.000Z',
+      pairPresentationOrder: [],
+      pairwiseChoices: {},
+      result: scoreQuestionnaire(definition, { 'item-01': 4 }),
+      supportMetadata: {
+        ...record().supportMetadata,
+        simplerExplanationsShownAtSubmission: false,
+        answerModeAtSubmission: 'standard',
+        ratingInputRoutes: { 'item-01': 'standard-scale' },
+        pairInputRoutes: {},
+        supportChanges: [],
+      },
+    });
+    expect(customRecord.instrument.definition).toEqual(definition);
+    expect(saveCompletedResult(customRecord)).toBe(true);
+    expect(loadCompletedResults()).toContainEqual(customRecord);
+    const csv = resultsToCsv([customRecord]);
+    expect(csv).toContain('questionnaire_definition_json');
+    expect(csv).toContain('custom-tcc');
+    expect(csv).toContain('rating_item-01');
   });
 });
