@@ -821,6 +821,17 @@ figcaption {
   cursor: pointer;
 }
 
+.rating-option-content {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.35rem;
+  text-align: center;
+}
+
+.rating-option-content small {
+  line-height: 1.25;
+}
+
 .selected-marker {
   display: inline-flex;
   align-items: center;
@@ -1164,6 +1175,145 @@ button:disabled {
   margin-top: 0;
 }
 
+.platform-questionnaire-import {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 2px solid #536a82;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.platform-questionnaire-import h4 {
+  margin-top: 0;
+}
+
+.file-import-control input[type='file'] {
+  min-height: 3rem;
+  padding: 0.55rem;
+  border: 2px solid #6f8092;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.platform-import-review {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 3px solid #08783d;
+  border-radius: 8px;
+  background: #f2fbf5;
+  scroll-margin-block-start: 1.5rem;
+}
+
+.platform-import-review.import-blocked {
+  border-color: #a51725;
+  background: #fff4f4;
+}
+
+.platform-import-review-heading {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.platform-import-review-heading h5,
+.platform-import-review-heading p {
+  margin: 0 0 0.35rem;
+}
+
+.warning-icon {
+  display: inline-grid;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #a51725;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.platform-import-findings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.platform-import-finding {
+  padding: 0.85rem;
+  border: 2px solid #6f8092;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.platform-import-finding h5 {
+  margin-top: 0;
+}
+
+.platform-import-finding ul {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+}
+
+.platform-import-finding li + li {
+  margin-top: 0.65rem;
+}
+
+.platform-import-finding li span {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.platform-import-finding.import-safe {
+  border-color: #08783d;
+}
+
+.platform-import-finding.import-confirm {
+  border-color: #725b00;
+  background: #fff9dc;
+}
+
+.platform-import-finding.import-unsupported {
+  border-color: #a51725;
+  background: #fff4f4;
+}
+
+.platform-import-confirmation,
+.platform-import-reverse-items {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid #536a82;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.platform-import-confirmation > legend,
+.platform-import-reverse-items > legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.platform-import-reverse-items label,
+.platform-import-final-confirmation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.platform-import-reverse-items label + label {
+  margin-top: 0.65rem;
+}
+
+.platform-import-final-confirmation {
+  margin: 1rem 0;
+  padding: 0.85rem;
+  border: 3px solid #725b00;
+  border-radius: 8px;
+  background: #fff9dc;
+}
+
 .custom-definition-fields,
 .custom-items {
   margin-top: 1.25rem;
@@ -1309,7 +1459,8 @@ pre {
 
 @media (max-width: 700px) {
   .form-grid,
-  .config-grid {
+  .config-grid,
+  .platform-import-findings {
     grid-template-columns: 1fr;
   }
 

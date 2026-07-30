@@ -25,6 +25,11 @@ import {
   type CustomQuestionnaireItemDraft,
 } from './custom-questionnaire';
 import {
+  reviewQuestionnaireExport,
+  type QuestionnaireImportReview,
+  type QuestionnaireImportSourceSelection,
+} from './platform-questionnaire-import';
+import {
   PROTOTYPE_VERSION,
   buildParticipantUrl,
   clearCompletedResults,
@@ -89,6 +94,9 @@ export class StudyConductorApp extends LitElement {
   @state() private customDraft: CustomQuestionnaireDraft =
     createCustomQuestionnaireDraft();
   @state() private customBuilderOpen = false;
+  @state() private platformImportSource: QuestionnaireImportSourceSelection = 'auto';
+  @state() private platformImportReview: QuestionnaireImportReview | null = null;
+  @state() private platformImportConfirmed = false;
   @state() private studyId = '';
   @state() private studyTitle = '';
   @state() private taskLabel = '';
@@ -592,6 +600,8 @@ export class StudyConductorApp extends LitElement {
           </p>
         </aside>
 
+        ${this.renderPlatformQuestionnaireImport()}
+
         <div class="form-grid custom-definition-fields">
           <label>
             <strong>Questionnaire name</strong>
@@ -833,6 +843,217 @@ export class StudyConductorApp extends LitElement {
     `;
   }
 
+  private renderPlatformQuestionnaireImport() {
+    const review = this.platformImportReview;
+    return html`
+      <section
+        class="platform-questionnaire-import"
+        aria-labelledby="platform-questionnaire-import-heading"
+      >
+        <h4 id="platform-questionnaire-import-heading">
+          Import from Qualtrics or LimeSurvey
+        </h4>
+        <p>
+          Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
+          <code>.lss</code> survey-structure export. The file is reviewed in this
+          browser and is not uploaded. Nothing is converted until you review and
+          confirm the result.
+        </p>
+        <div class="form-grid">
+          <label>
+            <strong>Source format</strong>
+            <span>Automatic detection is recommended.</span>
+            <select
+              data-platform-import-source
+              .value=${this.platformImportSource}
+              @change=${(event: Event) => {
+                this.platformImportSource = (event.currentTarget as HTMLSelectElement)
+                  .value as QuestionnaireImportSourceSelection;
+                this.platformImportReview = null;
+                this.platformImportConfirmed = false;
+              }}
+            >
+              <option value="auto">Detect from file</option>
+              <option value="qualtrics-qsf">Qualtrics QSF</option>
+              <option value="limesurvey-lss">LimeSurvey LSS</option>
+            </select>
+          </label>
+          <label class="file-import-control">
+            <strong>Questionnaire export</strong>
+            <span>Maximum file size: 2 MB.</span>
+            <input
+              data-platform-questionnaire-import
+              type="file"
+              accept=".qsf,.lss,application/json,application/xml,text/xml"
+              @change=${this.importPlatformQuestionnaire}
+            />
+          </label>
+        </div>
+        ${review ? this.renderPlatformQuestionnaireReview(review) : nothing}
+      </section>
+    `;
+  }
+
+  private renderPlatformQuestionnaireReview(review: QuestionnaireImportReview) {
+    const findingList = (
+      title: string,
+      className: string,
+      findings: QuestionnaireImportReview['imported'],
+      emptyMessage: string,
+    ) => html`
+      <section class=${`platform-import-finding ${className}`}>
+        <h5>${title} (${findings.length})</h5>
+        ${findings.length
+          ? html`<ul>
+              ${findings.map((finding) => html`
+                <li>
+                  <strong>${finding.title}</strong>
+                  <span>${finding.detail}</span>
+                </li>
+              `)}
+            </ul>`
+          : html`<p>${emptyMessage}</p>`}
+      </section>
+    `;
+
+    return html`
+      <section
+        class=${`platform-import-review${review.canConvert ? '' : ' import-blocked'}`}
+        id="platform-import-review"
+        tabindex="-1"
+        aria-labelledby="platform-import-review-heading"
+      >
+        <div class="platform-import-review-heading">
+          <span class=${review.canConvert ? 'success-icon' : 'warning-icon'} aria-hidden="true">
+            ${review.canConvert ? '✓' : '!'}
+          </span>
+          <div>
+            <h5 id="platform-import-review-heading">
+              ${review.canConvert ? 'Import review ready' : 'Conversion blocked'}
+            </h5>
+            <p>
+              <strong>${review.title}</strong> · ${review.sourceName} ·
+              ${review.fileName}
+            </p>
+          </div>
+        </div>
+
+        <div class="platform-import-findings">
+          ${findingList(
+            'Imported safely',
+            'import-safe',
+            review.imported,
+            'No questionnaire items were imported safely.',
+          )}
+          ${findingList(
+            'Requires researcher confirmation',
+            'import-confirm',
+            review.confirmations,
+            'No additional confirmation is required.',
+          )}
+          ${findingList(
+            'Unsupported content',
+            'import-unsupported',
+            review.unsupported,
+            'No unsupported content was found.',
+          )}
+        </div>
+
+        ${review.canConvert && review.draft
+          ? html`
+              <fieldset class="platform-import-confirmation">
+                <legend>Confirm scoring before conversion</legend>
+                <div class="form-grid">
+                  <label>
+                    <strong>Scale description</strong>
+                    <select
+                      data-platform-import-scale-type
+                      .value=${this.customDraft.scaleType}
+                      @change=${(event: Event) =>
+                        this.updateCustomDraft(
+                          'scaleType',
+                          (event.currentTarget as HTMLSelectElement)
+                            .value as CustomQuestionnaireDraft['scaleType'],
+                        )}
+                    >
+                      <option value="agreement">Agreement</option>
+                      <option value="magnitude">Magnitude</option>
+                      <option value="semantic-differential">Semantic differential</option>
+                    </select>
+                  </label>
+                  <label>
+                    <strong>Score calculation</strong>
+                    <select
+                      data-platform-import-aggregation
+                      .value=${this.customDraft.aggregation}
+                      @change=${(event: Event) =>
+                        this.updateCustomDraft(
+                          'aggregation',
+                          (event.currentTarget as HTMLSelectElement)
+                            .value as CustomQuestionnaireDraft['aggregation'],
+                        )}
+                    >
+                      <option value="mean">Mean of reviewed item values</option>
+                      <option value="sum">Sum of reviewed item values</option>
+                    </select>
+                  </label>
+                </div>
+                <fieldset class="platform-import-reverse-items">
+                  <legend>Reverse-scored items</legend>
+                  <p>Select an item only if the questionnaire's reviewed scoring instructions require it.</p>
+                  ${this.customDraft.items.map((item, index) => html`
+                    <label>
+                      <input
+                        data-platform-import-reverse=${index}
+                        type="checkbox"
+                        .checked=${item.reverseScored}
+                        @change=${(event: Event) =>
+                          this.updateCustomItem(
+                            index,
+                            'reverseScored',
+                            (event.currentTarget as HTMLInputElement).checked,
+                          )}
+                      />
+                      <span>${index + 1}. ${item.name}: ${item.prompt}</span>
+                    </label>
+                  `)}
+                </fieldset>
+                <label class="platform-import-final-confirmation">
+                  <input
+                    data-platform-import-confirm
+                    type="checkbox"
+                    .checked=${this.platformImportConfirmed}
+                    @change=${(event: Event) => {
+                      this.platformImportConfirmed =
+                        (event.currentTarget as HTMLInputElement).checked;
+                    }}
+                  />
+                  <span>
+                    I checked the imported wording, question order, response labels,
+                    numeric values, score calculation and reverse-scored items against
+                    the source questionnaire.
+                  </span>
+                </label>
+                <button
+                  class="primary-button"
+                  type="button"
+                  ?disabled=${!this.platformImportConfirmed}
+                  @click=${this.usePlatformImport}
+                >
+                  Convert and use this questionnaire
+                </button>
+              </fieldset>
+            `
+          : html`
+              <p class="support-boundary">
+                Correct the unsupported content in the source survey and export it
+                again. The platform has not created a partial questionnaire.
+              </p>
+            `}
+      </section>
+    `;
+  }
+
   private renderCustomQuestionnaireItem(
     item: CustomQuestionnaireItemDraft,
     index: number,
@@ -957,11 +1178,60 @@ export class StudyConductorApp extends LitElement {
     `;
   }
 
+  private importPlatformQuestionnaire = async (event: Event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.errorMessage = '';
+    this.definitionConfirmation = '';
+    this.platformImportReview = null;
+    this.platformImportConfirmed = false;
+    try {
+      const review = reviewQuestionnaireExport(
+        await file.text(),
+        file.name,
+        this.platformImportSource,
+      );
+      this.platformImportReview = review;
+      if (review.draft) this.customDraft = structuredClone(review.draft);
+      this.message = review.canConvert
+        ? 'Import review ready. Check every section and confirm scoring before conversion.'
+        : 'Import review found unsupported content. No partial questionnaire was created.';
+      this.revealConductorResult('#platform-import-review');
+    } catch (error) {
+      this.showError(
+        error instanceof Error
+          ? error.message
+          : 'The questionnaire export could not be reviewed.',
+      );
+    } finally {
+      input.value = '';
+    }
+  };
+
+  private usePlatformImport = () => {
+    const review = this.platformImportReview;
+    if (!review?.canConvert || !review.draft || !this.platformImportConfirmed) return;
+    this.errorMessage = '';
+    this.definitionConfirmation = '';
+    try {
+      const definition = createCustomQuestionnaireDefinition(this.customDraft);
+      this.activateCustomDefinition(definition, 'imported');
+    } catch (error) {
+      this.showError(
+        error instanceof Error
+          ? error.message
+          : 'The reviewed questionnaire could not be converted.',
+      );
+    }
+  };
+
   private updateCustomDraft<K extends keyof CustomQuestionnaireDraft>(
     field: K,
     value: CustomQuestionnaireDraft[K],
   ) {
     this.customDraft = { ...this.customDraft, [field]: value };
+    if (this.platformImportReview) this.platformImportConfirmed = false;
   }
 
   private updateCustomItem<K extends keyof CustomQuestionnaireItemDraft>(
@@ -974,6 +1244,7 @@ export class StudyConductorApp extends LitElement {
       items: this.customDraft.items.map((item, itemIndex) =>
         itemIndex === index ? { ...item, [field]: value } : item),
     };
+    if (this.platformImportReview) this.platformImportConfirmed = false;
   }
 
   private addCustomItem = () => {
@@ -1069,6 +1340,8 @@ export class StudyConductorApp extends LitElement {
 
   private resetCustomDraft = () => {
     this.customDraft = createCustomQuestionnaireDraft();
+    this.platformImportReview = null;
+    this.platformImportConfirmed = false;
     this.message =
       'Custom questionnaire builder fields reset. The selected questionnaire is unchanged until you validate a new definition.';
   };

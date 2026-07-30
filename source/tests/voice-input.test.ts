@@ -101,6 +101,36 @@ describe('voice-answer parsing', () => {
     expect(parsePairTranscript('frustration', ['mental', 'physical'])).toBeNull();
   });
 
+  it('accepts exact imported response labels without accepting partial labels', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.name = 'Imported agreement check';
+    draft.shortName = 'IAC';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Clarity',
+        prompt: 'The instructions were clear.',
+        lowAnchor: 'Strongly disagree',
+        highAnchor: 'Strongly agree',
+        responseLabels: {
+          1: 'Strongly disagree',
+          2: 'Disagree',
+          3: 'Neither agree nor disagree',
+          4: 'Agree',
+          5: 'Strongly agree',
+        },
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const values = buildRatingValues(definition);
+    const item = definition.items[0];
+
+    expect(parseRatingTranscript('agree', item, values, [])).toBe(4);
+    expect(parseRatingTranscript('neither agree nor disagree', item, values, [])).toBe(3);
+    expect(parseRatingTranscript('I choose strongly agree', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('strongly', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('not agree', item, values, [])).toBeNull();
+  });
+
   it('uses a consistent lower-ranked hypothesis without guessing across conflicts or negation', () => {
     expect(parseRatingAlternatives(['hello', 'low'], dimensions[0])).toEqual({
       transcript: 'hello',

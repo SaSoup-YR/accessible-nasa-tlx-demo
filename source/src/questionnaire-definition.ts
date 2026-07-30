@@ -17,6 +17,7 @@ export interface QuestionnaireItem {
   shortMeaning: string;
   lowAnchor: string;
   highAnchor: string;
+  responseLabels?: Record<string, string>;
   voiceLowAliases?: string[];
   voiceHighAliases?: string[];
 }
@@ -124,6 +125,35 @@ function stringList(value: unknown, path: string): string[] | undefined {
   return normalised;
 }
 
+function responseLabels(
+  value: unknown,
+  path: string,
+  minimum: number,
+  maximum: number,
+  step: number,
+): Record<string, string> | undefined {
+  if (value === undefined) return undefined;
+  const labels = record(value, path);
+  const expectedValues = Array.from(
+    { length: ((maximum - minimum) / step) + 1 },
+    (_, index) => minimum + (index * step),
+  );
+  const expectedKeys = expectedValues.map(String);
+  if (
+    Object.keys(labels).length !== expectedKeys.length ||
+    expectedKeys.some((key) => !(key in labels))
+  ) {
+    throw new Error(`${path} must label every value in the declared response scale.`);
+  }
+  const unexpected = Object.keys(labels).filter((key) => !expectedKeys.includes(key));
+  if (unexpected.length) {
+    throw new Error(`${path} contains a value outside the declared response scale.`);
+  }
+  return Object.fromEntries(
+    expectedKeys.map((key) => [key, text(labels[key], `${path}.${key}`, 120)]),
+  );
+}
+
 /**
  * Runtime validation complements the published JSON Schema with semantic checks
  * that JSON Schema alone cannot express clearly, including scorer compatibility.
@@ -203,10 +233,18 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
         'shortMeaning',
         'lowAnchor',
         'highAnchor',
+        'responseLabels',
         'voiceLowAliases',
         'voiceHighAliases',
       ],
       `items[${index}]`,
+    );
+    const declaredResponseLabels = responseLabels(
+      item.responseLabels,
+      `items[${index}].responseLabels`,
+      minimum,
+      maximum,
+      step,
     );
     return {
       id: text(item.id, `items[${index}].id`, 64, /^[a-z][a-z0-9_-]*$/),
@@ -218,6 +256,7 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
       shortMeaning: text(item.shortMeaning, `items[${index}].shortMeaning`, 240),
       lowAnchor: text(item.lowAnchor, `items[${index}].lowAnchor`, 80),
       highAnchor: text(item.highAnchor, `items[${index}].highAnchor`, 80),
+      ...(declaredResponseLabels ? { responseLabels: declaredResponseLabels } : {}),
       ...(stringList(item.voiceLowAliases, `items[${index}].voiceLowAliases`)
         ? { voiceLowAliases: stringList(item.voiceLowAliases, `items[${index}].voiceLowAliases`) }
         : {}),

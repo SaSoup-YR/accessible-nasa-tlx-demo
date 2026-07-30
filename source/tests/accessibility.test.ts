@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import axe from 'axe-core';
 import '../src/accessible-nasa-tlx';
@@ -112,6 +114,35 @@ describe('automated structural accessibility scan', () => {
       .click();
     await conductor.updateComplete;
     expect(conductor.querySelector('#custom-questionnaire-builder')).not.toBeNull();
+    const result = await axe.run(conductor, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations).toEqual([]);
+  });
+
+  it('finds no detectable violations in a structured export import review', async () => {
+    const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
+    document.body.append(conductor);
+    await conductor.updateComplete;
+    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await conductor.updateComplete;
+    const qsf = readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
+      'utf8',
+    );
+    const input = conductor.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: [{ name: 'task-support.qsf', text: async () => qsf }],
+    });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await conductor.updateComplete;
+    expect(conductor.querySelector('#platform-import-review')).not.toBeNull();
     const result = await axe.run(conductor, {
       rules: { 'color-contrast': { enabled: false } },
     });

@@ -192,6 +192,25 @@ function exactEndpointCandidate(
   return low ? allowedValues[0] : allowedValues.at(-1) ?? null;
 }
 
+function exactDeclaredLabelCandidate(
+  text: string,
+  dimension: TlxDimension,
+  allowedValues: readonly number[],
+): number | null | undefined {
+  if (!dimension.responseLabels) return undefined;
+  const answer = text
+    .replace(
+      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?)\s+/,
+      '',
+    )
+    .trim();
+  const matches = allowedValues.filter(
+    (value) => normalise(dimension.responseLabels?.[String(value)] ?? '') === answer,
+  );
+  if (matches.length === 0) return undefined;
+  return matches.length === 1 ? matches[0] : null;
+}
+
 function numericCandidates(text: string, allowedValues: readonly number[]) {
   const tokens = text.split(' ').filter(Boolean);
   const candidates: Array<number | null> = [];
@@ -293,6 +312,8 @@ export function parseRatingTranscript(
   // still require confirmation in the participant interface. This check must
   // precede the general negation guard because "Not interesting" is an official
   // UEQ-S endpoint rather than a negated instruction.
+  const declaredLabel = exactDeclaredLabelCandidate(text, dimension, allowedValues);
+  if (declaredLabel !== undefined) return declaredLabel;
   const endpoint = exactEndpointCandidate(text, dimension, allowedValues);
   if (endpoint !== undefined) return endpoint;
   if (unsafeMeaning.test(text)) return null;

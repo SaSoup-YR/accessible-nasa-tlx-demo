@@ -6,6 +6,12 @@ Version 0.8 loads registered files from:
 
 ## Adding a questionnaire without editing code
 
+If the questionnaire already exists in Qualtrics or LimeSurvey, first follow
+[`QUESTIONNAIRE-IMPORT.md`](QUESTIONNAIRE-IMPORT.md). The structured importer
+reviews supported QSF/LSS rating questions, blocks unsupported active content,
+and sends the confirmed result through the same definition validator described
+below.
+
 Open `study.html` and select **Add your own questionnaire**. A researcher can:
 
 1. enter the questionnaire name, version, description, participant instruction
@@ -70,6 +76,7 @@ Optional content:
 
 - exactly five labelled landmarks;
 - an all-pairs comparison stage;
+- one visible label for every numeric response value on an item;
 - simpler explanatory text and voice endpoint aliases.
 
 ## Validation behavior
