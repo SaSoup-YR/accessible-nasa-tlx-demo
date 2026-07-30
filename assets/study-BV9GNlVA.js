@@ -1,4 +1,4 @@
-import{w as x,g as R,x as O,M as T,a as r,t as k,i as M,D as L,m as y,y as F,z as j,u as U,o as B,B as J,h as G,C as P,P as v,A as d,l as o,k as _,j as H,E as W,F as V,f as C}from"./shared-JcwOsfAN.js";const w=`__js_AQP_ACCEPTED
+import{w as we,g as me,x as Se,M as re,a as h,t as Ae,i as Ie,D as Te,m as G,y as qe,z as Ce,u as $e,o as Ee,B as Pe,h as Qe,C as oe,P as X,A as I,l,k as K,j as Re,E as xe,F as Ne,f as ae}from"./shared-DW-EREGI.js";const ee=`__js_AQP_ACCEPTED
 __js_AQP_BRIDGE_READY
 __js_AQP_BRIDGE_BUILD
 __js_AQP_SCHEMA
@@ -60,7 +60,7 @@ __js_AQP_RAW_21
 __js_AQP_RAW_22
 __js_AQP_RAW_23
 __js_AQP_RAW_24
-`,z=`Questionnaire complete
+`,De=`Questionnaire complete
 
 {{OPTIONAL_SCORE_BLOCK}}
 
@@ -70,7 +70,7 @@ Any accessibility-support choices and input-route information have been saved se
 
 No further action is required.
 You may now close this page.
-`,A=`/*
+`,te=`/*
  * Accessible Questionnaire Platform Version 0.8 Qualtrics question bridge.
  *
  * Paste this complete file into the JavaScript editor of the Qualtrics
@@ -610,7 +610,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     window.removeEventListener('message', receiveResult);
   });
 });
-`,Y=`<!--
+`,ke=`<!--
   REFERENCE TEMPLATE ONLY.
   Do not paste this file into Qualtrics unchanged. Use the complete generated
   question HTML from study.html so the iframe has the configured participant URL.
@@ -770,27 +770,27 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     style="display:block;position:absolute;inset:0;width:100%;height:100%;border:0;overflow:auto;visibility:hidden;background:#eef2f6"
   ></iframe>
 </div>
-`,f=20;let E=0;function S(e={}){return E+=1,{key:`custom-item-${E}`,name:"",prompt:"",lowAnchor:"",highAnchor:"",simpleExplanation:"",reverseScored:!1,...e}}function Q(){return{name:"",shortName:"",version:"1.0.0",description:"A researcher-supplied questionnaire.",introPrompt:"Answer each item about the task that you have just completed.",sourceLabel:"Researcher-supplied questionnaire",sourceUrl:"",scaleType:"agreement",minimum:1,maximum:5,step:1,scoreName:"Questionnaire score",aggregation:"mean",items:[S({name:"Item 1"}),S({name:"Item 2"})]}}function c(e,t){const n=e.trim().replace(/\s+/g," ");if(!n)throw new Error(`${t} is required.`);return n}function X(e){return e.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,50)}function K(e,t){const n=t.trim()||e.trim();return n.length<=240?n:`${n.slice(0,237).trimEnd()}...`}function Z(e){if(!Number.isInteger(e.minimum)||!Number.isInteger(e.maximum)||!Number.isInteger(e.step))throw new Error("Scale minimum, maximum and step must be whole numbers.");if(!Array.isArray(e.items)||e.items.length<1||e.items.length>f)throw new Error(`Add between 1 and ${f} questionnaire items.`);const t=c(e.name,"Questionnaire name"),n=c(e.shortName,"Short name"),i=X(n||t);if(!i)throw new Error("Questionnaire name must contain at least one Latin letter or number for its stable ID.");const l=e.items.map((u,p)=>{const I=c(u.prompt,`Item ${p+1} question`),b=u.simpleExplanation.trim().replace(/\s+/g," ");return{id:`item-${String(p+1).padStart(2,"0")}`,name:c(u.name,`Item ${p+1} label`),prompt:I,...b?{simpleExplanation:b}:{},shortMeaning:K(I,b),lowAnchor:c(u.lowAnchor,`Item ${p+1} low endpoint`),highAnchor:c(u.highAnchor,`Item ${p+1} high endpoint`)}}),m=e.items.flatMap((u,p)=>u.reverseScored?[`item-${String(p+1).padStart(2,"0")}`]:[]),g=l.every(u=>u.simpleExplanation),q=e.aggregation==="mean"?e.minimum:e.minimum*l.length,N=e.aggregation==="mean"?e.maximum:e.maximum*l.length,D={schemaVersion:1,id:`custom-${i}`,version:c(e.version,"Questionnaire version"),name:t,shortName:n,description:c(e.description,"Questionnaire description"),introPrompt:c(e.introPrompt,"Participant instruction"),officialContentNotice:"This questionnaire definition was supplied by the study conductor. Its wording, use and interpretation must match the approved study protocol.",source:{label:c(e.sourceLabel,"Source or authorship label"),...e.sourceUrl.trim()?{url:e.sourceUrl.trim()}:{}},scale:{type:e.scaleType,minimum:e.minimum,maximum:e.maximum,step:e.step},items:l,scoring:{strategy:e.aggregation==="mean"?"mean-v1":"sum-v1",scoreName:c(e.scoreName,"Score name"),minimum:q,maximum:N,...m.length?{reverseItemIds:m}:{}},supports:{simplerExplanations:g,smileyLandmarks:!1}};return $(D)}function $(e){const t=x(e);if(R(t.id))throw new Error("A custom questionnaire cannot replace a built-in questionnaire ID.");if(!t.id.startsWith("custom-"))throw new Error("A custom questionnaire ID must start with custom-.");if(t.scoring.strategy!=="mean-v1"&&t.scoring.strategy!=="sum-v1")throw new Error("A custom questionnaire must use the reviewed mean or sum scorer.");if(t.pairwise)throw new Error("Custom questionnaires do not support pairwise comparisons.");if(t.landmarks||t.supports.smileyLandmarks)throw new Error("Custom questionnaires do not support smiley landmarks.");const n=O(t);if(n>T)throw new Error(`The questionnaire definition is ${n} bytes; the participant-link limit is ${T} bytes.`);return t}function ee(e){return`${e.id}-${e.version.replace(/[^A-Za-z0-9._-]+/g,"-")}.questionnaire.json`}var te=Object.defineProperty,ne=Object.getOwnPropertyDescriptor,a=(e,t,n,i)=>{for(var l=i>1?void 0:i?ne(t,n):t,m=e.length-1,g;m>=0;m--)(g=e[m])&&(l=(i?g(t,n,l):g(l))||l);return i&&l&&te(t,n,l),l};const ie=w.trim().split(/\r?\n/).filter(Boolean).length,h=A.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function se(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(n=>{if(!n||typeof n!="object")return!1;const i=n;return"study"in i&&"responses"in i&&"result"in i})}function ae(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const n=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return Y.trim().replace(t,n)}function re(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
-`):"";return z.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
+`,k=20;let le=0;function H(e={}){return le+=1,{key:`custom-item-${le}`,name:"",prompt:"",lowAnchor:"",highAnchor:"",simpleExplanation:"",reverseScored:!1,...e}}function ue(){return{name:"",shortName:"",version:"1.0.0",description:"A researcher-supplied questionnaire.",introPrompt:"Answer each item about the task that you have just completed.",sourceLabel:"Researcher-supplied questionnaire",sourceUrl:"",scaleType:"agreement",minimum:1,maximum:5,step:1,scoreName:"Questionnaire score",aggregation:"mean",items:[H({name:"Item 1"}),H({name:"Item 2"})]}}function $(e,t){const n=e.trim().replace(/\s+/g," ");if(!n)throw new Error(`${t} is required.`);return n}function Le(e){return e.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,50)}function Oe(e,t){const n=t.trim()||e.trim();return n.length<=240?n:`${n.slice(0,237).trimEnd()}...`}function ce(e){if(!Number.isInteger(e.minimum)||!Number.isInteger(e.maximum)||!Number.isInteger(e.step))throw new Error("Scale minimum, maximum and step must be whole numbers.");if(!Array.isArray(e.items)||e.items.length<1||e.items.length>k)throw new Error(`Add between 1 and ${k} questionnaire items.`);const t=$(e.name,"Questionnaire name"),n=$(e.shortName,"Short name"),i=Le(n||t);if(!i)throw new Error("Questionnaire name must contain at least one Latin letter or number for its stable ID.");const s=e.items.map((a,_)=>{const T=$(a.prompt,`Item ${_+1} question`),u=a.simpleExplanation.trim().replace(/\s+/g," ");return{id:`item-${String(_+1).padStart(2,"0")}`,name:$(a.name,`Item ${_+1} label`),prompt:T,...u?{simpleExplanation:u}:{},shortMeaning:Oe(T,u),lowAnchor:$(a.lowAnchor,`Item ${_+1} low endpoint`),highAnchor:$(a.highAnchor,`Item ${_+1} high endpoint`),...a.responseLabels?{responseLabels:a.responseLabels}:{}}}),r=e.items.flatMap((a,_)=>a.reverseScored?[`item-${String(_+1).padStart(2,"0")}`]:[]),f=s.every(a=>a.simpleExplanation),m=e.aggregation==="mean"?e.minimum:e.minimum*s.length,b=e.aggregation==="mean"?e.maximum:e.maximum*s.length,S={schemaVersion:1,id:`custom-${i}`,version:$(e.version,"Questionnaire version"),name:t,shortName:n,description:$(e.description,"Questionnaire description"),introPrompt:$(e.introPrompt,"Participant instruction"),officialContentNotice:"This questionnaire definition was supplied by the study conductor. Its wording, use and interpretation must match the approved study protocol.",source:{label:$(e.sourceLabel,"Source or authorship label"),...e.sourceUrl.trim()?{url:e.sourceUrl.trim()}:{}},scale:{type:e.scaleType,minimum:e.minimum,maximum:e.maximum,step:e.step},items:s,scoring:{strategy:e.aggregation==="mean"?"mean-v1":"sum-v1",scoreName:$(e.scoreName,"Score name"),minimum:m,maximum:b,...r.length?{reverseItemIds:r}:{}},supports:{simplerExplanations:f,smileyLandmarks:!1}};return he(S)}function he(e){const t=we(e);if(me(t.id))throw new Error("A custom questionnaire cannot replace a built-in questionnaire ID.");if(!t.id.startsWith("custom-"))throw new Error("A custom questionnaire ID must start with custom-.");if(t.scoring.strategy!=="mean-v1"&&t.scoring.strategy!=="sum-v1")throw new Error("A custom questionnaire must use the reviewed mean or sum scorer.");if(t.pairwise)throw new Error("Custom questionnaires do not support pairwise comparisons.");if(t.landmarks||t.supports.smileyLandmarks)throw new Error("Custom questionnaires do not support smiley landmarks.");const n=Se(t);if(n>re)throw new Error(`The questionnaire definition is ${n} bytes; the participant-link limit is ${re} bytes.`);return t}function Me(e){return`${e.id}-${e.version.replace(/[^A-Za-z0-9._-]+/g,"-")}.questionnaire.json`}const Fe=2e6,je=/<\s*(?:script|iframe|object|embed|style)\b|(?:href|src)\s*=\s*["']?\s*javascript:|\son[a-z]+\s*=/i,Ue=/<\s*(?:img|picture|video|audio|canvas|svg|math|form|input|button|select|textarea|table)\b/i,Be=/\$\{(?:e|q|lm|gr)?:?\/?\/|q:\/\/|\{(?:if|TOKEN|INSERTANS|[A-Za-z][A-Za-z0-9_.]*\.(?:NAOK|shown))\b/i;function A(e){return e&&typeof e=="object"&&!Array.isArray(e)?e:null}function w(e){return typeof e=="string"||typeof e=="number"?String(e):""}function N(e){return e.replace(/\s+/g," ").trim()}function D(e,t){e.confirmationCodes.has(t.code)||(e.confirmationCodes.add(t.code),e.confirmations.push(t))}function M(e,t,n,i){const s=w(e);if(!s.trim())return i.unsupported.push({code:"missing-visible-text",title:`${t} is empty`,detail:`${n} does not contain participant-visible text.`}),null;if(je.test(s)||Be.test(s))return i.unsupported.push({code:"unsafe-dynamic-content",title:`${t} contains executable or dynamic content`,detail:`${n} contains script, an event handler, a JavaScript URL or survey-expression text. The importer does not execute or approximate it.`}),null;if(Ue.test(s))return i.unsupported.push({code:"unsupported-structured-content",title:`${t} contains media, a table or an interactive control`,detail:`${n} cannot be represented as one safe plain-text rating item without changing participant-visible content.`}),null;const f=new DOMParser().parseFromString(`<body>${s}</body>`,"text/html"),m=N(f.body.textContent??"");return m?((/<[^>]+>/.test(s)||m!==N(s))&&D(i,{code:"plain-text-normalisation",title:"Formatting was converted to plain text",detail:"Imported wording is rendered as safe plain text. Review it against the source export before use."}),m):(i.unsupported.push({code:"missing-visible-text",title:`${t} has no readable text`,detail:`${n} contains no participant-visible text after safe text extraction.`}),null)}function ne(e){const t=typeof e=="number"?e:Number(w(e).trim());return Number.isInteger(t)?t:null}function ie(e){if(e.length<2||e.some(n=>n<0||n>100)||new Set(e).size!==e.length)return!1;const t=e[1]-e[0];return t>0&&e.every((n,i)=>i===0||n-e[i-1]===t)}function fe(e,t){if(!Array.isArray(e)||e.length!==Object.keys(t).length)return null;const n=e.map(String);return new Set(n).size===n.length&&n.every(i=>i in t)?n:null}function ge(e,t,n,i){const s=A(e);return M(s?.Display,t,n,i)}function Je(e){return e.flatMap(n=>n.labels).map(n=>n.toLowerCase()).some(n=>n.includes("agree")||n.includes("disagree"))?"agreement":"semantic-differential"}function Ge(e){const t=e.split(/\s+/).map(i=>i.replace(/[^A-Za-z0-9]/g,"")[0]??"").join("").slice(0,12);return t?t.toUpperCase():e.replace(/[^A-Za-z0-9]+/g,"").slice(0,12)||"IMPORTED"}function ye(e,t,n,i,s){if(!i.length)return s.unsupported.push({code:"no-supported-items",title:"No supported questionnaire items were found",detail:"This release needs at least one required, ordered single-choice rating item."}),null;if(i.length>k)return s.unsupported.push({code:"too-many-items",title:"The questionnaire has too many items for a participant link",detail:`${i.length} supported items were found; this release accepts at most ${k}.`}),null;const r=i[0].values;if(!ie(r))return s.unsupported.push({code:"unsupported-response-values",title:"Response values are not one increasing whole-number scale",detail:"Values must be unique whole numbers from 0 to 100 with one constant positive step."}),null;const f=r.join("|");return i.some(m=>m.values.join("|")!==f)?(s.unsupported.push({code:"mixed-response-scales",title:"Items use different response values",detail:"The current participant interface requires every imported item to share the same ordered numeric scale."}),null):(D(s,{code:"review-scoring",title:"Scoring and reverse scoring require confirmation",detail:"Answer recodes do not establish a questionnaire score. Choose reviewed mean or sum, then mark any reverse-scored items."}),D(s,{code:"review-scale-type",title:"The scale description requires confirmation",detail:"Confirm whether the imported scale should be described as agreement or semantic differential."}),{name:e.slice(0,120),shortName:Ge(e),version:"1.0.0",description:`Questionnaire imported from ${t}.`,introPrompt:n.slice(0,400),sourceLabel:t,sourceUrl:"",scaleType:Je(i),minimum:r[0],maximum:r.at(-1),step:r[1]-r[0],scoreName:"Questionnaire score",aggregation:"mean",items:i.map(m=>H({name:m.name.slice(0,120),prompt:m.prompt.slice(0,1e3),lowAnchor:m.labels[0].slice(0,80),highAnchor:m.labels.at(-1).slice(0,80),responseLabels:Object.fromEntries(m.values.map((b,S)=>[String(b),m.labels[S].slice(0,120)]))}))})}function se(e){return{code:`item-${e.sourceId}`,title:`${e.name}: imported`,detail:`${e.sourceId}; “${e.prompt}”; ordered choices: `+e.values.map((t,n)=>`${t} = ${e.labels[n]}`).join("; ")}}function ve(e,t,n,i,s,r){return{source:e,sourceName:t,fileName:n,title:i,draft:s,imported:r.imported,confirmations:r.confirmations,unsupported:r.unsupported,canConvert:!!s&&r.unsupported.length===0}}function be(){return{imported:[],confirmations:[],unsupported:[],confirmationCodes:new Set}}function de(e,t){const n=A(e);if(!n)throw new Error(t);return n}function He(e,t){const n=e.find(u=>u.Element==="BL"),i=Array.isArray(n?.Payload)?n.Payload.map(A).filter(u=>!!u):[],s=i.filter(u=>u.Type!=="Trash"),r=new Set(i.filter(u=>u.Type==="Trash").flatMap(u=>Array.isArray(u.BlockElements)?u.BlockElements:[]).map(A).filter(u=>!!u).map(u=>w(u.QuestionID)).filter(Boolean));r.size&&D(t,{code:"qualtrics-trash-ignored",title:"Questions in the Qualtrics Trash block were ignored",detail:`${r.size} deleted question${r.size===1?"":"s"} will not appear in the converted questionnaire.`});const f=e.find(u=>u.Element==="FL"),m=A(f?.Payload),b=Array.isArray(m?.Flow)?m.Flow.map(A).filter(u=>!!u):[];if(s.length!==1||b.length!==1||b[0].Type!=="Block")return t.unsupported.push({code:"qualtrics-complex-flow",title:"Qualtrics flow is outside the supported single-block subset",detail:"Use one ordinary question block only. Branches, randomisers, embedded-data flow and multiple blocks are not removed or flattened."}),{order:[],trashQuestionIds:r};const S=w(b[0].ID),a=s.find(u=>w(u.ID)===S);if(!a)return t.unsupported.push({code:"qualtrics-missing-block",title:"The active Qualtrics block could not be resolved",detail:`Survey Flow references ${S||"an unknown block"}.`}),{order:[],trashQuestionIds:r};const _=Array.isArray(a.BlockElements)?a.BlockElements:[],T=[];for(const u of _){const q=A(u);if(!q||q.Type!=="Question"||!w(q.QuestionID)){t.unsupported.push({code:"qualtrics-non-question-block-item",title:"The Qualtrics block contains unsupported content",detail:"Only ordered question entries are supported in the imported block."});continue}(q.SkipLogic||q.DisplayLogic)&&t.unsupported.push({code:"qualtrics-question-logic",title:`${w(q.QuestionID)} uses question logic`,detail:"Skip and display logic are not imported."}),T.push(w(q.QuestionID))}return{order:T,trashQuestionIds:r}}function We(e){return["QuestionJS","JavaScript","DisplayLogic","SkipLogic","ChoiceDisplayLogic","CarryForward","Randomization","ChoiceRandomization"].some(t=>e[t]!==void 0&&e[t]!==null)}function pe(e,t,n,i,s){const r=A(e[t]),f=A(e.RecodeValues);if(!r||!f)return s.unsupported.push({code:"qualtrics-missing-scale",title:`${i} has no explicit ordered recode table`,detail:"The importer will not guess answer values from object keys."}),null;const m=fe(e[n],r);if(!m)return s.unsupported.push({code:"qualtrics-unknown-answer-order",title:`${i} has no reliable answer order`,detail:`${n} must list every ${t.toLowerCase()} entry exactly once.`}),null;const b=m.map(a=>ne(f[a]));if(b.some(a=>a===null))return s.unsupported.push({code:"qualtrics-nonnumeric-recodes",title:`${i} has missing or non-integer recode values`,detail:"Every visible option needs an explicit whole-number recode."}),null;const S=m.map((a,_)=>ge(r[a],`Answer ${_+1}`,`${i}/${a}`,s));return S.some(a=>a===null)?null:{values:b,labels:S}}function Ve(e,t){let n;try{n=JSON.parse(e)}catch{throw new Error("The Qualtrics QSF file is not valid JSON.")}const i=de(n,"The Qualtrics QSF root must be a JSON object."),s=de(i.SurveyEntry,"The file does not contain a Qualtrics SurveyEntry.");if(!Array.isArray(i.SurveyElements))throw new Error("The file does not contain Qualtrics SurveyElements.");const r=be(),f=N(w(s.SurveyName))||"Imported Qualtrics questionnaire",m=i.SurveyElements.map(A).filter(c=>!!c),{order:b,trashQuestionIds:S}=He(m,r),a=new Set(m.map(c=>w(c.Element)).filter(c=>c&&!["BL","FL","SQ"].includes(c)));a.size&&D(r,{code:"qualtrics-platform-settings-not-imported",title:"Qualtrics platform and presentation settings are not imported",detail:`The following non-question element types remain in Qualtrics only: ${[...a].sort().join(", ")}. Review the converted participant presentation.`});const _=new Map(m.filter(c=>c.Element==="SQ").map(c=>[w(c.PrimaryAttribute),A(c.Payload)]));if(b.length){const c=new Set(b);for(const y of _.keys())!y||c.has(y)||S.has(y)||r.unsupported.push({code:"qualtrics-unreferenced-question",title:`${y} is outside the imported active block`,detail:"The importer will not silently omit an active question that is not represented by the supported single-block flow."})}const T=[];for(const c of b){const y=_.get(c);if(!y){r.unsupported.push({code:"qualtrics-missing-question",title:`${c} is missing`,detail:"The active block references a question that is not present in SurveyElements."});continue}if(We(y)){r.unsupported.push({code:"qualtrics-unsupported-behaviour",title:`${c} contains logic, randomisation or code`,detail:"The importer does not execute or remove question behaviour."});continue}const F=A(y.Validation);if(A(F?.Settings)?.ForceResponse!=="ON"){r.unsupported.push({code:"qualtrics-optional-question",title:`${c} is not a forced-response question`,detail:"The participant platform currently requires every imported item."});continue}const j=M(y.QuestionText,"Question text",c,r);if(!j)continue;const U=w(y.QuestionType),o=w(y.Selector),g=w(y.SubSelector),B=N(w(y.DataExportTag))||c;if(U==="MC"&&o==="SAVR"){const C=pe(y,"Choices","ChoiceOrder",c,r);if(!C)continue;const E={sourceId:c,name:B,prompt:j,...C};T.push(E),r.imported.push(se(E));continue}if(U==="Matrix"&&o==="Likert"&&g==="SingleAnswer"){const C=pe(y,"Answers","AnswerOrder",c,r),E=A(y.Choices),Q=E?fe(y.ChoiceOrder,E):null;if(!C||!E||!Q){Q||r.unsupported.push({code:"qualtrics-unknown-row-order",title:`${c} has no reliable matrix row order`,detail:"ChoiceOrder must list every matrix row exactly once."});continue}D(r,{code:"qualtrics-matrix-expanded",title:"Single-answer matrix rows were expanded into items",detail:"Review each generated item against the original matrix before conversion."}),Q.forEach((R,J)=>{const x=ge(E[R],`Matrix row ${J+1}`,`${c}/${R}`,r);if(!x)return;const L={sourceId:`${c}/${R}`,name:x,prompt:`${j} — ${x}`,...C};T.push(L),r.imported.push(se(L))});continue}r.unsupported.push({code:"qualtrics-unsupported-question",title:`${c} uses an unsupported Qualtrics question type`,detail:`${U||"Unknown"} / ${o||"Unknown"} / ${g||"none"} is not converted. Supported: MC/SAVR and Matrix/Likert/SingleAnswer.`})}const q=(w(s.SurveyDescription).trim()?M(s.SurveyDescription,"Survey description","SurveyEntry",r):null)??"Answer each imported item about the task that you have just completed.",W=ye(f,"Imported from Qualtrics QSF",q,T,r);return ve("qualtrics-qsf","Qualtrics QSF",t,f,W,r)}function P(e,t){const n=[...e.documentElement.children].find(s=>s.localName===t);if(!n)return[];const i=[...n.children].find(s=>s.localName==="rows");return i?[...i.children].filter(s=>s.localName==="row").map(s=>Object.fromEntries([...s.children].map(r=>[r.localName,r.textContent??""]))):[]}function Z(e,t,n,i,s){return e.find(r=>r[t]===n&&(!r.language||r.language===s))?.[i]??""}function ze(e,t){if(/<!DOCTYPE|<!ENTITY|<\?xml-stylesheet/i.test(e))throw new Error("The LimeSurvey file contains a DTD, entity or stylesheet declaration and was not parsed.");const i=new DOMParser().parseFromString(e,"application/xml");if(i.querySelector("parsererror"))throw new Error("The LimeSurvey LSS file is not valid XML.");if(i.querySelector("LimeSurveyDocType")?.textContent?.trim()!=="Survey")throw new Error("The XML file is not a LimeSurvey survey-structure export.");const s=be(),r=[...i.querySelectorAll("languages > language")].map(o=>o.textContent?.trim()??"").filter(Boolean);r.length!==1&&s.unsupported.push({code:"limesurvey-multiple-languages",title:"The LimeSurvey export does not contain exactly one language",detail:"Multilingual wording is not flattened or discarded in this release."});const f=r[0]??"",m=P(i,"surveys_languagesettings"),b=m.find(o=>!o.surveyls_language||o.surveyls_language===f)??m[0],S=N(b?.surveyls_title??"")||"Imported LimeSurvey questionnaire",a=P(i,"groups"),_=P(i,"group_l10ns");a.length!==1&&s.unsupported.push({code:"limesurvey-multiple-groups",title:"The LimeSurvey export is outside the supported single-group subset",detail:"Multiple group headings and group-level navigation are not flattened."});for(const o of a){o.grelevance&&o.grelevance!=="1"&&s.unsupported.push({code:"limesurvey-group-relevance",title:`Group ${o.gid||""} uses relevance logic`,detail:"Group conditions are not imported."});const B=_.find(C=>C.gid===o.gid&&(!C.language||C.language===f))?.description??o.description??"";N(B)&&s.unsupported.push({code:"limesurvey-group-description",title:`Group ${o.gid||""} has participant-visible description text`,detail:"Group descriptions are not silently removed by this release."})}P(i,"conditions").length&&s.unsupported.push({code:"limesurvey-conditions",title:"The LimeSurvey export contains conditions",detail:"Branching and conditional relevance are not imported."});for(const[o,g]of[["assessments","assessment rules"],["defaultvalues","default answers"],["quotas","quota rules"],["quota_members","quota membership rules"],["quota_languages","localised quota messages"]])P(i,o).length&&s.unsupported.push({code:`limesurvey-${o.replace(/_/g,"-")}`,title:`The LimeSurvey export contains ${g}`,detail:`${g[0].toUpperCase()}${g.slice(1)} are not executed or silently discarded.`});P(i,"question_attributes").length&&s.unsupported.push({code:"limesurvey-question-attributes",title:"The LimeSurvey export contains question attributes",detail:"Question attributes may change validation, randomisation or presentation and are not silently discarded."});const T=P(i,"questions"),u=P(i,"question_l10ns"),q=P(i,"answers"),W=P(i,"answer_l10ns"),c=new Map(a.map(o=>[o.gid,Number(o.group_order)||0])),y=T.filter(o=>!o.parent_qid||o.parent_qid==="0").sort((o,g)=>(c.get(o.gid)??0)-(c.get(g.gid)??0)||(Number(o.question_order)||0)-(Number(g.question_order)||0)),F=[];T.some(o=>o.parent_qid&&o.parent_qid!=="0")&&s.unsupported.push({code:"limesurvey-subquestions",title:"The LimeSurvey export contains subquestions or matrix rows",detail:"This release imports only standalone List (Radio) and 5 Point Choice questions."}),D(s,{code:"limesurvey-platform-settings-not-imported",title:"LimeSurvey platform and presentation settings are not imported",detail:"Theme, navigation, notification and publication settings remain in LimeSurvey. Review the converted participant presentation."});for(const o of y){const g=o.qid||o.title||"unknown-question";if(o.mandatory!=="Y"){s.unsupported.push({code:"limesurvey-optional-question",title:`${o.title||g} is not mandatory`,detail:"The participant platform currently requires every imported item."});continue}if(o.other&&o.other!=="N"){s.unsupported.push({code:"limesurvey-other-answer",title:`${o.title||g} allows an “Other” answer`,detail:"Free-text “Other” responses are not imported."});continue}if(o.relevance&&o.relevance!=="1"){s.unsupported.push({code:"limesurvey-question-relevance",title:`${o.title||g} uses relevance logic`,detail:"Conditional questions are not imported."});continue}const B=Z(u,"qid",o.qid,"question",f)||o.question,C=Z(u,"qid",o.qid,"help",f)||o.help;if(N(C||"")){s.unsupported.push({code:"limesurvey-question-help",title:`${o.title||g} contains participant help text`,detail:"Question help text is not silently merged into or removed from the item wording."});continue}const E=M(B,"Question text",o.title||g,s);if(!E)continue;let Q=[],R=[];if(o.type==="5")Q=[1,2,3,4,5],R=["1","2","3","4","5"];else if(o.type==="L"){const x=q.filter(v=>v.qid===o.qid&&(!v.scale_id||v.scale_id==="0")).sort((v,Y)=>(Number(v.sortorder)||0)-(Number(Y.sortorder)||0)),L=x.map(v=>ne(v.code)),z=x.map(v=>ne(v.assessment_value));if(L.every(v=>v!==null)&&ie(L))Q=L;else if(z.every(v=>v!==null)&&ie(z))Q=z,D(s,{code:"limesurvey-assessment-values",title:"LimeSurvey assessment values were used as response values",detail:"Verify every imported value against the LimeSurvey answer table."});else{s.unsupported.push({code:"limesurvey-unsupported-values",title:`${o.title||g} has no safe increasing numeric recode`,detail:"Answer codes or assessment values must form one increasing whole-number scale with a constant step."});continue}if(R=x.map((v,Y)=>{const _e=Z(W,"aid",v.aid,"answer",f)||v.answer;return M(_e,`Answer ${Y+1}`,`${o.title||g}/${v.code}`,s)}).filter(v=>!!v),R.length!==x.length||R.length!==Q.length)continue}else{s.unsupported.push({code:"limesurvey-unsupported-question",title:`${o.title||g} uses unsupported LimeSurvey type ${o.type||"unknown"}`,detail:"Supported in this release: List (Radio) and 5 Point Choice."});continue}const J={sourceId:o.title||g,name:o.title||`Item ${F.length+1}`,prompt:E,values:Q,labels:R};F.push(J),s.imported.push(se(J))}const V=b?.surveyls_description||b?.surveyls_welcometext||"",j=N(V)?M(V,"Survey introduction","surveys_languagesettings",s):null,U=ye(S,"Imported from LimeSurvey LSS",j??"Answer each imported item about the task that you have just completed.",F,s);return ve("limesurvey-lss","LimeSurvey LSS",t,S,U,s)}function Ye(e,t){const n=t.toLowerCase().split(".").at(-1),i=e.trimStart();if(n==="qsf"||i.startsWith("{")&&/"SurveyElements"/.test(e))return"qualtrics-qsf";if(n==="lss"||i.startsWith("<")&&/<LimeSurveyDocType>Survey</.test(e))return"limesurvey-lss";throw new Error("Choose a Qualtrics .qsf file or a LimeSurvey .lss file.")}function Xe(e,t,n="auto"){const i=new TextEncoder().encode(e).length;if(!e.trim())throw new Error("The selected questionnaire export is empty.");if(i>Fe)throw new Error("The selected questionnaire export is larger than the 2 MB review limit.");const s=Ye(e,t);if(n!=="auto"&&n!==s)throw new Error(`The selected file looks like ${s==="qualtrics-qsf"?"Qualtrics QSF":"LimeSurvey LSS"}, not the chosen format.`);return s==="qualtrics-qsf"?Ve(e,t):ze(e,t)}var Ke=Object.defineProperty,Ze=Object.getOwnPropertyDescriptor,p=(e,t,n,i)=>{for(var s=i>1?void 0:i?Ze(t,n):t,r=e.length-1,f;r>=0;r--)(f=e[r])&&(s=(i?f(t,n,s):f(s))||s);return i&&s&&Ke(t,n,s),s};const et=ee.trim().split(/\r?\n/).filter(Boolean).length,O=te.match(/var bridgeBuild = '([^']+)'/)?.[1]??"unidentified";function tt(e){const t=Array.isArray(e)?e:[e];return t.length>0&&t.some(n=>{if(!n||typeof n!="object")return!1;const i=n;return"study"in i&&"responses"in i&&"result"in i})}function nt(e){const t="PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE";if(!e||e.includes(t))throw new Error("A generated participant URL is required for the Qualtrics question HTML.");const n=e.replace(/&/g,"&amp;").replace(/"/g,"&quot;");return ke.trim().replace(t,n)}function it(e){const t=e?["Questionnaire:","${e://Field/__js_AQP_INSTRUMENT_NAME}","","${e://Field/__js_AQP_SCORE_NAME}:","${e://Field/__js_AQP_PRIMARY_SCORE}"].join(`
+`):"";return De.replace("{{OPTIONAL_SCORE_BLOCK}}",t).replace(/\n{3,}/g,`
 
-`).trim()}let s=class extends M{constructor(){super(...arguments),this.instrumentId=L,this.customDefinition=null,this.customDraft=Q(),this.customBuilderOpen=!1,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.definitionConfirmation="",this.configurationConfirmation="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,n=this.availableDefinitions.find(i=>i.id===t)??null;n&&(this.instrumentId=t,n.supports.simplerExplanations||(this.showSimpleLanguage=!1),n.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.definitionConfirmation=`${n.name} ${n.version} selected. Complete the study details, then generate a new configuration.`,this.configurationConfirmation="",this.message=`${n.name} selected. Generate a new configuration before testing.`)},this.addCustomItem=()=>{this.customDraft.items.length>=f||(this.customDraft={...this.customDraft,items:[...this.customDraft.items,S({name:`Item ${this.customDraft.items.length+1}`})]})},this.useCustomDraft=()=>{this.errorMessage="",this.definitionConfirmation="";try{this.activateCustomDefinition(Z(this.customDraft),"validated")}catch(e){this.showError(e instanceof Error?e.message:"The custom questionnaire could not be validated.")}},this.importCustomDefinition=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="",this.definitionConfirmation="";try{const i=$(JSON.parse(await n.text()));this.activateCustomDefinition(i,"imported")}catch(i){this.showError(i instanceof Error?i.message:"The questionnaire definition file could not be read.")}finally{t.value=""}}},this.downloadCustomDefinition=()=>{this.customDefinition&&y(ee(this.customDefinition),JSON.stringify(this.customDefinition,null,2),"application/json")},this.resetCustomDraft=()=>{this.customDraft=Q(),this.message="Custom questionnaire builder fields reset. The selected questionnaire is unchanged until you validate a new definition."},this.generateParticipantLink=()=>{this.errorMessage="",this.configurationConfirmation="";try{const e=F({instrumentId:this.instrumentId,...this.customDefinition?.id===this.instrumentId?{questionnaireDefinition:this.customDefinition}:{},studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.configurationConfirmation="Participant link and configuration generated. The ready-to-use files and link are shown below.",this.message="",this.revealConductorResult("#configuration-ready-panel")}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&y(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="",this.configurationConfirmation="";try{const i=JSON.parse(await n.text()),l=j(i);if(!l)throw se(i)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(l),this.configurationConfirmation="Configuration imported and participant link reproduced. The configuration ID and files are shown below.",this.message="",this.revealConductorResult("#configuration-ready-panel")}catch(i){this.showError(i instanceof Error?i.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=U()},this.exportResultsJson=()=>{this.completedResults.length&&y(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&y(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${B(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(J(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return G(this.instrumentId,this.customDefinition??void 0)}get availableDefinitions(){return this.customDefinition?[...P,this.customDefinition]:P}render(){return o`
+`).trim()}let d=class extends Ie{constructor(){super(...arguments),this.instrumentId=Te,this.customDefinition=null,this.customDraft=ue(),this.customBuilderOpen=!1,this.platformImportSource="auto",this.platformImportReview=null,this.platformImportConfirmed=!1,this.studyId="",this.studyTitle="",this.taskLabel="",this.showScoreToParticipant=!1,this.showSimpleLanguage=!1,this.answerMode="standard",this.largeText=!1,this.audioGuidance=!1,this.recoveryEnabled=!0,this.participantAdjustmentPolicy="participant-choice",this.voiceInputAvailable=!0,this.gazeInputAvailable=!1,this.collectionMode="local",this.qualtricsSurveyUrl="",this.generatedConfig=null,this.participantUrl="",this.message="",this.definitionConfirmation="",this.configurationConfirmation="",this.errorMessage="",this.completedResults=[],this.selectInstrument=e=>{const t=e.currentTarget.value,n=this.availableDefinitions.find(i=>i.id===t)??null;n&&(this.instrumentId=t,n.supports.simplerExplanations||(this.showSimpleLanguage=!1),n.supports.smileyLandmarks||(this.answerMode="standard"),this.generatedConfig=null,this.participantUrl="",this.definitionConfirmation=`${n.name} ${n.version} selected. Complete the study details, then generate a new configuration.`,this.configurationConfirmation="",this.message=`${n.name} selected. Generate a new configuration before testing.`)},this.importPlatformQuestionnaire=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="",this.definitionConfirmation="",this.platformImportReview=null,this.platformImportConfirmed=!1;try{const i=Xe(await n.text(),n.name,this.platformImportSource);this.platformImportReview=i,i.draft&&(this.customDraft=structuredClone(i.draft)),this.message=i.canConvert?"Import review ready. Check every section and confirm scoring before conversion.":"Import review found unsupported content. No partial questionnaire was created.",this.revealConductorResult("#platform-import-review")}catch(i){this.showError(i instanceof Error?i.message:"The questionnaire export could not be reviewed.")}finally{t.value=""}}},this.usePlatformImport=()=>{const e=this.platformImportReview;if(!(!e?.canConvert||!e.draft||!this.platformImportConfirmed)){this.errorMessage="",this.definitionConfirmation="";try{const t=ce(this.customDraft);this.activateCustomDefinition(t,"imported")}catch(t){this.showError(t instanceof Error?t.message:"The reviewed questionnaire could not be converted.")}}},this.addCustomItem=()=>{this.customDraft.items.length>=k||(this.customDraft={...this.customDraft,items:[...this.customDraft.items,H({name:`Item ${this.customDraft.items.length+1}`})]})},this.useCustomDraft=()=>{this.errorMessage="",this.definitionConfirmation="";try{this.activateCustomDefinition(ce(this.customDraft),"validated")}catch(e){this.showError(e instanceof Error?e.message:"The custom questionnaire could not be validated.")}},this.importCustomDefinition=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="",this.definitionConfirmation="";try{const i=he(JSON.parse(await n.text()));this.activateCustomDefinition(i,"imported")}catch(i){this.showError(i instanceof Error?i.message:"The questionnaire definition file could not be read.")}finally{t.value=""}}},this.downloadCustomDefinition=()=>{this.customDefinition&&G(Me(this.customDefinition),JSON.stringify(this.customDefinition,null,2),"application/json")},this.resetCustomDraft=()=>{this.customDraft=ue(),this.platformImportReview=null,this.platformImportConfirmed=!1,this.message="Custom questionnaire builder fields reset. The selected questionnaire is unchanged until you validate a new definition."},this.generateParticipantLink=()=>{this.errorMessage="",this.configurationConfirmation="";try{const e=qe({instrumentId:this.instrumentId,...this.customDefinition?.id===this.instrumentId?{questionnaireDefinition:this.customDefinition}:{},studyId:this.studyId,studyTitle:this.studyTitle,taskLabel:this.taskLabel,showScoreToParticipant:this.showScoreToParticipant,support:this.currentSupportConfig(),collection:this.currentCollectionConfig()});this.useConfiguration(e),this.configurationConfirmation="Participant link and configuration generated. The ready-to-use files and link are shown below.",this.message="",this.revealConductorResult("#configuration-ready-panel")}catch(e){this.showError(e instanceof Error?e.message:"The study configuration could not be generated.")}},this.copyParticipantLink=async()=>{this.participantUrl&&await this.copySetupAsset(this.participantUrl,"participant link")},this.copySetupAsset=async(e,t)=>{try{if(!navigator.clipboard?.writeText)throw new Error("Clipboard API unavailable.");await navigator.clipboard.writeText(e),this.message=`${t.charAt(0).toUpperCase()}${t.slice(1)} copied.`}catch{this.message=`Automatic copy was unavailable. Select and copy the ${t} from its text box.`}},this.downloadConfiguration=()=>{this.generatedConfig&&G(`${this.generatedConfig.studyId}-${this.generatedConfig.configId}.json`,JSON.stringify(this.generatedConfig,null,2),"application/json")},this.importConfiguration=async e=>{const t=e.currentTarget,n=t.files?.[0];if(n){this.errorMessage="",this.configurationConfirmation="";try{const i=JSON.parse(await n.text()),s=Ce(i);if(!s)throw tt(i)?new Error("This is a completed result file, not a study configuration. Import the JSON downloaded from Configuration ready."):new Error("This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.");this.useConfiguration(s),this.configurationConfirmation="Configuration imported and participant link reproduced. The configuration ID and files are shown below.",this.message="",this.revealConductorResult("#configuration-ready-panel")}catch(i){this.showError(i instanceof Error?i.message:"The configuration file could not be read.")}finally{t.value=""}}},this.refreshResults=()=>{this.completedResults=$e()},this.exportResultsJson=()=>{this.completedResults.length&&G(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(this.completedResults,null,2),"application/json")},this.exportResultsCsv=()=>{this.completedResults.length&&G(`accessible-questionnaire-results-${new Date().toISOString().slice(0,10)}.csv`,`\uFEFF${Ee(this.completedResults)}`,"text/csv")},this.eraseResults=()=>{window.confirm("Erase every completed questionnaire record stored by this site in this browser? Confirm only after checking the exported files.")&&(Pe(),this.refreshResults(),this.message="Local completed records erased.")}}connectedCallback(){super.connectedCallback(),this.refreshResults(),window.addEventListener("storage",this.refreshResults)}disconnectedCallback(){window.removeEventListener("storage",this.refreshResults),super.disconnectedCallback()}createRenderRoot(){return this}get definition(){return Qe(this.instrumentId,this.customDefinition??void 0)}get availableDefinitions(){return this.customDefinition?[...oe,this.customDefinition]:oe}render(){return l`
       <a class="skip-link" href="#conductor-main">Skip to study setup</a>
       <main class="app-shell conductor-shell" id="conductor-main">
         <header class="app-header">
           <p class="eyebrow">
-            Study conductor · Version ${v} · Qualtrics package ${h}
+            Study conductor · Version ${X} · Qualtrics package ${O}
           </p>
           <h1>Prepare an accessible questionnaire study</h1>
           <p class="subtitle">Create one configuration, give participants a prepared link, and export completed records.</p>
         </header>
 
         <aside class="boundary-note important-boundary" aria-labelledby="current-generator-heading">
-          <h2 id="current-generator-heading">Current Qualtrics generator: ${h}</h2>
+          <h2 id="current-generator-heading">Current Qualtrics generator: ${O}</h2>
           <p>
             Every generated JavaScript block must contain
-            <code>var bridgeBuild = '${h}';</code>. If it shows another value, that browser tab is
+            <code>var bridgeBuild = '${O}';</code>. If it shows another value, that browser tab is
             running a stale conductor build. Close that tab and reopen the versioned
-            <a href="study.html?package=${h}">Prepare a study page</a> before copying anything.
+            <a href="study.html?package=${O}">Prepare a study page</a> before copying anything.
           </p>
         </aside>
 
@@ -809,9 +809,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           </p>
         </aside>
 
-        ${this.errorMessage?o`<div class="error-summary" role="alert" tabindex="-1" id="conductor-error">
+        ${this.errorMessage?l`<div class="error-summary" role="alert" tabindex="-1" id="conductor-error">
               <h2>There is a problem</h2><p>${this.errorMessage}</p>
-            </div>`:d}
+            </div>`:I}
         <p class="sr-only" aria-live="polite">${this.message}</p>
 
         <section class="panel conductor-panel" aria-labelledby="study-details-heading">
@@ -828,11 +828,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 definition; accessibility supports are configured separately.
               </span>
               <select @change=${this.selectInstrument}>
-                ${this.availableDefinitions.map(e=>o`<option
+                ${this.availableDefinitions.map(e=>l`<option
                     value=${e.id}
                     .selected=${e.id===this.instrumentId}
                   >
-                    ${e.name} · ${e.version}${R(e.id)?"":" · researcher supplied"}
+                    ${e.name} · ${e.version}${me(e.id)?"":" · researcher supplied"}
                   </option>`)}
               </select>
             </label>
@@ -840,26 +840,26 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               class=${`definition-summary full-width${this.definitionConfirmation?" success-confirmation":""}`}
               id="selected-questionnaire-summary"
               tabindex="-1"
-              aria-describedby=${this.definitionConfirmation?"definition-confirmation-message":d}
+              aria-describedby=${this.definitionConfirmation?"definition-confirmation-message":I}
             >
-              ${this.definitionConfirmation?o`<p
+              ${this.definitionConfirmation?l`<p
                     class="success-message"
                     id="definition-confirmation-message"
                   >
                     <span class="success-icon" aria-hidden="true">✓</span>
                     <span><strong>Questionnaire ready.</strong> ${this.definitionConfirmation}</span>
-                  </p>`:d}
+                  </p>`:I}
               <strong>${this.definition.shortName}</strong>
               <span>
                 ${this.definition.items.length} items,
-                ${_(this.definition).length}
+                ${K(this.definition).length}
                 ${this.definition.scale.type.replace("-"," ")} response values,
-                ${H(this.definition).length} comparisons,
+                ${Re(this.definition).length} comparisons,
                 ${this.definition.scoring.scoreName}.
               </span>
-              ${this.definition.source.url?o`<a href=${this.definition.source.url} target="_blank" rel="noopener">
+              ${this.definition.source.url?l`<a href=${this.definition.source.url} target="_blank" rel="noopener">
                     Instrument source: ${this.definition.source.label}
-                  </a>`:o`<span>Instrument source: ${this.definition.source.label}</span>`}
+                  </a>`:l`<span>Instrument source: ${this.definition.source.label}</span>`}
             </aside>
             <div class="full-width button-row compact">
               <button
@@ -871,7 +871,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               >
                 ${this.customBuilderOpen?"Close custom questionnaire builder":"Add your own questionnaire"}
               </button>
-              ${this.customDefinition?o`
+              ${this.customDefinition?l`
                     <button
                       class="secondary-button"
                       type="button"
@@ -879,9 +879,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                     >
                       Download current questionnaire definition
                     </button>
-                  `:d}
+                  `:I}
             </div>
-            ${this.customBuilderOpen?this.renderCustomQuestionnaireBuilder():d}
+            ${this.customBuilderOpen?this.renderCustomQuestionnaireBuilder():I}
             <label>
               <strong>Study ID</strong>
               <span>Internal label shared by records from one study or condition. Example: ACCESS-TECH-01. Do not use a participant name.</span>
@@ -907,7 +907,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             workflow and allowlisted scoring rule unchanged.
           </p>
           <div class="config-grid">
-            ${this.definition.supports.simplerExplanations?this.booleanOption("Show simpler explanations from the start",this.showSimpleLanguage,e=>{this.showSimpleLanguage=e}):o`<aside class="boundary-note">
+            ${this.definition.supports.simplerExplanations?this.booleanOption("Show simpler explanations from the start",this.showSimpleLanguage,e=>{this.showSimpleLanguage=e}):l`<aside class="boundary-note">
                   <strong>Simpler item text is unavailable for ${this.definition.shortName}</strong>
                   <p>
                     This definition preserves the validated item statements without adding unvalidated rewording.
@@ -970,12 +970,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             </label>
           </fieldset>
 
-          ${this.definition.supports.smileyLandmarks?o`<fieldset class="answer-mode-control conductor-answer-mode">
+          ${this.definition.supports.smileyLandmarks?l`<fieldset class="answer-mode-control conductor-answer-mode">
                 <legend>Starting rating presentation</legend>
                 <label>
                   <input type="radio" name="conductor-answer-mode" value="standard" .checked=${this.answerMode==="standard"} @change=${()=>{this.answerMode="standard"}} />
                   <span>
-                    <strong>Standard ${_(this.definition).length}-value scale</strong>
+                    <strong>Standard ${K(this.definition).length}-value scale</strong>
                     <small>Recommended default.</small>
                   </span>
                 </label>
@@ -983,8 +983,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                   <input type="radio" name="conductor-answer-mode" value="smiley" .checked=${this.answerMode==="smiley"} @change=${()=>{this.answerMode="smiley"}} />
                   <span><strong>Experimental smiley landmarks</strong><small>Use only when this presentation is part of the approved protocol.</small></span>
                 </label>
-              </fieldset>`:o`<p class="support-boundary">
-                ${this.definition.shortName} uses its standard ${_(this.definition).length}-value
+              </fieldset>`:l`<p class="support-boundary">
+                ${this.definition.shortName} uses its standard ${K(this.definition).length}-value
                 response scale. Smiley landmarks are disabled because facial valence is not equivalent to agreement.
               </p>`}
         </section>
@@ -1020,7 +1020,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               </span>
             </label>
           </fieldset>
-          ${this.collectionMode==="qualtrics"?o`<label class="full-width">
+          ${this.collectionMode==="qualtrics"?l`<label class="full-width">
                 <strong>Qualtrics survey or preview URL</strong>
                 <span>
                   Paste the HTTPS URL opened by your UCL Qualtrics survey. Only its exact origin is stored in the
@@ -1037,7 +1037,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               <p class="support-boundary">
                 Participants must receive the Qualtrics distribution link, not the embedded GitHub page URL. Complete the
                 one-question bridge setup and verify a synthetic record in Qualtrics Data &amp; Analysis before recruitment.
-              </p>`:d}
+              </p>`:I}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="link-heading">
@@ -1060,21 +1060,21 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             record type and is not imported here.
           </p>
 
-          ${this.generatedConfig?o`<div
+          ${this.generatedConfig?l`<div
                 class=${`generated-link${this.configurationConfirmation?" success-confirmation":""}`}
                 id="configuration-ready-panel"
                 role="region"
                 aria-labelledby="generated-link-heading"
-                aria-describedby=${this.configurationConfirmation?"configuration-confirmation-message":d}
+                aria-describedby=${this.configurationConfirmation?"configuration-confirmation-message":I}
                 tabindex="-1"
               >
-                ${this.configurationConfirmation?o`<p
+                ${this.configurationConfirmation?l`<p
                       class="success-message"
                       id="configuration-confirmation-message"
                     >
                       <span class="success-icon" aria-hidden="true">✓</span>
                       <span><strong>Success.</strong> ${this.configurationConfirmation}</span>
-                    </p>`:d}
+                    </p>`:I}
                 <h3 id="generated-link-heading">Configuration ready</h3>
                 <dl class="study-details">
                   <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
@@ -1088,26 +1088,26 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 <textarea id="participant-link" readonly rows="5" .value=${this.participantUrl}></textarea>
                 <div class="button-row compact">
                   <button class="secondary-button" type="button" @click=${this.copyParticipantLink}>Copy link</button>
-                  ${this.generatedConfig.collection.mode==="local"?o`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`:d}
+                  ${this.generatedConfig.collection.mode==="local"?l`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`:I}
                   <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
                 </div>
-                ${this.generatedConfig.collection.mode==="qualtrics"?this.renderQualtricsSetup():d}
+                ${this.generatedConfig.collection.mode==="qualtrics"?this.renderQualtricsSetup():I}
                 <p class="support-boundary">
                   Save the JSON with the study protocol. Importing it later regenerates the same configuration ID and participant link.
                   The link contains settings only; it contains no participant name, email or answer.
                 </p>
-              </div>`:d}
+              </div>`:I}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="results-heading">
           <h2 id="results-heading">5. Results saved on this device</h2>
           <p><strong>${this.completedResults.length}</strong> completed record${this.completedResults.length===1?"":"s"} found in this browser.</p>
-          ${this.completedResults.length?o`
+          ${this.completedResults.length?l`
                 <div class="table-scroll">
                   <table>
                     <thead><tr><th>Study ID</th><th>Instrument</th><th>Participant code</th><th>Completed</th><th>Primary score</th></tr></thead>
                     <tbody>
-                      ${this.completedResults.map(e=>o`<tr>
+                      ${this.completedResults.map(e=>l`<tr>
                         <td>${e.study.studyId}</td>
                         <td>${e.instrument.name}</td>
                         <td>${e.participantCode}</td>
@@ -1125,7 +1125,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                 <p class="support-boundary">
                   Verify the exported files and move them through the approved data-management route before erasing the browser copy.
                 </p>
-              `:o`<p>After a configured questionnaire is completed in this same browser, its pseudonymous record will appear here.</p>`}
+              `:l`<p>After a configured questionnaire is completed in this same browser, its pseudonymous record will appear here.</p>`}
         </section>
 
         <section class="panel conductor-panel" aria-labelledby="remote-heading">
@@ -1136,14 +1136,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             as the normal study procedure.
           </p>
           <p>
-            Version ${v} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
+            Version ${X} includes a Qualtrics parent bridge. The participant page sends a complete record only to the
             exact HTTPS origin stored by the conductor; Qualtrics writes the fields into the current response and returns a
             matching receipt before advancing. A failed save leaves the answers on Review for retry. Platform selection,
             consent, retention and access must still match the project's existing approved protocol and data-management documents.
           </p>
         </section>
       </main>
-    `}renderCustomQuestionnaireBuilder(){return o`
+    `}renderCustomQuestionnaireBuilder(){return l`
       <section
         class="custom-questionnaire-builder full-width"
         id="custom-questionnaire-builder"
@@ -1151,7 +1151,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       >
         <h3 id="custom-questionnaire-heading">Add a researcher-supplied questionnaire</h3>
         <p>
-          No code is required. This builder supports 1–${f}
+          No code is required. This builder supports 1–${k}
           required single-choice items that share one whole-number response scale.
           It can calculate a reviewed mean or sum, including selected reverse-scored items.
         </p>
@@ -1164,6 +1164,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
             executable code are deliberately not accepted.
           </p>
         </aside>
+
+        ${this.renderPlatformQuestionnaireImport()}
 
         <div class="form-grid custom-definition-fields">
           <label>
@@ -1328,7 +1330,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           <button
             class="secondary-button"
             type="button"
-            ?disabled=${this.customDraft.items.length>=f}
+            ?disabled=${this.customDraft.items.length>=k}
             @click=${this.addCustomItem}
           >
             Add another item
@@ -1372,7 +1374,160 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           configuration reproduces the same items, scale and scoring rule without changing source code.
         </p>
       </section>
-    `}renderCustomQuestionnaireItem(e,t){return o`
+    `}renderPlatformQuestionnaireImport(){const e=this.platformImportReview;return l`
+      <section
+        class="platform-questionnaire-import"
+        aria-labelledby="platform-questionnaire-import-heading"
+      >
+        <h4 id="platform-questionnaire-import-heading">
+          Import from Qualtrics or LimeSurvey
+        </h4>
+        <p>
+          Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
+          <code>.lss</code> survey-structure export. The file is reviewed in this
+          browser and is not uploaded. Nothing is converted until you review and
+          confirm the result.
+        </p>
+        <div class="form-grid">
+          <label>
+            <strong>Source format</strong>
+            <span>Automatic detection is recommended.</span>
+            <select
+              data-platform-import-source
+              .value=${this.platformImportSource}
+              @change=${t=>{this.platformImportSource=t.currentTarget.value,this.platformImportReview=null,this.platformImportConfirmed=!1}}
+            >
+              <option value="auto">Detect from file</option>
+              <option value="qualtrics-qsf">Qualtrics QSF</option>
+              <option value="limesurvey-lss">LimeSurvey LSS</option>
+            </select>
+          </label>
+          <label class="file-import-control">
+            <strong>Questionnaire export</strong>
+            <span>Maximum file size: 2 MB.</span>
+            <input
+              data-platform-questionnaire-import
+              type="file"
+              accept=".qsf,.lss,application/json,application/xml,text/xml"
+              @change=${this.importPlatformQuestionnaire}
+            />
+          </label>
+        </div>
+        ${e?this.renderPlatformQuestionnaireReview(e):I}
+      </section>
+    `}renderPlatformQuestionnaireReview(e){const t=(n,i,s,r)=>l`
+      <section class=${`platform-import-finding ${i}`}>
+        <h5>${n} (${s.length})</h5>
+        ${s.length?l`<ul>
+              ${s.map(f=>l`
+                <li>
+                  <strong>${f.title}</strong>
+                  <span>${f.detail}</span>
+                </li>
+              `)}
+            </ul>`:l`<p>${r}</p>`}
+      </section>
+    `;return l`
+      <section
+        class=${`platform-import-review${e.canConvert?"":" import-blocked"}`}
+        id="platform-import-review"
+        tabindex="-1"
+        aria-labelledby="platform-import-review-heading"
+      >
+        <div class="platform-import-review-heading">
+          <span class=${e.canConvert?"success-icon":"warning-icon"} aria-hidden="true">
+            ${e.canConvert?"✓":"!"}
+          </span>
+          <div>
+            <h5 id="platform-import-review-heading">
+              ${e.canConvert?"Import review ready":"Conversion blocked"}
+            </h5>
+            <p>
+              <strong>${e.title}</strong> · ${e.sourceName} ·
+              ${e.fileName}
+            </p>
+          </div>
+        </div>
+
+        <div class="platform-import-findings">
+          ${t("Imported safely","import-safe",e.imported,"No questionnaire items were imported safely.")}
+          ${t("Requires researcher confirmation","import-confirm",e.confirmations,"No additional confirmation is required.")}
+          ${t("Unsupported content","import-unsupported",e.unsupported,"No unsupported content was found.")}
+        </div>
+
+        ${e.canConvert&&e.draft?l`
+              <fieldset class="platform-import-confirmation">
+                <legend>Confirm scoring before conversion</legend>
+                <div class="form-grid">
+                  <label>
+                    <strong>Scale description</strong>
+                    <select
+                      data-platform-import-scale-type
+                      .value=${this.customDraft.scaleType}
+                      @change=${n=>this.updateCustomDraft("scaleType",n.currentTarget.value)}
+                    >
+                      <option value="agreement">Agreement</option>
+                      <option value="magnitude">Magnitude</option>
+                      <option value="semantic-differential">Semantic differential</option>
+                    </select>
+                  </label>
+                  <label>
+                    <strong>Score calculation</strong>
+                    <select
+                      data-platform-import-aggregation
+                      .value=${this.customDraft.aggregation}
+                      @change=${n=>this.updateCustomDraft("aggregation",n.currentTarget.value)}
+                    >
+                      <option value="mean">Mean of reviewed item values</option>
+                      <option value="sum">Sum of reviewed item values</option>
+                    </select>
+                  </label>
+                </div>
+                <fieldset class="platform-import-reverse-items">
+                  <legend>Reverse-scored items</legend>
+                  <p>Select an item only if the questionnaire's reviewed scoring instructions require it.</p>
+                  ${this.customDraft.items.map((n,i)=>l`
+                    <label>
+                      <input
+                        data-platform-import-reverse=${i}
+                        type="checkbox"
+                        .checked=${n.reverseScored}
+                        @change=${s=>this.updateCustomItem(i,"reverseScored",s.currentTarget.checked)}
+                      />
+                      <span>${i+1}. ${n.name}: ${n.prompt}</span>
+                    </label>
+                  `)}
+                </fieldset>
+                <label class="platform-import-final-confirmation">
+                  <input
+                    data-platform-import-confirm
+                    type="checkbox"
+                    .checked=${this.platformImportConfirmed}
+                    @change=${n=>{this.platformImportConfirmed=n.currentTarget.checked}}
+                  />
+                  <span>
+                    I checked the imported wording, question order, response labels,
+                    numeric values, score calculation and reverse-scored items against
+                    the source questionnaire.
+                  </span>
+                </label>
+                <button
+                  class="primary-button"
+                  type="button"
+                  ?disabled=${!this.platformImportConfirmed}
+                  @click=${this.usePlatformImport}
+                >
+                  Convert and use this questionnaire
+                </button>
+              </fieldset>
+            `:l`
+              <p class="support-boundary">
+                Correct the unsupported content in the source survey and export it
+                again. The platform has not created a partial questionnaire.
+              </p>
+            `}
+      </section>
+    `}renderCustomQuestionnaireItem(e,t){return l`
       <section class="custom-item-editor" aria-labelledby=${`custom-item-${t+1}-heading`}>
         <div class="custom-item-heading">
           <h4 id=${`custom-item-${t+1}-heading`}>Item ${t+1}</h4>
@@ -1459,10 +1614,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           </label>
         </div>
       </section>
-    `}updateCustomDraft(e,t){this.customDraft={...this.customDraft,[e]:t}}updateCustomItem(e,t,n){this.customDraft={...this.customDraft,items:this.customDraft.items.map((i,l)=>l===e?{...i,[t]:n}:i)}}removeCustomItem(e){this.customDraft.items.length!==1&&(this.customDraft={...this.customDraft,items:this.customDraft.items.filter((t,n)=>n!==e)})}activateCustomDefinition(e,t){this.customDefinition=e,this.instrumentId=e.id,e.supports.simplerExplanations||(this.showSimpleLanguage=!1),this.answerMode="standard",this.generatedConfig=null,this.participantUrl="";const n=t==="imported"?"imported, validated and selected":"validated and selected";this.definitionConfirmation=`${e.name} ${e.version} ${n}. Complete the study details, then generate a new configuration.`,this.configurationConfirmation="",this.message="",this.revealConductorResult("#selected-questionnaire-summary")}booleanOption(e,t,n,i=""){return o`<label class="toggle-card conductor-toggle">
-      <input type="checkbox" .checked=${t} @change=${l=>n(l.currentTarget.checked)} />
-      <span><strong>${e}</strong>${i?o`<small>${i}</small>`:d}</span>
-    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=W(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){e.questionnaireDefinition&&(this.customDefinition=e.questionnaireDefinition),this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=V(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":ae(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=re(this.generatedConfig?.showScoreToParticipant===!0);return o`
+    `}updateCustomDraft(e,t){this.customDraft={...this.customDraft,[e]:t},this.platformImportReview&&(this.platformImportConfirmed=!1)}updateCustomItem(e,t,n){this.customDraft={...this.customDraft,items:this.customDraft.items.map((i,s)=>s===e?{...i,[t]:n}:i)},this.platformImportReview&&(this.platformImportConfirmed=!1)}removeCustomItem(e){this.customDraft.items.length!==1&&(this.customDraft={...this.customDraft,items:this.customDraft.items.filter((t,n)=>n!==e)})}activateCustomDefinition(e,t){this.customDefinition=e,this.instrumentId=e.id,e.supports.simplerExplanations||(this.showSimpleLanguage=!1),this.answerMode="standard",this.generatedConfig=null,this.participantUrl="";const n=t==="imported"?"imported, validated and selected":"validated and selected";this.definitionConfirmation=`${e.name} ${e.version} ${n}. Complete the study details, then generate a new configuration.`,this.configurationConfirmation="",this.message="",this.revealConductorResult("#selected-questionnaire-summary")}booleanOption(e,t,n,i=""){return l`<label class="toggle-card conductor-toggle">
+      <input type="checkbox" .checked=${t} @change=${s=>n(s.currentTarget.checked)} />
+      <span><strong>${e}</strong>${i?l`<small>${i}</small>`:I}</span>
+    </label>`}currentSupportConfig(){return{showSimpleLanguage:this.definition.supports.simplerExplanations&&this.showSimpleLanguage,answerMode:this.definition.supports.smileyLandmarks?this.answerMode:"standard",largeText:this.largeText,audioGuidance:this.audioGuidance,recoveryEnabled:this.recoveryEnabled,participantAdjustmentPolicy:this.participantAdjustmentPolicy,voiceInputAvailable:this.voiceInputAvailable,gazeInputAvailable:this.gazeInputAvailable}}currentCollectionConfig(){if(this.collectionMode==="local")return{mode:"local"};const e=xe(this.qualtricsSurveyUrl);if(!e)throw new Error("Enter a valid HTTPS Qualtrics survey or preview URL for central collection.");if(e===window.location.origin)throw new Error("The Qualtrics origin must be different from this GitHub Pages website.");return{mode:"qualtrics",parentOrigin:e}}useConfiguration(e){e.questionnaireDefinition&&(this.customDefinition=e.questionnaireDefinition),this.generatedConfig=e,this.instrumentId=e.instrumentId,this.studyId=e.studyId,this.studyTitle=e.studyTitle,this.taskLabel=e.taskLabel,this.showScoreToParticipant=e.showScoreToParticipant,this.showSimpleLanguage=e.support.showSimpleLanguage,this.answerMode=e.support.answerMode,this.largeText=e.support.largeText,this.audioGuidance=e.support.audioGuidance,this.recoveryEnabled=e.support.recoveryEnabled,this.participantAdjustmentPolicy=e.support.participantAdjustmentPolicy,this.voiceInputAvailable=e.support.voiceInputAvailable,this.gazeInputAvailable=e.support.gazeInputAvailable,this.collectionMode=e.collection.mode,this.qualtricsSurveyUrl=e.collection.mode==="qualtrics"?e.collection.parentOrigin:"",this.participantUrl=Ne(new URL("index.html",window.location.href).toString(),e)}qualtricsIframeHtml(){return!this.generatedConfig||this.generatedConfig.collection.mode!=="qualtrics"?"":nt(this.participantUrl)}renderQualtricsSetup(){const e=this.qualtricsIframeHtml(),t=it(this.generatedConfig?.showScoreToParticipant===!0);return l`
       <div class="qualtrics-setup" role="region" aria-labelledby="qualtrics-setup-heading">
         <h3 id="qualtrics-setup-heading">Qualtrics installation package for this configuration</h3>
         <p>
@@ -1473,7 +1628,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         </p>
         <p>
           <strong>Installation fingerprint:</strong>
-          platform ${v}; Qualtrics bridge ${h}.
+          platform ${X}; Qualtrics bridge ${O}.
           Replace both the complete HTML and complete JavaScript together whenever this fingerprint changes.
         </p>
         <aside class="boundary-note important-boundary">
@@ -1514,7 +1669,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           <p>
             <strong>A rendered iframe is not a data-collection pass.</strong>
             In Preview, the status above the questionnaire must name bridge
-            ${h} and say that diagnostic fields were staged. Then complete one
+            ${O} and say that diagnostic fields were staged. Then complete one
             <em>new</em> synthetic response and confirm that its newly dated row contains
             <code>__js_AQP_ACCEPTED = 1</code>, <code>__js_AQP_SCHEMA = 4</code> and the selected
             instrument ID. Rows collected before these fields were installed remain blank and are
@@ -1552,19 +1707,19 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               into the question body.
             </p>
             <label for="qualtrics-embedded-fields">
-              <strong>${ie} Embedded Data field names</strong>
+              <strong>${et} Embedded Data field names</strong>
             </label>
             <textarea
               id="qualtrics-embedded-fields"
               data-qualtrics-asset="embedded-data"
               readonly
               rows="10"
-              .value=${w.trim()}
+              .value=${ee.trim()}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(w.trim(),"Embedded Data field list")}
+              @click=${()=>this.copySetupAsset(ee.trim(),"Embedded Data field list")}
             >
               Copy Embedded Data field list
             </button>
@@ -1582,12 +1737,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               data-qualtrics-asset="question-javascript"
               readonly
               rows="10"
-              .value=${A.trim()}
+              .value=${te.trim()}
             ></textarea>
             <button
               class="secondary-button"
               type="button"
-              @click=${()=>this.copySetupAsset(A.trim(),"question JavaScript")}
+              @click=${()=>this.copySetupAsset(te.trim(),"question JavaScript")}
             >
               Copy complete question JavaScript
             </button>
@@ -1639,4 +1794,4 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           <a href="docs/QUALTRICS-INTEGRATION.md">Open the full Qualtrics setup and adverse-test guide</a>
         </p>
       </div>
-    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&C(t)})}revealConductorResult(e){this.updateComplete.then(()=>{const t=this.querySelector(e);t&&C(t,{block:"start"})})}};a([r()],s.prototype,"instrumentId",2);a([r()],s.prototype,"customDefinition",2);a([r()],s.prototype,"customDraft",2);a([r()],s.prototype,"customBuilderOpen",2);a([r()],s.prototype,"studyId",2);a([r()],s.prototype,"studyTitle",2);a([r()],s.prototype,"taskLabel",2);a([r()],s.prototype,"showScoreToParticipant",2);a([r()],s.prototype,"showSimpleLanguage",2);a([r()],s.prototype,"answerMode",2);a([r()],s.prototype,"largeText",2);a([r()],s.prototype,"audioGuidance",2);a([r()],s.prototype,"recoveryEnabled",2);a([r()],s.prototype,"participantAdjustmentPolicy",2);a([r()],s.prototype,"voiceInputAvailable",2);a([r()],s.prototype,"gazeInputAvailable",2);a([r()],s.prototype,"collectionMode",2);a([r()],s.prototype,"qualtricsSurveyUrl",2);a([r()],s.prototype,"generatedConfig",2);a([r()],s.prototype,"participantUrl",2);a([r()],s.prototype,"message",2);a([r()],s.prototype,"definitionConfirmation",2);a([r()],s.prototype,"configurationConfirmation",2);a([r()],s.prototype,"errorMessage",2);a([r()],s.prototype,"completedResults",2);s=a([k("study-conductor-app")],s);
+    `}showError(e){this.errorMessage=e,this.updateComplete.then(()=>{const t=this.querySelector("#conductor-error");t&&ae(t)})}revealConductorResult(e){this.updateComplete.then(()=>{const t=this.querySelector(e);t&&ae(t,{block:"start"})})}};p([h()],d.prototype,"instrumentId",2);p([h()],d.prototype,"customDefinition",2);p([h()],d.prototype,"customDraft",2);p([h()],d.prototype,"customBuilderOpen",2);p([h()],d.prototype,"platformImportSource",2);p([h()],d.prototype,"platformImportReview",2);p([h()],d.prototype,"platformImportConfirmed",2);p([h()],d.prototype,"studyId",2);p([h()],d.prototype,"studyTitle",2);p([h()],d.prototype,"taskLabel",2);p([h()],d.prototype,"showScoreToParticipant",2);p([h()],d.prototype,"showSimpleLanguage",2);p([h()],d.prototype,"answerMode",2);p([h()],d.prototype,"largeText",2);p([h()],d.prototype,"audioGuidance",2);p([h()],d.prototype,"recoveryEnabled",2);p([h()],d.prototype,"participantAdjustmentPolicy",2);p([h()],d.prototype,"voiceInputAvailable",2);p([h()],d.prototype,"gazeInputAvailable",2);p([h()],d.prototype,"collectionMode",2);p([h()],d.prototype,"qualtricsSurveyUrl",2);p([h()],d.prototype,"generatedConfig",2);p([h()],d.prototype,"participantUrl",2);p([h()],d.prototype,"message",2);p([h()],d.prototype,"definitionConfirmation",2);p([h()],d.prototype,"configurationConfirmation",2);p([h()],d.prototype,"errorMessage",2);p([h()],d.prototype,"completedResults",2);d=p([Ae("study-conductor-app")],d);

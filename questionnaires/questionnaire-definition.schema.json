@@ -67,6 +67,15 @@
           "shortMeaning": { "type": "string", "minLength": 1, "maxLength": 240 },
           "lowAnchor": { "type": "string", "minLength": 1, "maxLength": 80 },
           "highAnchor": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "responseLabels": {
+            "type": "object",
+            "propertyNames": { "pattern": "^-?[0-9]+$" },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
           "voiceLowAliases": {
             "type": "array",
             "maxItems": 20,
