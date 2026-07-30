@@ -21,6 +21,7 @@ claim to support any questionnaire.
 | Raw TLX | 6 magnitude items, 0–100 in steps of 5 | ratings only | unweighted arithmetic mean |
 | System Usability Scale | 10 agreement items, 1–5 | ratings only | standard alternating SUS |
 | UEQ-S | 8 semantic differentials, 1–7 | ratings only | centred overall, pragmatic and hedonic means |
+| Researcher supplied | 1–20 integer single-choice items on one shared 0–100-bounded scale | ratings only | reviewed mean or sum, with optional reverse-scored items |
 
 For both NASA-TLX definitions, the valid displayed and spoken values are
 `0, 5, 10, …, 100`. Values such as `1`, `2`, `3` or `92` are deliberately
@@ -28,12 +29,23 @@ rejected rather than silently rounded. Raw TLX is the six-item unweighted form;
 the weighted definition is the separate six-rating plus fifteen-comparison
 workflow.
 
-Questionnaire files are discovered from
+Built-in questionnaire files are discovered from
 [`source/instruments/*.questionnaire.json`](source/instruments/). JSON Schema plus
 runtime semantic checks reject unsupported fields and incompatible scorers. Scoring
-functions are an executable allowlist; JSON cannot inject code. Definitions are
-registered from separate JSON files at build time. This is not an arbitrary remote
-questionnaire uploader.
+functions are an executable allowlist; JSON cannot inject code.
+
+On the conductor page, **Add your own questionnaire** provides a no-code builder
+and validated JSON import. The researcher supplies the name, participant
+instruction, shared integer scale, item wording, endpoints, mean or sum rule and
+any reverse-scored items. The full validated definition is embedded in the study
+configuration, participant link and result record, so another browser does not
+need a local copy. Download the definition JSON with the protocol.
+
+This remains a bounded definition profile, not an arbitrary survey uploader.
+Free text, multiple answers, branching, matrices, custom formula strings and
+executable code are rejected. The platform validates structure and calculation;
+the conductor remains responsible for permission, provenance, psychometric
+validity and ethics approval.
 
 See
 [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md)
@@ -43,7 +55,7 @@ for the decision, evidence and explicit limits.
 
 | Role | Entry point | Responsibility |
 | --- | --- | --- |
-| Study conductor | `study.html` | Selects a registered questionnaire, sets study/task context, prepares support defaults and policy, selects local or Qualtrics collection, and generates the participant configuration. |
+| Study conductor | `study.html` | Selects a built-in questionnaire or validates a researcher-supplied one, sets study/task context, prepares support defaults and policy, selects local or Qualtrics collection, and generates the participant configuration. |
 | Participant | generated `index.html#study=...` | Enters a pseudonymous code and answers the prepared instrument. No setup is required before starting. |
 | UCL Qualtrics | activated distribution link | Hosts the participant iframe, stores the generic Version 4 record and returns a matching receipt. |
 
@@ -99,6 +111,7 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | --- | --- |
 | Questionnaire definitions and schema | [`source/instruments/`](source/instruments/) |
 | Definition validation/registry | [`source/src/questionnaire-definition.ts`](source/src/questionnaire-definition.ts) |
+| No-code custom definition builder | [`source/src/custom-questionnaire.ts`](source/src/custom-questionnaire.ts) |
 | Allowlisted scoring | [`source/src/scoring.ts`](source/src/scoring.ts) |
 | Participant runner | [`source/src/accessible-nasa-tlx.ts`](source/src/accessible-nasa-tlx.ts) |
 | Conductor | [`source/src/study-conductor.ts`](source/src/study-conductor.ts) |
@@ -123,8 +136,8 @@ npm test
 npm run build:release
 ```
 
-Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS
-and UEQ-S end-to-end workflows,
+Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS,
+UEQ-S and researcher-supplied end-to-end workflows,
 configuration migration, conservative voice parsing, direct and iframe-parent
 focus/error movement, saved-session semantics, visible-state contrast, result
 validation/export, exact-origin receipts, Qualtrics adverse paths, standalone

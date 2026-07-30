@@ -32,7 +32,7 @@
     "source": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["label", "url"],
+      "required": ["label"],
       "properties": {
         "label": { "type": "string", "minLength": 1, "maxLength": 240 },
         "url": { "type": "string", "format": "uri", "pattern": "^https://" }
@@ -154,6 +154,26 @@
             "scoreName": { "type": "string" },
             "minimum": { "type": "integer" },
             "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "enum": ["mean-v1", "sum-v1"] },
+            "scoreName": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" },
+            "reverseItemIds": {
+              "type": "array",
+              "maxItems": 20,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "uniqueItems": true
+            }
           }
         }
       ]

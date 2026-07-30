@@ -3,6 +3,8 @@ import {
   buildQuestionnairePairs,
   buildRatingValues,
   getQuestionnaireDefinition,
+  resolveQuestionnaireDefinition,
+  type QuestionnaireDefinition,
 } from './questionnaire-definition';
 import {
   scoreQuestionnaire,
@@ -12,6 +14,7 @@ import {
 
 export const PROTOTYPE_VERSION = '0.8.0';
 export const COMPLETED_RESULTS_KEY = 'accessible-questionnaire-v0.8-completed-results';
+export const MAX_PARTICIPANT_URL_LENGTH = 24000;
 
 export type AnswerMode = 'standard' | 'smiley';
 export type ParticipantAdjustmentPolicy = 'locked' | 'presentation-only' | 'participant-choice';
@@ -51,6 +54,7 @@ export interface StudyConfig {
   createdAt: string;
   prototypeVersion: typeof PROTOTYPE_VERSION;
   instrumentId: string;
+  questionnaireDefinition?: QuestionnaireDefinition;
   studyId: string;
   studyTitle: string;
   taskLabel: string;
@@ -99,6 +103,7 @@ export interface StudyResultRecord {
     version: string;
     definitionSchemaVersion: 1;
     scoringStrategy: QuestionnaireScore['strategy'];
+    definition?: QuestionnaireDefinition;
   };
   collection: StudyCollectionConfig;
   configuration: StudySupportConfig;
@@ -113,6 +118,7 @@ export interface StudyResultRecord {
 
 export interface StudyConfigDraft {
   instrumentId?: string;
+  questionnaireDefinition?: QuestionnaireDefinition;
   studyId: string;
   studyTitle: string;
   taskLabel: string;
@@ -183,9 +189,10 @@ function validSupportConfig(value: unknown): value is StudySupportConfig {
   );
 }
 
-function supportMatchesInstrument(instrumentId: string, support: StudySupportConfig) {
-  const definition = getQuestionnaireDefinition(instrumentId);
-  if (!definition) return false;
+function supportMatchesDefinition(
+  definition: QuestionnaireDefinition,
+  support: StudySupportConfig,
+) {
   if (support.showSimpleLanguage && !definition.supports.simplerExplanations) return false;
   if (support.answerMode === 'smiley' && !definition.supports.smileyLandmarks) return false;
   return true;
@@ -215,14 +222,18 @@ function validCollectionConfig(value: unknown): value is StudyCollectionConfig {
 export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pick<StudyConfig, 'configId' | 'createdAt'>> = {}): StudyConfig {
   const studyId = draft.studyId.trim();
   const instrumentId = draft.instrumentId ?? DEFAULT_QUESTIONNAIRE_ID;
+  const definition = resolveQuestionnaireDefinition(
+    instrumentId,
+    draft.questionnaireDefinition,
+  );
   if (!validStudyId(studyId)) {
     throw new Error('Study ID must use 1–64 letters, numbers, hyphens or underscores, and start with a letter or number.');
   }
   if (!validSupportConfig(draft.support)) throw new Error('The support configuration is incomplete.');
-  if (!getQuestionnaireDefinition(instrumentId)) {
+  if (!definition) {
     throw new Error('Choose a supported questionnaire definition.');
   }
-  if (!supportMatchesInstrument(instrumentId, draft.support)) {
+  if (!supportMatchesDefinition(definition, draft.support)) {
     throw new Error('The selected support settings are not compatible with this questionnaire definition.');
   }
   if (!validCollectionConfig(draft.collection)) throw new Error('The result-collection configuration is incomplete.');
@@ -232,6 +243,9 @@ export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pi
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     prototypeVersion: PROTOTYPE_VERSION,
     instrumentId,
+    ...(getQuestionnaireDefinition(instrumentId)
+      ? {}
+      : { questionnaireDefinition: definition }),
     studyId,
     studyTitle: cleanText(draft.studyTitle, 'Study title', 120),
     taskLabel: cleanText(draft.taskLabel, 'Task label', 160),
@@ -244,11 +258,18 @@ export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pi
 export function isStudyConfig(value: unknown): value is StudyConfig {
   if (!value || typeof value !== 'object') return false;
   const config = value as Record<string, unknown>;
+  const definition =
+    typeof config.instrumentId === 'string'
+      ? resolveQuestionnaireDefinition(
+          config.instrumentId,
+          config.questionnaireDefinition,
+        )
+      : null;
   return (
     config.schemaVersion === 4 &&
     config.prototypeVersion === PROTOTYPE_VERSION &&
     typeof config.instrumentId === 'string' &&
-    getQuestionnaireDefinition(config.instrumentId) !== null &&
+    definition !== null &&
     typeof config.configId === 'string' &&
     config.configId.length > 0 &&
     typeof config.createdAt === 'string' &&
@@ -262,7 +283,7 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
     config.taskLabel.length <= 160 &&
     isBoolean(config.showScoreToParticipant) &&
     validSupportConfig(config.support) &&
-    supportMatchesInstrument(config.instrumentId, config.support) &&
+    supportMatchesDefinition(definition, config.support) &&
     validCollectionConfig(config.collection)
   );
 }
@@ -359,7 +380,13 @@ export function buildParticipantUrl(baseUrl: string, config: StudyConfig) {
   const parameters = new URLSearchParams();
   parameters.set('study', encodeStudyConfig(config));
   url.hash = parameters.toString();
-  return url.toString();
+  const participantUrl = url.toString();
+  if (participantUrl.length > MAX_PARTICIPANT_URL_LENGTH) {
+    throw new Error(
+      `The generated participant link is too long. Reduce questionnaire wording or item count below ${MAX_PARTICIPANT_URL_LENGTH} URL characters.`,
+    );
+  }
+  return participantUrl;
 }
 
 export function progressStorageKey(configId: string, participantCode: string) {
@@ -369,7 +396,10 @@ export function progressStorageKey(configId: string, participantCode: string) {
 
 export function createStudyResultRecord(input: StudyResultInput): StudyResultRecord {
   if (!validParticipantCode(input.participantCode)) throw new Error('A valid pseudonymous participant code is required.');
-  const definition = getQuestionnaireDefinition(input.config.instrumentId);
+  const definition = resolveQuestionnaireDefinition(
+    input.config.instrumentId,
+    input.config.questionnaireDefinition,
+  );
   if (!definition) throw new Error('The study questionnaire definition is unavailable.');
   if (input.result.strategy !== definition.scoring.strategy) {
     throw new Error('The calculated result does not match the configured questionnaire.');
@@ -395,6 +425,9 @@ export function createStudyResultRecord(input: StudyResultInput): StudyResultRec
       version: definition.version,
       definitionSchemaVersion: definition.schemaVersion,
       scoringStrategy: definition.scoring.strategy,
+      ...(input.config.questionnaireDefinition
+        ? { definition }
+        : {}),
     },
     collection: { ...input.config.collection },
     configuration: { ...input.config.support },
@@ -415,7 +448,10 @@ function sameNumber(left: number, right: number) {
 export function isStudyResultRecord(value: unknown): value is StudyResultRecord {
   if (!value || typeof value !== 'object') return false;
   const record = value as StudyResultRecord;
-  const definition = getQuestionnaireDefinition(record.instrument?.id ?? '');
+  const definition = resolveQuestionnaireDefinition(
+    record.instrument?.id ?? '',
+    record.instrument?.definition,
+  );
   if (
     record.schemaVersion !== 4 ||
     typeof record.submissionId !== 'string' ||
@@ -439,7 +475,7 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
     record.instrument?.scoringStrategy !== definition.scoring.strategy ||
     !validCollectionConfig(record.collection) ||
     !validSupportConfig(record.configuration) ||
-    !supportMatchesInstrument(definition.id, record.configuration) ||
+    !supportMatchesDefinition(definition, record.configuration) ||
     !record.responses ||
     !record.result ||
     !record.supportMetadata
@@ -581,7 +617,10 @@ function csvCell(value: unknown) {
 }
 
 function resultRow(record: StudyResultRecord): Record<string, unknown> {
-  const definition = getQuestionnaireDefinition(record.instrument.id);
+  const definition = resolveQuestionnaireDefinition(
+    record.instrument.id,
+    record.instrument.definition,
+  );
   if (!definition) throw new Error(`Unknown questionnaire definition ${record.instrument.id}.`);
   const pairs = buildQuestionnairePairs(definition);
   const row: Record<string, unknown> = {
@@ -598,6 +637,12 @@ function resultRow(record: StudyResultRecord): Record<string, unknown> {
     instrument_id: record.instrument.id,
     instrument_version: record.instrument.version,
     scoring_strategy: record.instrument.scoringStrategy,
+    embedded_definition: record.instrument.definition ? 1 : 0,
+    questionnaire_definition_json: record.instrument.definition
+      ? JSON.stringify(record.instrument.definition)
+      : '',
+    instrument_source: definition.source.label,
+    instrument_source_url: definition.source.url ?? '',
     collection_mode: record.collection.mode,
     score_name: record.result.scoreName,
     primary_score: record.result.primaryScore,

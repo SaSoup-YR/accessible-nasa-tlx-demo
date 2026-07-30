@@ -4,6 +4,34 @@ Version 0.8 loads registered files from:
 
 `source/instruments/*.questionnaire.json`
 
+## Adding a questionnaire without editing code
+
+Open `study.html` and select **Add your own questionnaire**. A researcher can:
+
+1. enter the questionnaire name, version, description, participant instruction
+   and source or authorship label;
+2. choose a shared integer scale between 0 and 100;
+3. add 1–20 required single-choice items with their exact wording and two visible
+   endpoint labels;
+4. choose the reviewed mean or sum calculation;
+5. mark individual items as reverse-scored;
+6. validate and select the definition;
+7. download the definition JSON and generate the participant configuration.
+
+The definition is embedded in the configuration, participant URL and result
+record. A participant or another browser therefore does not need the original
+builder state. Importing the definition JSON or saved study configuration
+reproduces the same wording, values and score rule.
+
+This path accepts data, not code. It rejects free-text items, multiple answers,
+branching, matrices, pairwise stages, arbitrary formula strings and JavaScript.
+The 9,000-byte definition limit keeps the participant URL and full Qualtrics raw
+record within the documented transport allocation.
+
+The builder verifies technical structure and deterministic scoring only. Before
+use, the researcher must separately verify permission, primary-source wording,
+population/task validity, interpretation, ethics and data management.
+
 ## Adding a registered instrument
 
 1. Confirm that its use, wording and scoring are permitted and cite the primary
@@ -26,7 +54,7 @@ Required content:
 
 - definition schema version, ID, instrument version and names;
 - description, participant introduction and content-integrity notice;
-- primary HTTPS source;
+- source or authorship label, with an optional primary HTTPS source URL;
 - declared magnitude, agreement or semantic-differential scale type, with integer
   minimum, maximum and step;
 - one or more single-choice items;
@@ -46,19 +74,22 @@ JSON Schema catches structural errors. Runtime validation additionally checks
 scorer compatibility, HTTPS sources, unique item IDs, scale divisibility,
 landmark positions and capability dependencies.
 
-The current registry includes weighted NASA-TLX, Raw TLX, SUS and UEQ-S. These
+The built-in registry includes weighted NASA-TLX, Raw TLX, SUS and UEQ-S. These
 exercise an optional comparison stage, three scale semantics and four reviewed
 scoring strategies.
 
 The runner fails closed. An unknown property, scorer or incompatible definition
 stops the build or registration instead of being ignored.
 
-## Current extension limit
+## Extension limits
 
-Definitions are separate JSON files but are registered into the published build;
-the public site does not fetch an arbitrary remote URL or accept executable code.
-Adding a definition that uses an existing response type but a new scoring rule
-still requires a reviewed scorer in `source/src/scoring.ts`. Adding a new response
-type also requires runner and schema work. This is why the public claim is
+Built-in definitions remain versioned repository files. Researcher-supplied
+definitions are validated locally and carried inside the generated study
+configuration; the public site does not fetch an arbitrary remote definition URL.
+
+The no-code path supports a shared bounded integer scale with reviewed mean or sum
+scoring. Adding a new response type, subscale rule, weighting formula, adaptive
+flow or other scorer still requires reviewed implementation and tests in
+`source/src/scoring.ts`. This is why the public claim remains
 questionnaire-independent within the supported profile rather than compatible
-with any questionnaire.
+with every questionnaire.

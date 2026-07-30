@@ -6,8 +6,9 @@ This directory builds the public Accessible Questionnaire Platform candidate.
 
 - `instruments/*.questionnaire.json` — versioned registered definitions.
 - `instruments/questionnaire-definition.schema.json` — published structural schema.
-- `src/questionnaire-definition.ts` — discovery and strict semantic validation.
-- `src/scoring.ts` — allowlisted weighted NASA-TLX, Raw TLX, SUS and UEQ-S scorers.
+- `src/questionnaire-definition.ts` — discovery, embedded-definition resolution and strict semantic validation.
+- `src/custom-questionnaire.ts` — bounded no-code questionnaire builder and import validation.
+- `src/scoring.ts` — allowlisted instrument scorers plus reviewed generic mean and sum scorers.
 - `src/study.ts` — Version 4 configuration/result schemas and exports.
 - `src/result-sink.ts` — exact-origin, exact-build Qualtrics handshake and child
   result sink.
@@ -28,6 +29,13 @@ npm run build:release
 Development routes are `/` for participants and `/study.html` for conductors.
 `demo/accessible-questionnaire-platform-v0.8.html` is participant-only and cannot
 collect centrally from `file://`.
+
+The conductor can also build or import a researcher-supplied questionnaire without
+editing TypeScript. This path is deliberately limited to 1–20 required integer
+single-choice items on one shared scale, with a mean or sum and optional reverse
+scoring. The validated definition is embedded in the configuration, participant
+link and result record. Arbitrary JavaScript, custom formulas, branching and
+unsupported response types fail closed.
 
 ## Evidence boundary
 

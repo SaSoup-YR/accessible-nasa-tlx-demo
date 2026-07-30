@@ -10,8 +10,8 @@ Version 0.8 is questionnaire-independent within an explicitly supported
 declarative profile. It is not described as supporting every questionnaire.
 
 The same conductor, participant runner, support controls, interruption recovery,
-input-route provenance, result schema and Qualtrics bridge now run four registered
-instruments:
+input-route provenance, result schema and Qualtrics bridge run four built-in
+instruments and a bounded researcher-supplied definition profile:
 
 | Definition | Response structure | Scoring strategy | Pairwise stage |
 | --- | --- | --- | --- |
@@ -19,6 +19,7 @@ instruments:
 | Raw TLX | six integer ratings, 0–100 in steps of 5 | unweighted arithmetic mean | none |
 | System Usability Scale | ten integer ratings, 1–5 | standard alternating SUS rule | none |
 | UEQ-S | eight 1–7 semantic differentials | centred overall, pragmatic and hedonic means | none |
+| Researcher supplied | 1–20 integer single-choice items sharing one scale | reviewed mean or sum with optional reverse scoring | none |
 
 This contrast is deliberate. Re-running the same six-item workflow under another
 title would not demonstrate separation. Raw TLX isolates a scoring/workflow change
@@ -43,6 +44,8 @@ Version 0.8 therefore supports:
 - optional all-pairs comparisons;
 - an allowlisted and tested scoring strategy;
 - versioned item, source and scoring metadata in every result.
+- a no-code custom path for 1–20 items on one shared 0–100-bounded integer
+  scale, using reviewed mean or sum scoring.
 
 It does not currently support:
 
@@ -52,7 +55,8 @@ It does not currently support:
 - an unreviewed scoring expression;
 - automatic psychometric equivalence between an official item and an optional
   accessibility presentation;
-- arbitrary remote definition URLs.
+- arbitrary remote definition URLs;
+- custom formula strings or executable code.
 
 Refusing unsupported definitions is part of the research contribution. Silent
 approximation could alter an instrument while still producing a plausible score.
@@ -62,8 +66,16 @@ approximation could alter an instrument while still producing a plausible score.
 ### 1. Definition layer
 
 Files matching `source/instruments/*.questionnaire.json` are discovered at build
-time. Each file contains identity, version, source, items, scale, optional
-pairwise behavior, capability flags and the name of an approved scorer.
+time for the built-in registry. Each file contains identity, version, source,
+items, scale, optional pairwise behavior, capability flags and the name of an
+approved scorer.
+
+The conductor also has a no-code builder and validated JSON import for the
+researcher-supplied profile. It creates the same `QuestionnaireDefinition`
+contract, but only with the generic mean or sum scorer and no pairwise stage.
+The validated definition is embedded in the study configuration, participant
+link and result record. It is bounded to 9,000 UTF-8 bytes and cannot replace a
+built-in ID.
 
 `questionnaire-definition.schema.json` publishes the structural contract.
 `validateQuestionnaireDefinition` repeats validation at runtime and adds semantic
@@ -113,6 +125,10 @@ strategy but cannot provide code.
   pairs.
 - `ueqs-standard-v1` requires the ordered `ueqs01`–`ueqs08` semantic
   differentials, a 1–7 scale and no pairs.
+- `mean-v1` averages original or explicitly reverse-scored values across 1–20
+  items.
+- `sum-v1` sums the same adjusted values and derives its declared range from
+  the item count.
 
 A genuinely new scoring rule requires reviewed code and tests. This is intentional:
 scoring is part of instrument validity, not ordinary presentation configuration.
@@ -122,6 +138,7 @@ scoring is part of instrument validity, not ordinary presentation configuration.
 Result schema Version 4 stores:
 
 - questionnaire ID, name, version, definition schema and scoring strategy;
+- the complete validated definition snapshot when it is researcher supplied;
 - item responses and any pairwise choices;
 - primary score, declared range and strategy-specific details;
 - configured support, final support state, changes and input routes;
@@ -152,7 +169,7 @@ the architectural separation, not a claim of feature parity.
 
 Automated evidence must show more than successful rendering:
 
-1. all four JSON definitions pass structural and semantic validation;
+1. all four built-in JSON definitions pass structural and semantic validation;
 2. executable fields and incompatible scorer/scale combinations are rejected;
 3. weighted NASA-TLX produces 21 rating values, 15 pairs and its weighted result;
 4. Raw TLX produces the same six ratings, no pair page and their unweighted mean;
@@ -163,6 +180,12 @@ Automated evidence must show more than successful rendering:
 8. the same participant element completes all four workflows;
 9. the same Version 4 record and Qualtrics bridge preserve every result;
 10. accessibility checks run on representative workflows.
+11. a conductor can create a new questionnaire without editing source, and its
+    participant URL reproduces the definition in a separate runner;
+12. custom mean, sum, reverse scoring, result validation and export are
+    deterministic;
+13. executable fields, built-in-ID replacement, unsupported scoring, invalid
+    scales and oversized definitions are rejected.
 
 These tests establish architectural reuse and data integrity. They do not establish
 that either optional support improves accessibility or preserves psychometric
@@ -170,9 +193,10 @@ properties. Those are evaluation questions.
 
 ## Extension path
 
-Raw TLX and UEQ-S now exercise the two previously identified extension paths. A
-custom scale should still be accepted only when its response type and scorer are
-represented explicitly and reviewed. The public build does not execute a formula
-or script supplied by a definition and does not claim that any arbitrary
-questionnaire is supported. This incremental policy gives each added capability a
+Raw TLX and UEQ-S exercise the registered extension path. The no-code builder
+adds a second path for questionnaires that fit the bounded rating profile. A
+new response type or scoring rule is still accepted only when it is represented
+explicitly in reviewed code and tests. The public build does not execute a
+formula or script supplied by a definition and does not claim that every
+questionnaire is supported. This incremental policy gives each capability a
 testable boundary and preserves scoring provenance.
