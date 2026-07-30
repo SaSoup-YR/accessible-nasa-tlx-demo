@@ -84,6 +84,25 @@ describe('automated structural accessibility scan', () => {
     expect(result.violations).toEqual([]);
   });
 
+  it('finds no detectable violations in the visible configuration-success state', async () => {
+    const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
+    document.body.append(conductor);
+    await conductor.updateComplete;
+    (conductor as any).studyId = 'SUCCESS-01';
+    (conductor as any).studyTitle = 'Success confirmation check';
+    (conductor as any).taskLabel = 'checking the generated study workflow';
+    await conductor.updateComplete;
+    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Generate link')!
+      .click();
+    await conductor.updateComplete;
+    expect(conductor.querySelector('.success-confirmation')).not.toBeNull();
+    const result = await axe.run(conductor, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations).toEqual([]);
+  });
+
   it('finds no detectable violations in the no-code custom questionnaire builder', async () => {
     const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
     document.body.append(conductor);
