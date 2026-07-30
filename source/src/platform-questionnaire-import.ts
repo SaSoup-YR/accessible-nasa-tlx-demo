@@ -419,12 +419,11 @@ function qsfScale(
   state: ImportAccumulator,
 ) {
   const options = asRecord(payload[optionsKey]);
-  const recodes = asRecord(payload.RecodeValues);
-  if (!options || !recodes) {
+  if (!options) {
     state.unsupported.push({
       code: 'qualtrics-missing-scale',
-      title: `${sourceId} has no explicit ordered recode table`,
-      detail: 'The importer will not guess answer values from object keys.',
+      title: `${sourceId} has no answer scale`,
+      detail: `${optionsKey} must contain every visible answer option.`,
     });
     return null;
   }
@@ -437,20 +436,48 @@ function qsfScale(
     });
     return null;
   }
-  const values = keys.map((key) => parseInteger(recodes[key]));
-  if (values.some((value) => value === null)) {
-    state.unsupported.push({
-      code: 'qualtrics-nonnumeric-recodes',
-      title: `${sourceId} has missing or non-integer recode values`,
-      detail: 'Every visible option needs an explicit whole-number recode.',
+
+  const recodes = asRecord(payload.RecodeValues);
+  let values: number[];
+  if (recodes) {
+    const explicitValues = keys.map((key) => parseInteger(recodes[key]));
+    if (explicitValues.some((value) => value === null)) {
+      state.unsupported.push({
+        code: 'qualtrics-nonnumeric-recodes',
+        title: `${sourceId} has missing or non-integer recode values`,
+        detail: 'Every visible option needs an explicit whole-number recode.',
+      });
+      return null;
+    }
+    values = explicitValues as number[];
+  } else {
+    const hasDefaultSequentialChoiceIds = keys.every(
+      (key, index) => key === String(index + 1),
+    );
+    if (!hasDefaultSequentialChoiceIds) {
+      state.unsupported.push({
+        code: 'qualtrics-missing-scale',
+        title: `${sourceId} has no explicit recode table or default sequential choice IDs`,
+        detail:
+          'Without RecodeValues, ChoiceOrder must explicitly list the default IDs 1 through N. ' +
+          'The importer will not infer values from other object keys.',
+      });
+      return null;
+    }
+    values = keys.map((_, index) => index + 1);
+    addConfirmation(state, {
+      code: 'qualtrics-default-recodes',
+      title: 'Qualtrics default sequential recodes were used',
+      detail:
+        'The QSF omits RecodeValues and explicitly orders default choice IDs 1 through N. ' +
+        'Confirm these values against the source survey before conversion.',
     });
-    return null;
   }
   const labels = keys.map((key, index) =>
     optionDisplay(options[key], `Answer ${index + 1}`, `${sourceId}/${key}`, state));
   if (labels.some((label) => label === null)) return null;
   return {
-    values: values as number[],
+    values,
     labels: labels as string[],
   };
 }
@@ -688,6 +715,81 @@ function lssLocalisedValue(
   )?.[valueField] ?? '';
 }
 
+const safeLimeSurveyQuestionAttributeValues: Record<string, readonly string[]> = {
+  answer_order: ['normal'],
+  array_filter_style: ['0'],
+  hidden: ['0'],
+  hide_tip: ['0'],
+  other_comment_mandatory: ['0'],
+  other_numbers_only: ['0'],
+  other_position: ['default'],
+  page_break: ['0'],
+  public_statistics: ['0'],
+  scale_export: ['0'],
+  statistics_graphtype: ['0'],
+  statistics_showgraph: ['1'],
+  time_limit_action: ['1'],
+  time_limit_disable_next: ['0'],
+  time_limit_disable_prev: ['0'],
+};
+
+function reviewLimeSurveyQuestionAttributes(
+  rows: Record<string, string>[],
+  state: ImportAccumulator,
+) {
+  if (!rows.length) return;
+  const active = rows.filter((row) => {
+    const attribute = row.attribute?.trim() ?? '';
+    const value = row.value?.trim() ?? '';
+    if (!value) return false;
+    return !safeLimeSurveyQuestionAttributeValues[attribute]?.includes(value);
+  });
+  if (active.length) {
+    const summary = active
+      .slice(0, 6)
+      .map((row) => `${row.qid || 'unknown question'}: ${row.attribute || 'unknown'}=${row.value || ''}`)
+      .join('; ');
+    state.unsupported.push({
+      code: 'limesurvey-question-attributes',
+      title: 'The LimeSurvey export contains active or unknown question attributes',
+      detail:
+        `${summary}${active.length > 6 ? `; and ${active.length - 6} more` : ''}. ` +
+        'These settings may change validation, randomisation, timing or presentation and are not discarded.',
+    });
+    return;
+  }
+  addConfirmation(state, {
+    code: 'limesurvey-default-question-attributes',
+    title: 'Default LimeSurvey question settings were not imported',
+    detail:
+      'Only empty or known default attributes were present; no active validation, randomisation or timing rule was found. ' +
+      'Review the converted participant presentation.',
+  });
+}
+
+function visibleMarkupText(raw: string) {
+  if (!raw.trim()) return '';
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(`<body>${raw}</body>`, 'text/html');
+  return collapsed(parsed.body.textContent ?? '');
+}
+
+function reliableLimeSurveyAnswerOrder(answers: Record<string, string>[]) {
+  const orders = answers.map((answer) => parseInteger(answer.sortorder));
+  if (orders.some((order) => order === null)) return false;
+  const values = orders as number[];
+  if (new Set(values).size !== values.length) return false;
+  const start = values[0];
+  return (start === 0 || start === 1) &&
+    values.every((value, index) => value === start + index);
+}
+
+function hasDefaultLimeSurveyAnswerCodes(answers: Record<string, string>[]) {
+  return answers.every(
+    (answer, index) => answer.code === `A${String(index + 1).padStart(3, '0')}`,
+  );
+}
+
 function parseLimeSurveyLss(
   contents: string,
   fileName: string,
@@ -707,14 +809,24 @@ function parseLimeSurveyLss(
   const languages = [...document.querySelectorAll('languages > language')]
     .map((language) => language.textContent?.trim() ?? '')
     .filter(Boolean);
-  if (languages.length !== 1) {
+  const surveys = xmlRows(document, 'surveys');
+  const declaredBaseLanguage = collapsed(surveys[0]?.language ?? '');
+  const language = declaredBaseLanguage || languages[0] || '';
+  if (!language || (languages.length && !languages.includes(language))) {
     importState.unsupported.push({
-      code: 'limesurvey-multiple-languages',
-      title: 'The LimeSurvey export does not contain exactly one language',
-      detail: 'Multilingual wording is not flattened or discarded in this release.',
+      code: 'limesurvey-base-language',
+      title: 'The LimeSurvey base language could not be resolved',
+      detail: 'The survey language must match one language declared in the LSS export.',
+    });
+  } else if (languages.length > 1) {
+    addConfirmation(importState, {
+      code: 'limesurvey-base-language-only',
+      title: `Only the LimeSurvey base language (${language}) will be imported`,
+      detail:
+        `Additional languages (${languages.filter((candidate) => candidate !== language).join(', ')}) ` +
+        'remain in LimeSurvey and are not included in the converted definition. Confirm the intended participant language.',
     });
   }
-  const language = languages[0] ?? '';
   const surveyLanguages = xmlRows(document, 'surveys_languagesettings');
   const surveyLanguage = surveyLanguages.find(
     (row) => !row.surveyls_language || row.surveyls_language === language,
@@ -771,14 +883,10 @@ function parseLimeSurveyLss(
       detail: `${title[0].toUpperCase()}${title.slice(1)} are not executed or silently discarded.`,
     });
   }
-  if (xmlRows(document, 'question_attributes').length) {
-    importState.unsupported.push({
-      code: 'limesurvey-question-attributes',
-      title: 'The LimeSurvey export contains question attributes',
-      detail:
-        'Question attributes may change validation, randomisation or presentation and are not silently discarded.',
-    });
-  }
+  reviewLimeSurveyQuestionAttributes(
+    xmlRows(document, 'question_attributes'),
+    importState,
+  );
 
   const questions = xmlRows(document, 'questions');
   const questionL10ns = xmlRows(document, 'question_l10ns');
@@ -839,7 +947,30 @@ function parseLimeSurveyLss(
     const questionHelp =
       lssLocalisedValue(questionL10ns, 'qid', question.qid, 'help', language) ||
       question.help;
-    if (collapsed(questionHelp || '')) {
+    const questionScript =
+      lssLocalisedValue(questionL10ns, 'qid', question.qid, 'script', language) ||
+      question.script;
+    if (collapsed(questionScript || '')) {
+      importState.unsupported.push({
+        code: 'limesurvey-question-script',
+        title: `${question.title || questionId} contains a question script`,
+        detail: 'Imported scripts are never executed or silently removed.',
+      });
+      continue;
+    }
+    if (
+      executableMarkup.test(questionHelp || '') ||
+      dynamicText.test(questionHelp || '') ||
+      unsupportedStructuredMarkup.test(questionHelp || '')
+    ) {
+      importState.unsupported.push({
+        code: 'limesurvey-question-help-structure',
+        title: `${question.title || questionId} contains dynamic or structured help content`,
+        detail: 'Executable code, expressions, media and interactive help are not imported.',
+      });
+      continue;
+    }
+    if (visibleMarkupText(questionHelp || '')) {
       importState.unsupported.push({
         code: 'limesurvey-question-help',
         title: `${question.title || questionId} contains participant help text`,
@@ -864,6 +995,15 @@ function parseLimeSurveyLss(
       const questionAnswers = answers
         .filter((answer) => answer.qid === question.qid && (!answer.scale_id || answer.scale_id === '0'))
         .sort((left, right) => (Number(left.sortorder) || 0) - (Number(right.sortorder) || 0));
+      if (!reliableLimeSurveyAnswerOrder(questionAnswers)) {
+        importState.unsupported.push({
+          code: 'limesurvey-answer-order',
+          title: `${question.title || questionId} has no reliable answer order`,
+          detail:
+            'Every answer needs one unique consecutive sort order starting at 0 or 1.',
+        });
+        continue;
+      }
       const codes = questionAnswers.map((answer) => parseInteger(answer.code));
       const assessments = questionAnswers.map((answer) => parseInteger(answer.assessment_value));
       if (codes.every((value) => value !== null) && validIncreasingScale(codes as number[])) {
@@ -877,6 +1017,15 @@ function parseLimeSurveyLss(
           code: 'limesurvey-assessment-values',
           title: 'LimeSurvey assessment values were used as response values',
           detail: 'Verify every imported value against the LimeSurvey answer table.',
+        });
+      } else if (hasDefaultLimeSurveyAnswerCodes(questionAnswers)) {
+        values = questionAnswers.map((_, index) => index + 1);
+        addConfirmation(importState, {
+          code: 'limesurvey-positional-values',
+          title: 'LimeSurvey default answer codes were converted to ordered positions',
+          detail:
+            'The source uses A001 through A00N rather than numeric scores. The converted scale uses positions 1 through N. ' +
+            'Confirm the intended values and scoring before conversion.',
         });
       } else {
         importState.unsupported.push({
