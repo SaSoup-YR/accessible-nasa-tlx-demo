@@ -27,6 +27,12 @@ UCL's Research Information Governance FAQ allows staff and students to use Qualt
 
 The prototype requests a study-issued pseudonymous code and does not request a name, email address or diagnosis. This supports, but does not determine, the Qualtrics route. The final classification must include recruitment, linkage, consent and support-use metadata. Even pseudonymised data remains personal data when a separate re-identification key exists.
 
+Qualtrics also records IP address and approximate location for an anonymous link
+by default. The survey owner must make and document a separate
+**Anonymize responses** decision in Survey Options. If those fields are not
+required by the approved study, enable the setting before the verification
+response and confirm that a new export leaves them blank.
+
 ## Options compared
 
 | Option | Benefit | Critical limitation | Decision |

@@ -23,7 +23,12 @@ Participants must receive the activated Qualtrics distribution link.
 
 Use the integration only within the project's existing approved protocol,
 participant-information, consent, retention and information-governance plan. The
-supplied participant code is pseudonymous. Do not add names, email addresses,
+supplied participant code is pseudonymous. That does not make the whole Qualtrics
+response anonymous: an anonymous distribution link records IP address and
+approximate location by default. If those fields are not required by the approved
+study, enable **Anonymize responses** in Survey Options before the synthetic test.
+The setting applies to future responses and is not retroactive. Confirm the actual
+export rather than relying on the link name. Do not add names, email addresses,
 diagnoses or highly confidential linked fields without the required UCL
 information-governance review. Freeze the exact prototype, configuration and
 survey before participant recruitment.
@@ -48,23 +53,27 @@ uploading repository files.
 
 1. Create a blank UCL Qualtrics survey.
 2. Add the participant information and consent pages covered by the study protocol.
-3. Put one Text/Graphic question on its own page.
-4. Open the versioned
+3. In **Survey Options → Security**, decide whether **Anonymize responses** must
+   be enabled. For the documented pseudonymous-code workflow, enable it unless
+   the approved protocol explicitly requires IP or location metadata. Publish the
+   setting before collecting the verification row.
+4. Put one Text/Graphic question on its own page.
+5. Open the versioned
    [`study.html?package=0.8.7-q7`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.7-q7)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
-5. Generate the configuration.
-6. Open the Text/Graphic question's HTML/source view. Replace the whole body with
+6. Generate the configuration.
+7. Open the Text/Graphic question's HTML/source view. Replace the whole body with
    Complete question HTML from the generated package. The static template is not
    usable unchanged because it contains a participant-URL placeholder.
-7. Add an Embedded Data element before the questionnaire block. Declare every line
+8. Add an Embedded Data element before the questionnaire block. Declare every line
    of `embedded-data-fields.txt`, including `__js_`, and leave the values unset.
-8. Replace the question's JavaScript with `qualtrics-question.js`.
-9. Optional: configure the generated End of Survey message as ordinary text.
+9. Replace the question's JavaScript with `qualtrics-question.js`.
+10. Optional: configure the generated End of Survey message as ordinary text.
    Qualtrics' default final page is acceptable and this message does not affect
    collection. Do not add HTML, JavaScript or a redirect. Use the generated
    message if the participant's score must remain visible after submission.
-10. Save and Preview. After the synthetic checks pass, select **Review and
+11. Save and Preview. After the synthetic checks pass, select **Review and
     Publish**. Draft changes do not update an already active distribution link.
 
 The conductor heading and its Current Qualtrics generator notice must both show
@@ -212,6 +221,8 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
    - six ratings, fifteen pair choices and the weighted score;
    - support configuration, final state and input routes;
    - a reconstructable raw record.
+   - if **Anonymize responses** is enabled, IP address, latitude, longitude and
+     contact fields are blank in the newly exported row.
 4. Repeat with SUS and verify:
    - instrument ID `system-usability-scale`;
    - ten 1–5 ratings;
