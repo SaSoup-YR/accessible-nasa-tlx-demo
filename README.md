@@ -26,21 +26,22 @@ automated suite, release build and manual real-export checks pass. The existing
 
 ### Structured-import candidate verification
 
-The development branch currently passes:
+The current structured-import candidate passes:
 
 - a clean lock-file installation;
-- 18 test files containing 145 passing tests;
+- 18 test files containing 149 passing tests;
 - 9 representative axe structural accessibility scans;
 - TypeScript, production, standalone and synchronized release builds; and
 - QSF/LSS fixture checks for order, values, labels, malformed input, unsupported
   types, logic, executable content, conversion, JSON round-trip, participant
   completion, scoring and result export.
 
-Before a new tag is created, complete one manual conversion using a fresh,
-real Qualtrics QSF export and one using a fresh, real LimeSurvey LSS export.
-Compare each review and downloaded definition with its source, then complete a
-synthetic local and Qualtrics result. Record any limitation discovered; otherwise
-the next immutable candidate may be tagged `v0.8.0-rc.3`.
+Exact fresh exports supplied from Qualtrics and LimeSurvey now pass direct
+regression checks against the importer. Before a new tag is created, repeat both
+conversions through the deployed conductor interface, compare each review and
+downloaded definition with its source, then complete a synthetic local and
+Qualtrics result. Record any limitation discovered; otherwise the next immutable
+candidate may be tagged `v0.8.0-rc.3`.
 
 ### Verification recorded for `v0.8.0-rc.2`
 
@@ -141,6 +142,13 @@ the platform does not create a partial questionnaire. Before conversion, the
 researcher must confirm wording, order, displayed labels, numeric values,
 mean/sum scoring and reverse-scored items. Imported markup becomes safe plain
 text, and imported code is never executed.
+
+Current Qualtrics exports that omit unchanged default recodes are accepted only
+when their explicit choice order proves the default `1` through `N` mapping.
+Current LimeSurvey exports may use a declared base language, inert generated
+question attributes and default `A001` through `A00N` answer codes; each
+conversion is exposed for researcher confirmation. Non-default opaque codes,
+active attributes, scripts and survey logic remain blocking.
 
 The full validated definition is embedded in the study configuration,
 participant link and result record, so another browser does not need a local
