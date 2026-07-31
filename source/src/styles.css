@@ -1211,6 +1211,11 @@ button:disabled {
   background: #fff4f4;
 }
 
+.platform-import-review.import-selection {
+  border-color: #075f9a;
+  background: #f1f8fc;
+}
+
 .platform-import-review-heading {
   display: flex;
   gap: 0.75rem;
@@ -1233,6 +1238,41 @@ button:disabled {
   color: #fff;
   font-weight: 700;
   line-height: 1;
+}
+
+.selection-icon {
+  display: inline-grid;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #075f9a;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.platform-import-group-selection {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid #536a82;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.platform-import-group-selection > legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.platform-import-group-selection label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.platform-import-group-selection button {
+  margin-top: 1rem;
 }
 
 .platform-import-findings {

@@ -13,10 +13,11 @@ verified release build.
   rejection, and weighted NASA-TLX, Raw TLX, SUS and UEQ-S scoring.
 - `custom-questionnaire.test.ts` — no-code definition creation, bounded embedding,
   mean/sum and reverse scoring, and executable/oversize rejection.
-- `platform-questionnaire-import.test.ts` — bounded QSF/LSS format detection,
+- `platform-questionnaire-import.test.ts` — bounded QSF/LSS/LSG format detection,
   current default recode/code shapes, base-language selection, inert versus
-  active attributes, question/answer order, safe conversion, malformed input,
-  unsupported content, code rejection and JSON round-trip.
+  active attributes, multi-group selection, reviewed Array-row expansion,
+  question/answer order, safe conversion, malformed input, unsupported content,
+  code rejection and JSON round-trip.
 - `platform-component.test.ts` — complete researcher-supplied, SUS, Raw TLX and UEQ-S
   participant flows, imported-QSF completion/export and conductor link generation
   through the shared components.
@@ -38,7 +39,8 @@ verified release build.
   one-scroll presentation, generic 60-field SUS staging, bounded handoff, watchdog
   and failure navigation.
 - `conductor-component.test.ts` — role separation, three clearly labelled
-  questionnaire-addition routes, reviewed QSF conversion, no-code custom
+  questionnaire-addition routes, reviewed QSF conversion, explicit LimeSurvey
+  group selection, no-code custom
   definition, generated Qualtrics package, score-display-aware completion text
   and error focus.
 - `accessibility.test.ts` — structural axe scans including the three import/build

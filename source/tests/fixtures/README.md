@@ -13,6 +13,10 @@ using short, synthetic questionnaire content.
   fixture. It stores wording in localisation tables, declares an incomplete
   additional language, emits inert default question attributes and uses
   LimeSurvey's default `A001`–`A005` answer codes.
+- `limesurvey-group-rating.lsg` is a sanitised modern question-group export. It
+  contains one-row numeric Array questions, blank intermediate labels, generated
+  inert attributes and an exported group relevance expression. The review must
+  expose every conversion decision instead of silently discarding it.
 
 The fixtures contain no participant responses, credentials, tokens or
 identifying information.

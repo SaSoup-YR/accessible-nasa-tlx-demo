@@ -20,6 +20,25 @@ bounded formative evaluation. The tag is an immutable evidence point: any later
 functional change requires a new tag and proportionate re-verification. The
 earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
 
+The current `main` branch also contains post-`rc.3` LimeSurvey compatibility
+work. It accepts `.lsg` question-group exports and asks the researcher to choose
+one group when an `.lss` survey contains several groups. This remains an
+unreleased candidate until the real-file and release gates are repeated; it does
+not change the immutable `rc.3` evidence.
+
+Post-`rc.3` verification completed before publication:
+
+- 18 test files passed, containing 153 passing tests;
+- 10 representative axe structural accessibility scans passed;
+- TypeScript, production, standalone and synchronized release builds passed;
+- the attached real six-group LimeSurvey LSS exposed all six groups and safely
+  converted the explicitly selected five-item Spatial Presence group; and
+- the matching real LimeSurvey LSG converted the same SP1–SP5 items and 1–7
+  response scale with no unsupported content.
+
+A live-browser re-test is still required before assigning the next immutable
+release-candidate tag.
+
 ### Verification recorded for `v0.8.0-rc.3`
 
 Automated verification:
@@ -129,12 +148,13 @@ functions are an executable allowlist; JSON cannot inject code.
 On the conductor page, **Add your own questionnaire** provides:
 
 - **Import a source-platform export:** review and convert a Qualtrics `.qsf`
-  survey export or LimeSurvey `.lss` survey-structure export;
+  survey export, a LimeSurvey `.lss` survey export, or a LimeSurvey `.lsg`
+  question-group export;
 - **Reuse an AQP definition:** re-import a `.json` definition that this platform
   previously validated and downloaded; and
 - **Build manually:** enter a bounded questionnaire through the no-code form.
 
-The two file imports are not duplicates. QSF/LSS files are source-platform
+The two file imports are not duplicates. QSF/LSS/LSG files are source-platform
 exports that require review and conversion. AQP JSON is the platform's already
 normalised, portable definition and is validated again without repeating source
 conversion.
@@ -153,6 +173,14 @@ Current LimeSurvey exports may use a declared base language, inert generated
 question attributes and default `A001` through `A00N` answer codes; each
 conversion is exposed for researcher confirmation. Non-default opaque codes,
 active attributes, scripts and survey logic remain blocking.
+
+A multi-group LSS is not flattened silently. The conductor chooses one group to
+review as a standalone questionnaire. Reviewed List, 5 Point Choice and numeric
+Array rating rows may be converted. Group relevance, omitted groups, blank
+intermediate scale labels and Array expansion are shown for explicit
+confirmation. Question-level conditions and unsupported question types still
+block the selected group. An LSG is the clearest LimeSurvey input when the
+researcher intends to reuse one questionnaire group.
 
 The full validated definition is embedded in the study configuration,
 participant link and result record, so another browser does not need a local
@@ -179,7 +207,7 @@ for export, review, conversion and limitation details.
 
 | Role | Entry point | Responsibility |
 | --- | --- | --- |
-| Study conductor | `study.html` | Selects a built-in questionnaire, safely imports a supported QSF/LSS export or validates a researcher-supplied definition; then sets study/task context, support defaults, policy and collection route. |
+| Study conductor | `study.html` | Selects a built-in questionnaire, safely imports a supported QSF/LSS/LSG export or validates a researcher-supplied definition; then sets study/task context, support defaults, policy and collection route. |
 | Participant | generated `index.html#study=...` | Enters a pseudonymous code and answers the prepared instrument. No setup is required before starting. |
 | UCL Qualtrics | activated distribution link | Hosts the participant iframe, stores the generic Version 4 record and returns a matching receipt. |
 
@@ -236,7 +264,7 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Questionnaire definitions and schema | [`source/instruments/`](source/instruments/) |
 | Definition validation/registry | [`source/src/questionnaire-definition.ts`](source/src/questionnaire-definition.ts) |
 | No-code custom definition builder | [`source/src/custom-questionnaire.ts`](source/src/custom-questionnaire.ts) |
-| QSF/LSS review and conversion | [`source/src/platform-questionnaire-import.ts`](source/src/platform-questionnaire-import.ts) |
+| QSF/LSS/LSG review and conversion | [`source/src/platform-questionnaire-import.ts`](source/src/platform-questionnaire-import.ts) |
 | Allowlisted scoring | [`source/src/scoring.ts`](source/src/scoring.ts) |
 | Participant runner | [`source/src/accessible-nasa-tlx.ts`](source/src/accessible-nasa-tlx.ts) |
 | Conductor | [`source/src/study-conductor.ts`](source/src/study-conductor.ts) |
@@ -265,7 +293,7 @@ npm run build:release
 ```
 
 Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS,
-UEQ-S, researcher-supplied and QSF/LSS-imported end-to-end workflows,
+UEQ-S, researcher-supplied and QSF/LSS/LSG-imported end-to-end workflows,
 configuration migration, conservative voice parsing, direct and iframe-parent
 focus/error movement, saved-session semantics, visible-state contrast, result
 validation/export, exact-origin receipts, Qualtrics adverse paths, standalone

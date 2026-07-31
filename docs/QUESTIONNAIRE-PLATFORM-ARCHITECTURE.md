@@ -47,7 +47,7 @@ Version 0.8 therefore supports:
 - a no-code custom path for 1–20 items on one shared 0–100-bounded integer
   scale, using reviewed mean or sum scoring.
 - a browser-local review and conversion path for supported Qualtrics QSF and
-  LimeSurvey LSS rating questionnaires.
+  LimeSurvey LSS/LSG rating questionnaires.
 
 It does not currently support:
 
@@ -80,7 +80,7 @@ link and result record. It is bounded to 9,000 UTF-8 bytes and cannot replace a
 built-in ID.
 
 `platform-questionnaire-import.ts` is an adapter before this definition
-boundary. It parses a bounded Qualtrics QSF or LimeSurvey LSS subset, records
+boundary. It parses a bounded Qualtrics QSF or LimeSurvey LSS/LSG subset, records
 accepted, confirmation-required and unsupported content, and produces a draft
 only when no active content would be silently lost. A Qualtrics single-answer
 Likert matrix can be expanded row-by-row when its row and response order are
@@ -201,7 +201,7 @@ Automated evidence must show more than successful rendering:
     deterministic;
 13. executable fields, built-in-ID replacement, unsupported scoring, invalid
     scales and oversized definitions are rejected.
-14. representative QSF and LSS fixtures preserve item, response and numeric
+14. representative QSF, LSS and LSG fixtures preserve item, response and numeric
     order through conversion;
 15. malformed files, unsupported types, flow logic, dynamic content and mixed
     scales block the whole conversion;
@@ -218,7 +218,7 @@ properties. Those are evaluation questions.
 
 Raw TLX and UEQ-S exercise the registered extension path. The no-code builder
 adds a second path for questionnaires that fit the bounded rating profile.
-Qualtrics QSF and LimeSurvey LSS adapters add a third path into that same
+Qualtrics QSF and LimeSurvey LSS/LSG adapters add a third path into that same
 profile; they do not broaden the runner or scorer by inference. A new response
 type or scoring rule is still accepted only when it is represented explicitly
 in reviewed code and tests. The public build does not execute a formula or

@@ -121,6 +121,65 @@ describe('structured questionnaire export import', () => {
     );
   });
 
+  it('imports a LimeSurvey LSG single-row array group without discarding its condition silently', () => {
+    const review = reviewQuestionnaireExport(
+      fixture('limesurvey-group-rating.lsg'),
+      'task-support.lsg',
+    );
+
+    expect(review.source).toBe('limesurvey-lsg');
+    expect(review.canConvert).toBe(true);
+    expect(review.unsupported).toEqual([]);
+    expect(review.draft?.name).toBe('Task support');
+    expect(review.draft?.items.map(({ name, prompt }) => ({ name, prompt }))).toEqual([
+      { name: 'CLARITY', prompt: 'The task instructions were clear.' },
+      { name: 'CONTROL', prompt: 'I felt in control.' },
+    ]);
+    expect(review.draft?.items[0].responseLabels).toEqual({
+      1: 'Strongly disagree',
+      2: '2',
+      3: '3',
+      4: '4',
+      5: 'Strongly agree',
+    });
+    expect(review.confirmations.map(({ code }) => code)).toEqual(
+      expect.arrayContaining([
+        'limesurvey-group-relevance-not-retained',
+        'limesurvey-single-row-array-expanded',
+        'limesurvey-blank-scale-labels',
+      ]),
+    );
+  });
+
+  it('requires an explicit group choice for a multi-group LSS before reviewing one group', () => {
+    const lss = fixture('limesurvey-group-rating.lsg')
+      .replace('<LimeSurveyDocType>Group</LimeSurveyDocType>', '<LimeSurveyDocType>Survey</LimeSurveyDocType>')
+      .replace(
+        '</rows>\n </groups>',
+        '<row><gid>20</gid><group_order>2</group_order><randomization_group/><grelevance>1</grelevance></row></rows>\n </groups>',
+      )
+      .replace(
+        '</rows>\n </group_l10ns>',
+        '<row><gid>20</gid><group_name>Other content</group_name><description/><language>en</language></row></rows>\n </group_l10ns>',
+      );
+
+    const initial = reviewQuestionnaireExport(lss, 'multi-group.lss');
+    expect(initial.requiresGroupSelection).toBe(true);
+    expect(initial.canConvert).toBe(false);
+    expect(initial.groupOptions?.map(({ id, name }) => ({ id, name }))).toEqual([
+      { id: '10', name: 'Task support' },
+      { id: '20', name: 'Other content' },
+    ]);
+
+    const selected = reviewQuestionnaireExport(lss, 'multi-group.lss', 'auto', '10');
+    expect(selected.canConvert).toBe(true);
+    expect(selected.unsupported).toEqual([]);
+    expect(selected.draft?.items).toHaveLength(2);
+    expect(selected.confirmations.map(({ code }) => code)).toContain(
+      'limesurvey-selected-group-only',
+    );
+  });
+
   it('still blocks active LimeSurvey attributes and scripts', () => {
     const lss = fixture('limesurvey-current-rating.lss')
       .replace(

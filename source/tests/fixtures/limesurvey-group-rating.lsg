@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+ <LimeSurveyDocType>Group</LimeSurveyDocType>
+ <DBVersion>709</DBVersion>
+ <languages><language>en</language></languages>
+ <answers>
+  <rows>
+   <row><aid>101</aid><qid>201</qid><code>1</code><sortorder>0</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>102</aid><qid>201</qid><code>2</code><sortorder>1</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>103</aid><qid>201</qid><code>3</code><sortorder>2</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>104</aid><qid>201</qid><code>4</code><sortorder>3</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>105</aid><qid>201</qid><code>5</code><sortorder>4</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>106</aid><qid>202</qid><code>1</code><sortorder>0</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>107</aid><qid>202</qid><code>2</code><sortorder>1</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>108</aid><qid>202</qid><code>3</code><sortorder>2</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>109</aid><qid>202</qid><code>4</code><sortorder>3</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+   <row><aid>110</aid><qid>202</qid><code>5</code><sortorder>4</sortorder><assessment_value>0</assessment_value><scale_id>0</scale_id></row>
+  </rows>
+ </answers>
+ <answer_l10ns>
+  <rows>
+   <row><aid>101</aid><answer>Strongly disagree</answer><language>en</language></row>
+   <row><aid>102</aid><answer/><language>en</language></row>
+   <row><aid>103</aid><answer/><language>en</language></row>
+   <row><aid>104</aid><answer/><language>en</language></row>
+   <row><aid>105</aid><answer>Strongly agree</answer><language>en</language></row>
+   <row><aid>106</aid><answer>Strongly disagree</answer><language>en</language></row>
+   <row><aid>107</aid><answer/><language>en</language></row>
+   <row><aid>108</aid><answer/><language>en</language></row>
+   <row><aid>109</aid><answer/><language>en</language></row>
+   <row><aid>110</aid><answer>Strongly agree</answer><language>en</language></row>
+  </rows>
+ </answer_l10ns>
+ <groups>
+  <rows>
+   <row><gid>10</gid><group_order>1</group_order><randomization_group/><grelevance>(SOURCE == 1)</grelevance></row>
+  </rows>
+ </groups>
+ <group_l10ns>
+  <rows><row><gid>10</gid><group_name>Task support</group_name><description/><language>en</language></row></rows>
+ </group_l10ns>
+ <questions>
+  <rows>
+   <row><qid>201</qid><parent_qid>0</parent_qid><gid>10</gid><type>F</type><title>CLARITY</title><other>N</other><mandatory>Y</mandatory><question_order>1</question_order><scale_id>0</scale_id><relevance>1</relevance></row>
+   <row><qid>202</qid><parent_qid>0</parent_qid><gid>10</gid><type>F</type><title>CONTROL</title><other>N</other><mandatory>Y</mandatory><question_order>2</question_order><scale_id>0</scale_id><relevance>1</relevance></row>
+  </rows>
+ </questions>
+ <subquestions>
+  <rows>
+   <row><qid>211</qid><parent_qid>201</parent_qid><gid>10</gid><type>F</type><title>CLARITY1</title><other>N</other><question_order>0</question_order><scale_id>0</scale_id><relevance>1</relevance></row>
+   <row><qid>212</qid><parent_qid>202</parent_qid><gid>10</gid><type>F</type><title>CONTROL1</title><other>N</other><question_order>0</question_order><scale_id>0</scale_id><relevance>1</relevance></row>
+  </rows>
+ </subquestions>
+ <question_l10ns>
+  <rows>
+   <row><qid>201</qid><question>The task instructions were clear.</question><help/><script/><language>en</language></row>
+   <row><qid>202</qid><question>I felt in control.</question><help/><script/><language>en</language></row>
+   <row><qid>211</qid><question/><help/><script/><language>en</language></row>
+   <row><qid>212</qid><question/><help/><script/><language>en</language></row>
+  </rows>
+ </question_l10ns>
+ <question_attributes>
+  <rows>
+   <row><qid>201</qid><attribute>answer_width</attribute><value>0</value><language/></row>
+   <row><qid>201</qid><attribute>min_answers</attribute><value>1</value><language/></row>
+   <row><qid>201</qid><attribute>max_answers</attribute><value>1</value><language/></row>
+   <row><qid>201</qid><attribute>random_order</attribute><value>0</value><language/></row>
+   <row><qid>202</qid><attribute>answer_width</attribute><value>0</value><language/></row>
+   <row><qid>202</qid><attribute>min_answers</attribute><value>1</value><language/></row>
+   <row><qid>202</qid><attribute>max_answers</attribute><value>1</value><language/></row>
+   <row><qid>202</qid><attribute>random_order</attribute><value>0</value><language/></row>
+  </rows>
+ </question_attributes>
+</document>

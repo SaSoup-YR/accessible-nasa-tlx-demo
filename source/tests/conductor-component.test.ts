@@ -300,6 +300,60 @@ describe('study conductor defaults and guidance', () => {
     expect(definition.scoring.reverseItemIds).toEqual(['item-02']);
   });
 
+  it('asks for one group before reviewing a multi-group LimeSurvey survey', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const lss = readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'limesurvey-group-rating.lsg'),
+      'utf8',
+    )
+      .replace('<LimeSurveyDocType>Group</LimeSurveyDocType>', '<LimeSurveyDocType>Survey</LimeSurveyDocType>')
+      .replace(
+        '</rows>\n </groups>',
+        '<row><gid>20</gid><group_order>2</group_order><randomization_group/><grelevance>1</grelevance></row></rows>\n </groups>',
+      )
+      .replace(
+        '</rows>\n </group_l10ns>',
+        '<row><gid>20</gid><group_name>Other content</group_name><description/><language>en</language></row></rows>\n </group_l10ns>',
+      );
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{ name: 'multi-group.lss', text: async () => lss }],
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    let review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('Choose one LimeSurvey questionnaire group');
+    expect(review.textContent).toContain('Task support');
+    expect(review.textContent).toContain('Other content');
+    const group = component.querySelector<HTMLSelectElement>(
+      '[data-platform-import-group]',
+    )!;
+    group.value = '10';
+    group.dispatchEvent(new Event('change', { bubbles: true }));
+    await (component as any).updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Review selected group')!
+      .click();
+    await (component as any).updateComplete;
+
+    review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('Import review ready');
+    expect(review.textContent).toContain('Imported safely (2)');
+    expect(review.textContent).toContain('Only “Task support” will be converted');
+    expect(review.textContent).toContain('Blank scale positions');
+    expect(document.activeElement).toBe(review);
+  });
+
   it('shows unsupported exported content and does not offer partial conversion', async () => {
     const component = await renderConductor();
     [...component.querySelectorAll<HTMLButtonElement>('button')]
