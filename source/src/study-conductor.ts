@@ -97,6 +97,9 @@ export class StudyConductorApp extends LitElement {
   @state() private platformImportSource: QuestionnaireImportSourceSelection = 'auto';
   @state() private platformImportReview: QuestionnaireImportReview | null = null;
   @state() private platformImportConfirmed = false;
+  @state() private platformImportSelectedGroupId = '';
+  private platformImportContents = '';
+  private platformImportFileName = '';
   @state() private studyId = '';
   @state() private studyTitle = '';
   @state() private taskLabel = '';
@@ -886,9 +889,10 @@ export class StudyConductorApp extends LitElement {
         </h4>
         <p>
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
-          <code>.lss</code> survey-structure export. The file is reviewed in this
-          browser and is not uploaded. Nothing is converted until you review and
-          confirm the result.
+          <code>.lss</code> survey export or <code>.lsg</code> question-group export.
+          A multi-group LSS asks you to choose one group before conversion. The file
+          is reviewed in this browser and is not uploaded. Nothing is converted until
+          you review and confirm the result.
         </p>
         <div class="form-grid">
           <label>
@@ -902,11 +906,15 @@ export class StudyConductorApp extends LitElement {
                   .value as QuestionnaireImportSourceSelection;
                 this.platformImportReview = null;
                 this.platformImportConfirmed = false;
+                this.platformImportSelectedGroupId = '';
+                this.platformImportContents = '';
+                this.platformImportFileName = '';
               }}
             >
               <option value="auto">Detect from file</option>
               <option value="qualtrics-qsf">Qualtrics QSF</option>
               <option value="limesurvey-lss">LimeSurvey LSS</option>
+              <option value="limesurvey-lsg">LimeSurvey LSG</option>
             </select>
           </label>
           <label class="file-import-control">
@@ -915,7 +923,7 @@ export class StudyConductorApp extends LitElement {
             <input
               data-platform-questionnaire-import
               type="file"
-              accept=".qsf,.lss,application/json,application/xml,text/xml"
+              accept=".qsf,.lss,.lsg,application/json,application/xml,text/xml"
               @change=${this.importPlatformQuestionnaire}
             />
           </label>
@@ -946,6 +954,59 @@ export class StudyConductorApp extends LitElement {
           : html`<p>${emptyMessage}</p>`}
       </section>
     `;
+
+    if (review.requiresGroupSelection && review.groupOptions?.length) {
+      return html`
+        <section
+          class="platform-import-review import-selection"
+          id="platform-import-review"
+          tabindex="-1"
+          aria-labelledby="platform-import-review-heading"
+        >
+          <div class="platform-import-review-heading">
+            <span class="selection-icon" aria-hidden="true">→</span>
+            <div>
+              <h5 id="platform-import-review-heading">Choose one LimeSurvey questionnaire group</h5>
+              <p><strong>${review.title}</strong> · ${review.sourceName} · ${review.fileName}</p>
+            </div>
+          </div>
+          <p>
+            This survey contains several groups. Choose the group that should become
+            one standalone questionnaire. Other groups are not silently merged or removed.
+          </p>
+          <fieldset class="platform-import-group-selection">
+            <legend>Questionnaire group</legend>
+            <label>
+              <strong>Group to review</strong>
+              <select
+                data-platform-import-group
+                .value=${this.platformImportSelectedGroupId}
+                @change=${(event: Event) => {
+                  this.platformImportSelectedGroupId =
+                    (event.currentTarget as HTMLSelectElement).value;
+                }}
+              >
+                <option value="">Choose a group</option>
+                ${review.groupOptions.map((group) => html`
+                  <option value=${group.id}>
+                    ${group.name} · ${group.questionCount} source question${group.questionCount === 1 ? '' : 's'} ·
+                    types ${group.questionTypes.join(', ')}
+                  </option>
+                `)}
+              </select>
+            </label>
+            <button
+              class="primary-button"
+              type="button"
+              ?disabled=${!this.platformImportSelectedGroupId}
+              @click=${this.reviewSelectedLimeSurveyGroup}
+            >
+              Review selected group
+            </button>
+          </fieldset>
+        </section>
+      `;
+    }
 
     return html`
       <section
@@ -1062,7 +1123,8 @@ export class StudyConductorApp extends LitElement {
                   <span>
                     I checked the imported wording, question order, response labels,
                     numeric values, score calculation and reverse-scored items against
-                    the source questionnaire.
+                    the source questionnaire. I also understand every listed source
+                    setting or display condition that is not retained.
                   </span>
                 </label>
                 <button
@@ -1218,16 +1280,22 @@ export class StudyConductorApp extends LitElement {
     this.platformImportReview = null;
     this.platformImportConfirmed = false;
     try {
+      const contents = await file.text();
+      this.platformImportContents = contents;
+      this.platformImportFileName = file.name;
+      this.platformImportSelectedGroupId = '';
       const review = reviewQuestionnaireExport(
-        await file.text(),
+        contents,
         file.name,
         this.platformImportSource,
       );
       this.platformImportReview = review;
       if (review.draft) this.customDraft = structuredClone(review.draft);
-      this.message = review.canConvert
-        ? 'Import review ready. Check every section and confirm scoring before conversion.'
-        : 'Import review found unsupported content. No partial questionnaire was created.';
+      this.message = review.requiresGroupSelection
+        ? 'Choose one LimeSurvey questionnaire group to review.'
+        : review.canConvert
+          ? 'Import review ready. Check every section and confirm scoring before conversion.'
+          : 'Import review found unsupported content. No partial questionnaire was created.';
       this.revealConductorResult('#platform-import-review');
     } catch (error) {
       this.showError(
@@ -1237,6 +1305,37 @@ export class StudyConductorApp extends LitElement {
       );
     } finally {
       input.value = '';
+    }
+  };
+
+  private reviewSelectedLimeSurveyGroup = () => {
+    if (
+      !this.platformImportContents ||
+      !this.platformImportFileName ||
+      !this.platformImportSelectedGroupId
+    ) return;
+    this.errorMessage = '';
+    this.definitionConfirmation = '';
+    this.platformImportConfirmed = false;
+    try {
+      const review = reviewQuestionnaireExport(
+        this.platformImportContents,
+        this.platformImportFileName,
+        this.platformImportSource,
+        this.platformImportSelectedGroupId,
+      );
+      this.platformImportReview = review;
+      if (review.draft) this.customDraft = structuredClone(review.draft);
+      this.message = review.canConvert
+        ? 'Selected group review ready. Check every section and confirm scoring before conversion.'
+        : 'The selected group contains unsupported content. No partial questionnaire was created.';
+      this.revealConductorResult('#platform-import-review');
+    } catch (error) {
+      this.showError(
+        error instanceof Error
+          ? error.message
+          : 'The selected LimeSurvey group could not be reviewed.',
+      );
     }
   };
 
@@ -1373,6 +1472,9 @@ export class StudyConductorApp extends LitElement {
     this.customDraft = createCustomQuestionnaireDraft();
     this.platformImportReview = null;
     this.platformImportConfirmed = false;
+    this.platformImportSelectedGroupId = '';
+    this.platformImportContents = '';
+    this.platformImportFileName = '';
     this.message =
       'Custom questionnaire builder fields reset. The selected questionnaire is unchanged until you validate a new definition.';
   };

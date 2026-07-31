@@ -8,18 +8,18 @@ Version 0.8 loads registered files from:
 
 If the questionnaire already exists in Qualtrics or LimeSurvey, first follow
 [`QUESTIONNAIRE-IMPORT.md`](QUESTIONNAIRE-IMPORT.md). The structured importer
-reviews supported QSF/LSS rating questions, blocks unsupported active content,
+reviews supported QSF/LSS/LSG rating questions, blocks unsupported active content,
 and sends the confirmed result through the same definition validator described
 below.
 
 Open `study.html` and select **Add your own questionnaire**. The page separates
 three routes:
 
-1. convert a reviewed Qualtrics QSF or LimeSurvey LSS source export;
+1. convert a reviewed Qualtrics QSF or LimeSurvey LSS/LSG source export;
 2. reproduce an AQP definition JSON previously downloaded from this platform; or
 3. build a bounded questionnaire manually.
 
-QSF/LSS and AQP JSON are not interchangeable. The first route converts external
+QSF/LSS/LSG and AQP JSON are not interchangeable. The first route converts external
 source-platform structure. The second revalidates an already normalised platform
 definition.
 
