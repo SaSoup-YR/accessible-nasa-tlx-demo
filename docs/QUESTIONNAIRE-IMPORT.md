@@ -97,7 +97,18 @@ attributes still block an item selected for conversion.
 
 The source question order, response order, displayed labels and accepted numeric
 values are preserved. Imported response labels remain visible in the participant
-interface and can be used as exact confirmed voice answers.
+interface and can be used as complete, exact confirmed voice answers. Matching is built
+from the labels on the current item, so it is not limited to a hard-coded English or
+German phrase list. Unicode punctuation, diacritics and speech-engine whitespace are
+normalised; partial, fuzzy or ambiguous matches are rejected. The definition's declared
+base language is also used for browser speech recognition. Qualtrics-specific codes such
+as `ZH-S` and `ZH-T` are converted to browser-compatible tags. Browser or operating-system
+speech support may still vary, so a language can be valid in the imported definition but
+unavailable to one participant's browser or device. The participant page states the requested
+language, requires a complete visible label or shown number, and presents a focused visible
+error when recognition fails. The visible buttons and system voice control remain available;
+the platform never treats unavailable speech recognition as a required route. Blank source labels
+remain visible numeric positions: the importer never invents intermediate meanings.
 
 ## Content that blocks conversion
 

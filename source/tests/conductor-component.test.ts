@@ -82,6 +82,12 @@ describe('study conductor defaults and guidance', () => {
     expect(component.querySelector('.definition-summary')?.textContent).toContain(
       'Weighted workload score',
     );
+    expect(component.querySelector('.definition-summary')?.textContent).toContain(
+      'Questionnaire language: en-GB',
+    );
+    expect(component.querySelector('.definition-summary')?.textContent?.replace(/\s+/g, ' ')).toContain(
+      'complete exact visible answer label',
+    );
 
     const participantChoice = inputFor(component, 'Prepared defaults with optional participant choice');
     expect(participantChoice.checked).toBe(true);
@@ -285,6 +291,7 @@ describe('study conductor defaults and guidance', () => {
     expect(review.textContent).toContain('3 = Neither agree nor disagree');
     expect(review.textContent).toContain('Requires researcher confirmation');
     expect(review.textContent).toContain('Unsupported content (0)');
+    expect(review.textContent).toContain('does not translate');
     expect(document.activeElement).toBe(review);
     const convert = [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Convert and use this questionnaire')!;

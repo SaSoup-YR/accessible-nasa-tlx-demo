@@ -36,6 +36,8 @@ export interface QuestionnairePair {
 
 export interface QuestionnaireDefinition {
   schemaVersion: 1;
+  /** BCP 47 language tag for imported item wording and speech recognition. */
+  language: string;
   id: string;
   version: string;
   name: string;
@@ -104,6 +106,21 @@ function integer(value: unknown, path: string): number {
   return value as number;
 }
 
+function languageTag(value: unknown): string {
+  if (value === undefined) return 'en-GB';
+  const language = text(
+    value,
+    'language',
+    35,
+    /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/,
+  );
+  try {
+    return Intl.getCanonicalLocales(language)[0] ?? language;
+  } catch {
+    throw new Error('language must be a valid BCP 47 language tag.');
+  }
+}
+
 function stringList(value: unknown, path: string): string[] | undefined {
   if (value === undefined) return undefined;
   if (
@@ -167,6 +184,7 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
     [
       '$schema',
       'schemaVersion',
+      'language',
       'id',
       'version',
       'name',
@@ -454,6 +472,7 @@ export function validateQuestionnaireDefinition(candidate: unknown): Questionnai
 
   return {
     schemaVersion: 1,
+    language: languageTag(root.language),
     id,
     version: text(root.version, 'version', 40),
     name: text(root.name, 'name', 120),

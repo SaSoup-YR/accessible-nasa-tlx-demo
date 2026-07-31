@@ -44,6 +44,7 @@ describe('researcher-supplied questionnaire definitions', () => {
   it('builds a bounded data-only definition and reverse-scores a reviewed mean', () => {
     const definition = createCustomQuestionnaireDefinition(customDraft());
     expect(definition.id).toBe('custom-wai');
+    expect(definition.language).toBe('en-GB');
     expect(definition.items.map(({ id }) => id)).toEqual(['item-01', 'item-02']);
     expect(definition.scoring).toEqual({
       strategy: 'mean-v1',
@@ -155,5 +156,14 @@ describe('researcher-supplied questionnaire definitions', () => {
     expect(() => createCustomQuestionnaireDefinition(draft)).toThrow(
       /range divisible/i,
     );
+  });
+
+  it('preserves a valid source language and rejects an invalid language tag', () => {
+    const draft = customDraft();
+    draft.language = 'de-DE';
+    expect(createCustomQuestionnaireDefinition(draft).language).toBe('de-DE');
+
+    draft.language = 'German language';
+    expect(() => createCustomQuestionnaireDefinition(draft)).toThrow(/language/i);
   });
 });

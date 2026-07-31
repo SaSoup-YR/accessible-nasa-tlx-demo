@@ -266,6 +266,12 @@ export class StudyConductorApp extends LitElement {
                 ${buildQuestionnairePairs(this.definition).length} comparisons,
                 ${this.definition.scoring.scoreName}.
               </span>
+              <span>
+                Questionnaire language: <code>${this.definition.language}</code>.
+                Confirmed voice input requests this language and accepts one complete exact visible
+                answer label or one shown number. Recognition support still depends on the browser
+                and operating system; visible answer buttons remain available.
+              </span>
               ${this.definition.source.url
                 ? html`<a href=${this.definition.source.url} target="_blank" rel="noopener">
                     Instrument source: ${this.definition.source.label}
@@ -402,7 +408,8 @@ export class StudyConductorApp extends LitElement {
               </fieldset>`
             : html`<p class="support-boundary">
                 ${this.definition.shortName} uses its standard ${buildRatingValues(this.definition).length}-value
-                response scale. Smiley landmarks are disabled because facial valence is not equivalent to agreement.
+                response scale. Smiley landmarks are disabled because this definition does not declare validated
+                landmark meanings; adding faces could change the meaning of its response scale.
               </p>`}
         </section>
 
@@ -679,6 +686,18 @@ export class StudyConductorApp extends LitElement {
               .value=${this.customDraft.version}
               @input=${(event: Event) =>
                 this.updateCustomDraft('version', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label>
+            <strong>Questionnaire language</strong>
+            <span>BCP 47 tag used for item text and voice recognition, for example en-GB or de.</span>
+            <input
+              data-custom-field="language"
+              maxlength="35"
+              spellcheck="false"
+              .value=${this.customDraft.language}
+              @input=${(event: Event) =>
+                this.updateCustomDraft('language', (event.currentTarget as HTMLInputElement).value)}
             />
           </label>
           <label>
@@ -1143,6 +1162,25 @@ export class StudyConductorApp extends LitElement {
               <fieldset class="platform-import-confirmation">
                 <legend>Confirm scoring before conversion</legend>
                 <div class="form-grid">
+                  <label>
+                    <strong>Questionnaire language</strong>
+                    <span>
+                      BCP 47 language requested from the browser speech service. Voice accepts one
+                      complete exact visible answer label or shown number; it does not translate,
+                      fuzzily match or guess partial wording. Confirm this tag against the source.
+                    </span>
+                    <input
+                      data-platform-import-language
+                      maxlength="35"
+                      spellcheck="false"
+                      .value=${this.customDraft.language}
+                      @input=${(event: Event) =>
+                        this.updateCustomDraft(
+                          'language',
+                          (event.currentTarget as HTMLInputElement).value,
+                        )}
+                    />
+                  </label>
                   <label>
                     <strong>Scale description</strong>
                     <select

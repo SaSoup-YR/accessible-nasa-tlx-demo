@@ -131,6 +131,102 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('not agree', item, values, [])).toBeNull();
   });
 
+  it('accepts exact non-English labels while preserving safe exact-match behaviour', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'de';
+    draft.name = 'German agreement check';
+    draft.shortName = 'GAC';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Realismus',
+        prompt: 'Das Szenario war realistisch.',
+        lowAnchor: 'Stimme überhaupt nicht zu',
+        highAnchor: 'Stimme vollkommen zu',
+        responseLabels: {
+          1: 'Stimme überhaupt nicht zu',
+          2: 'Stimme nicht zu',
+          3: 'Stimme weder zu noch nicht zu',
+          4: 'Stimme zu',
+          5: 'Stimme vollkommen zu',
+        },
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const values = buildRatingValues(definition);
+    const item = definition.items[0];
+
+    expect(parseRatingTranscript('Stimme überhaupt nicht zu', item, values, [])).toBe(1);
+    expect(parseRatingTranscript('stimme vollkommen zu', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('stimme zu', item, values, [])).toBe(4);
+    expect(parseRatingTranscript('zwei', item, values, [])).toBe(2);
+    expect(parseRatingTranscript('fünf', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('vollkommen', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('stimme', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('nicht zwei', item, values, [])).toBeNull();
+  });
+
+  it('matches exact visible labels across scripts without language-specific dictionaries', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'zh-CN';
+    draft.name = 'Multilingual response check';
+    draft.shortName = 'MRC';
+    draft.items = [
+      createCustomItemDraft({
+        name: '清晰度',
+        prompt: '说明很清楚。',
+        lowAnchor: '非常不同意',
+        highAnchor: '非常同意',
+        responseLabels: {
+          1: '非常不同意',
+          2: '不同意',
+          3: '既不同意也不赞同',
+          4: '同意',
+          5: '非常同意',
+        },
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const values = buildRatingValues(definition);
+    const item = definition.items[0];
+
+    expect(parseRatingTranscript('非常同意', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('非 常 同 意', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('「非常同意」', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('同意', item, values, [])).toBe(4);
+    expect(parseRatingTranscript('非常', item, values, [])).toBeNull();
+  });
+
+  it('handles diacritics and right-to-left labels but rejects collapsed-label ambiguity', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'ar';
+    draft.name = 'Arabic response check';
+    draft.shortName = 'ARC';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'الوضوح',
+        prompt: 'كانت التعليمات واضحة.',
+        lowAnchor: 'لا أوافق',
+        highAnchor: 'أوافق تمامًا',
+        responseLabels: {
+          1: 'لا أوافق',
+          2: 'لا أوافق قليلًا',
+          3: 'محايد',
+          4: 'أوافق',
+          5: 'أوافق تمامًا',
+        },
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const values = buildRatingValues(definition);
+    const item = definition.items[0];
+
+    expect(parseRatingTranscript('أوافق تماماً', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('أوافق', item, values, [])).toBe(4);
+
+    item.responseLabels = { 1: 'A B', 2: 'AB', 3: 'C', 4: 'D', 5: 'E' };
+    expect(parseRatingTranscript('ab', item, values, [])).toBeNull();
+  });
+
   it('uses a consistent lower-ranked hypothesis without guessing across conflicts or negation', () => {
     expect(parseRatingAlternatives(['hello', 'low'], dimensions[0])).toEqual({
       transcript: 'hello',

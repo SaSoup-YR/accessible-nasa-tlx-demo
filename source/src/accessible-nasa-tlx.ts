@@ -379,8 +379,8 @@ export class AccessibleNasaTlx extends LitElement {
         <p class="sr-only" aria-live="polite" aria-atomic="true">${this.statusMessage}</p>
         <header class="app-header">
           <p class="eyebrow">Accessible questionnaire platform · Version ${PROTOTYPE_VERSION}</p>
-          <h1>${this.definition.name}</h1>
-          <p class="subtitle">${this.definition.description}</p>
+          <h1 lang=${this.definition.language} dir="auto">${this.definition.name}</h1>
+          <p class="subtitle" lang=${this.definition.language} dir="auto">${this.definition.description}</p>
         </header>
 
         ${this.resumeSummaryVisible ? this.renderResumeSummary() : nothing}
@@ -978,14 +978,14 @@ export class AccessibleNasaTlx extends LitElement {
     return html`
       <section class="panel" id="question-panel" aria-labelledby="rating-heading">
         <p class="step-label">Rating ${this.ratingIndex + 1} of ${this.dimensions.length}</p>
-        <h2 id="rating-heading">${dimension.name}</h2>
+        <h2 id="rating-heading" lang=${this.definition.language} dir="auto">${dimension.name}</h2>
         <p class="official-definition">
           <strong>${this.isResearcherSuppliedDefinition
             ? 'Questionnaire item'
             : this.pairs.length
             ? 'Official definition'
             : 'Official item'}:</strong>
-          ${dimension.prompt}
+          <span lang=${this.definition.language} dir="auto">${dimension.prompt}</span>
         </p>
 
         ${!this.definition.supports.simplerExplanations
@@ -1032,12 +1032,15 @@ export class AccessibleNasaTlx extends LitElement {
     return html`
       <fieldset class="rating-fieldset">
         <legend>
-          Rate ${dimension.name}: ${this.definition.scale.minimum} is ${dimension.lowAnchor};
-          ${this.definition.scale.maximum} is ${dimension.highAnchor}
+          Rate <span lang=${this.definition.language} dir="auto">${dimension.name}</span>:
+          ${this.definition.scale.minimum} is
+          <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>;
+          ${this.definition.scale.maximum} is
+          <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>
         </legend>
         <div class="rating-anchors" aria-hidden="true">
-          <span>${this.definition.scale.minimum} — ${dimension.lowAnchor}</span>
-          <span>${this.definition.scale.maximum} — ${dimension.highAnchor}</span>
+          <span>${this.definition.scale.minimum} — <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span></span>
+          <span>${this.definition.scale.maximum} — <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span></span>
         </div>
         <div class="rating-grid">
           ${this.ratingValues.map((value) => {
@@ -1063,7 +1066,7 @@ export class AccessibleNasaTlx extends LitElement {
                   <strong>${value}</strong>
                   ${dimension.responseLabels?.[String(value)] &&
                   dimension.responseLabels[String(value)] !== String(value)
-                    ? html`<small>${dimension.responseLabels[String(value)]}</small>`
+                    ? html`<small lang=${this.definition.language} dir="auto">${dimension.responseLabels[String(value)]}</small>`
                     : nothing}
                 </span>
                 ${selected === value
@@ -1216,8 +1219,10 @@ export class AccessibleNasaTlx extends LitElement {
         <div class="voice-input-content">
           <p>${prompt}</p>
           <p class="support-boundary">
-            Voice is optional. Your browser may use its speech service. This prototype does not store audio,
-            and buttons remain available if recognition is unsupported or incorrect.
+            Voice is optional. Recognition is requested in the questionnaire language
+            (<code>${this.definition.language}</code>). Say one complete visible answer label or one shown
+            number; partial or similar phrases are not guessed. Browser and operating-system language support
+            varies. This prototype does not store audio, and the visible answer buttons remain available.
           </p>
           <button
             class="secondary-button large-answer-button"
@@ -1234,13 +1239,25 @@ export class AccessibleNasaTlx extends LitElement {
               </p>`
             : nothing}
           ${this.voiceMessage
-            ? html`<p role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>`
+            ? this.voiceState === 'error'
+              ? html`<div
+                  class="voice-feedback-error"
+                  role="alert"
+                  aria-live="assertive"
+                  aria-atomic="true"
+                  tabindex="-1"
+                  data-voice-error
+                >
+                  <strong>Voice answer not accepted.</strong>
+                  <span>${this.voiceMessage}</span>
+                </div>`
+              : html`<p role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>`
             : nothing}
           ${activeForContext && this.pendingVoiceAnswer
             ? html`
                 <div class="voice-confirmation">
-                  <p>I heard: <strong>${this.pendingVoiceAnswer.transcript}</strong></p>
-                  <p>Proposed answer: <strong>${this.pendingVoiceAnswer.label}</strong></p>
+                  <p>I heard: <strong lang=${this.definition.language} dir="auto">${this.pendingVoiceAnswer.transcript}</strong></p>
+                  <p>Proposed answer: <strong lang=${this.definition.language} dir="auto">${this.pendingVoiceAnswer.label}</strong></p>
                   <div class="button-row compact">
                     <button
                       class="primary-button large-answer-button"
@@ -1789,7 +1806,7 @@ export class AccessibleNasaTlx extends LitElement {
         const label = dimension.responseLabels?.[String(value)];
         return label ? [`${value}, ${label}`] : [];
       });
-      if (labelledValues.length === this.ratingValues.length) {
+      if (labelledValues.length > 0) {
         return `${numericPrompt} You may instead say one exact visible answer label.`;
       }
       return this.definition.scale.type === 'magnitude'
@@ -2553,7 +2570,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.voiceState = 'listening';
     const recognition = new Constructor();
     this.recognition = recognition;
-    recognition.lang = 'en-GB';
+    recognition.lang = this.definition.language;
     recognition.continuous = false;
     recognition.interimResults = false;
     // Ask for ranked alternatives so a harmless primary transcription such as
@@ -2614,36 +2631,47 @@ export class AccessibleNasaTlx extends LitElement {
         }
       }
       this.releaseRecognition(recognition);
-      this.voiceState = 'error';
-      this.voiceMessage = `The answer was not recognised. ${context === 'rating' ? this.ratingVoicePrompt(first) : `Say ${first.name} or ${second!.name}.`}`;
-      this.announceAutomatic(this.voiceMessage);
+      this.showVoiceError(
+        `The answer was not recognised. ${context === 'rating' ? this.ratingVoicePrompt(first) : `Say ${first.name} or ${second!.name}.`}`,
+      );
     };
     recognition.onerror = (event) => {
       if (this.recognition !== recognition) return;
       this.releaseRecognition(recognition);
-      this.voiceState = 'error';
-      this.voiceMessage = event.error === 'not-allowed'
+      this.showVoiceError(event.error === 'not-allowed'
         ? 'Microphone permission was not granted. Use the visible answer buttons or system voice control.'
-        : 'Voice recognition did not complete. Use the visible answer buttons or try again.';
-      this.announceAutomatic(this.voiceMessage);
+        : event.error === 'language-not-supported' || event.error === 'language-unavailable'
+        ? `This browser does not support voice recognition for ${this.definition.language}. Use the visible answer buttons or system voice control.`
+        : 'Voice recognition did not complete. Use the visible answer buttons or try again.');
     };
     recognition.onend = () => {
       if (this.recognition !== recognition) return;
       this.recognition = null;
       if (this.voiceState === 'listening') {
-        this.voiceState = 'error';
-        this.voiceMessage = 'No answer was recognised. Try again or use the visible answer buttons.';
-        this.announceAutomatic(this.voiceMessage);
+        this.showVoiceError('No answer was recognised. Try again or use the visible answer buttons.');
       }
     };
     try {
       recognition.start();
     } catch {
       this.releaseRecognition(recognition);
-      this.voiceState = 'error';
-      this.voiceMessage = 'Voice recognition could not start in this browser context.';
-      this.announceAutomatic(this.voiceMessage);
+      this.showVoiceError('Voice recognition could not start in this browser context. Use the visible answer buttons.');
     }
+  }
+
+  private showVoiceError(message: string) {
+    this.voiceState = 'error';
+    this.voiceMessage = message;
+    void this.updateComplete.then(() => {
+      const feedback = this.querySelector<HTMLElement>('[data-voice-error]');
+      if (!feedback) return;
+      focusAndReveal(feedback, {
+        block: 'center',
+        forceCoordinateScroll: true,
+        onReveal: () => this.requestParentReveal(feedback),
+      });
+      this.announceAutomatic(`Voice answer not accepted. ${message}`);
+    });
   }
 
   private confirmVoiceAnswer = () => {
@@ -2939,7 +2967,6 @@ export class AccessibleNasaTlx extends LitElement {
 
   private showError(message: string) {
     this.errorMessage = message;
-    this.announceAutomatic(`There is a problem. ${message}`);
     void this.updateComplete.then(() => {
       const summary = this.querySelector<HTMLElement>('#error-summary');
       if (!summary) return;
@@ -2948,6 +2975,9 @@ export class AccessibleNasaTlx extends LitElement {
         forceCoordinateScroll: true,
         onReveal: () => this.requestParentReveal(summary),
       });
+      // Reveal the error before optional speech begins so visual position,
+      // keyboard focus and audio feedback describe the same state.
+      this.announceAutomatic(`There is a problem. ${message}`);
     });
   }
 

@@ -20,15 +20,17 @@ bounded formative evaluation. The tag is an immutable evidence point: any later
 functional change requires a new tag and proportionate re-verification. The
 earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
 
-The current release candidate also contains post-`rc.3` LimeSurvey compatibility
-work. It accepts `.lsg` question-group and `.lsq` single-question exports and
-asks the researcher to choose one group when an `.lss` survey contains several
-groups. This remains a candidate for `v0.8.0-rc.4` until the live-browser release
-gate is repeated; it does not change the immutable `rc.3` evidence.
+The current source is the prepared **`v0.8.0-rc.4` candidate**. It adds `.lsg`
+question-group and `.lsq` single-question imports, explicit selection when an
+`.lss` survey contains several groups, source-language propagation and exact
+visible-label voice answers for imported questionnaires. It remains unreleased
+until the synchronized files are deployed and the short live-browser release
+gate below is repeated; it does not change the immutable `rc.3` evidence.
 
 Verification on the current unreleased candidate:
 
-- 18 test files passed, containing 162 passing tests;
+- a clean lock-file installation completed;
+- 18 test files passed, containing 168 passing tests;
 - 11 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups and safely
@@ -36,10 +38,15 @@ Verification on the current unreleased candidate:
 - the matching real LimeSurvey LSG converted the same SP1–SP5 items and 1–7
   response scale with no unsupported content; and
 - a sanitised LimeSurvey LSQ converted one required rating question while
-  explicitly warning that its former survey and group context is unavailable.
+  explicitly warning that its former survey and group context is unavailable;
+- the attached German LSS propagated `de` to browser recognition, preserved its
+  complete visible labels and mapped an exact label to the reviewed value; and
+- partial, similar, ambiguous and negated speech remained rejected, with a
+  focused visible error and the ordinary answer buttons retained.
 
-A live-browser re-test of QSF, LSS, LSG and LSQ is still required before
-assigning the next immutable release-candidate tag.
+A deployed live-browser re-test of QSF, LSS, LSG and LSQ, one real microphone
+label answer in the imported language, and one accepted Qualtrics row are still
+required before assigning the next immutable release-candidate tag.
 
 ### Verification recorded for `v0.8.0-rc.3`
 
@@ -113,9 +120,12 @@ accessible or that it improves a questionnaire's psychometric properties.
 - Passing automated and manual technical checks is not a claim of complete WCAG
   2.2 conformance or coverage of every browser, screen reader and assistive-
   technology combination.
-- Voice recognition depends on browser support and accepts only allowed displayed
-  values or exact endpoint labels. Webcam gaze input remains experimental and
-  requires conventional keyboard/pointer fallbacks.
+- Voice recognition depends on the browser and operating system. It accepts an
+  allowed displayed number or one complete exact visible answer label from the
+  current item; it deliberately does not translate, fuzzily match or guess a
+  partial phrase. Unsupported recognition languages and inaccurate transcripts
+  leave the ordinary answer buttons available. Webcam gaze input remains
+  experimental and requires conventional keyboard/pointer fallbacks.
 - A disconnected submission is not centrally recorded until the connection is
   restored and Qualtrics accepts the response. The recovery copy remains on the
   same browser and device, so it should be downloaded before that local state is
@@ -236,9 +246,18 @@ Support changes and input routes are recorded separately and never enter scoring
 Instrument-specific capability checks prevent smileys or unvalidated simpler wording
 from appearing in SUS or UEQ-S. Their standard response positions keep the official
 endpoint labels without inventing meanings such as `Neutral` or `Agree` for
-intermediate values. Confirmed voice input accepts a displayed number or an exact
-official endpoint label. NASA-TLX smileys and simpler explanations remain experimental
-support routes, not psychometrically equivalent replacements.
+intermediate values. Imported blank intermediate labels likewise remain numbered rather
+than being given invented meanings. Confirmed voice input uses the definition's declared
+language and accepts a displayed number or one complete, unique visible answer label.
+Label matching is derived from the current item rather than a fixed English vocabulary:
+Unicode letters, diacritics, punctuation and speech-engine whitespace differences are
+normalised, but partial or fuzzy labels are not guessed. Qualtrics survey language codes
+are mapped to browser speech-language tags, including simplified and traditional Chinese.
+Recognition availability and transcription accuracy still depend on the participant's
+browser and operating system; buttons always remain available. Every voice proposal
+requires confirmation. NASA-TLX smileys and simpler explanations
+remain definition-specific experimental support routes, not psychometrically equivalent
+replacements that can be applied safely to every imported scale.
 
 WCAG 2.2 is used as an engineering and test framework. The repository does not claim
 complete WCAG conformance or disability-group benefit. See
