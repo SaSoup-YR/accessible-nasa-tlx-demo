@@ -859,9 +859,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               </span>
               <span>
                 Questionnaire language: <code>${this.definition.language}</code>.
-                Confirmed voice input requests this language and accepts one complete exact visible
-                answer label or one shown number. Recognition support still depends on the browser
-                and operating system; visible answer buttons remain available.
+                Confirmed voice input requests a browser-compatible regional form of this language
+                and accepts one complete exact visible answer label or one shown number. Non-English
+                rating questionnaires also retain an English-number fallback. Recognition support
+                still depends on the browser speech service; visible answer buttons remain available.
               </span>
               ${this.definition.source.url?m`<a href=${this.definition.source.url} target="_blank" rel="noopener">
                     Instrument source: ${this.definition.source.label}
@@ -1637,9 +1638,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                   <label>
                     <strong>Questionnaire language</strong>
                     <span>
-                      BCP 47 language requested from the browser speech service. Voice accepts one
-                      complete exact visible answer label or shown number; it does not translate,
-                      fuzzily match or guess partial wording. Confirm this tag against the source.
+                      BCP 47 language used for the questionnaire and requested from the browser speech
+                      service. A base tag such as de is requested as de-DE. Voice accepts one complete
+                      exact visible answer label or shown number; it does not translate, fuzzily match
+                      or guess partial wording. Non-English rating questionnaires also retain an
+                      English-number fallback. Confirm this tag against the source.
                     </span>
                     <input
                       data-platform-import-language

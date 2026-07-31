@@ -501,6 +501,42 @@ describe('speech support integration', () => {
     expect(document.activeElement).toBe(component.querySelector('[data-voice-error]'));
   });
 
+  it('reports a speech-service network failure without disabling NASA-TLX numeric answers', async () => {
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        expect(this.lang).toBe('en-GB');
+        this.onerror?.({ error: 'network' });
+      }
+      stop() {}
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = await renderComponent();
+    await startRatings(component);
+    component.querySelector<HTMLButtonElement>('[data-voice-questionnaire-language]')!.click();
+    await component.updateComplete;
+
+    expect(component.querySelector('[data-voice-error]')?.textContent).toContain(
+      'speech service could not connect',
+    );
+    expect(document.activeElement).toBe(component.querySelector('[data-voice-error]'));
+
+    const visibleNumericAnswer = component.querySelector<HTMLInputElement>(
+      '.rating-option input[value="50"]',
+    )!;
+    expect(visibleNumericAnswer.disabled).toBe(false);
+    visibleNumericAnswer.click();
+    await component.updateComplete;
+    expect(visibleNumericAnswer.checked).toBe(true);
+  });
+
   it('synchronises a confirmed voice landmark with the visible smiley radio group', async () => {
     class FakeRecognition {
       lang = '';

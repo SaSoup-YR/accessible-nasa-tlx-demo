@@ -20,11 +20,13 @@ verified release build.
   code rejection and JSON round-trip.
 - `platform-component.test.ts` — complete researcher-supplied, SUS, Raw TLX and UEQ-S
   participant flows, imported-QSF completion/export and conductor link generation
-  through the shared components.
+  through the shared components, imported-language exact labels, regional speech
+  locale selection and the non-English English-number fallback.
 - `content.test.ts` and `scoring.test.ts` — NASA content, pair invariants and
   weighted scoring compatibility.
 - `voice-input.test.ts` — displayed values/labels, conservative ranked alternatives,
-  mobile Low homophone, Performance anchors, negation, ambiguity and invalid values.
+  mobile Low homophone, Performance anchors, multilingual exact labels, negation,
+  ambiguity and invalid values.
 - `accessibility-utils.test.ts` — immediate, post-layout and delayed mobile error
   reveal plus visual-viewport coordinate fallback.
 - `saved-session-announcement.test.ts` — recovery-action focus, accessible
