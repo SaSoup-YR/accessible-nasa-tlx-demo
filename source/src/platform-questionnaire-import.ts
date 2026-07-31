@@ -214,10 +214,39 @@ function defaultShortName(title: string) {
   return ascii || 'IMPORTED';
 }
 
+// Qualtrics publishes several survey language codes that are not directly
+// usable as BCP 47/Web Speech language tags. Map its documented codes to
+// browser-facing tags while still accepting standard and custom BCP 47 codes.
+const qualtricsLanguageTags: Readonly<Record<string, string>> = {
+  SQI: 'sq', AR: 'ar', HYE: 'hy', ASM: 'as', 'AZ-AZ': 'az-AZ', ID: 'id', MS: 'ms',
+  BEL: 'be', BN: 'bn', BS: 'bs', 'PT-BR': 'pt-BR', BG: 'bg', CA: 'ca', CEB: 'ceb',
+  'ZH-S': 'zh-CN', 'ZH-T': 'zh-TW', HR: 'hr', CS: 'cs', DA: 'da', NL: 'nl',
+  'EN-GB': 'en-GB', EN: 'en', EO: 'eo', ET: 'et', FI: 'fi', FR: 'fr',
+  'FR-CA': 'fr-CA', KAT: 'ka', DE: 'de', EL: 'el', GU: 'gu', HE: 'he', HI: 'hi',
+  HIL: 'hil', HU: 'hu', ISL: 'is', IT: 'it', JA: 'ja', KAN: 'kn', KAZ: 'kk',
+  KM: 'km', KO: 'ko', LV: 'lv', LT: 'lt', MK: 'mk', MAL: 'ml', MAR: 'mr', MN: 'mn',
+  'SR-ME': 'sr-ME', MY: 'my', NE: 'ne', NO: 'no', ORI: 'or', FA: 'fa', PL: 'pl',
+  PT: 'pt', 'PA-IN': 'pa-IN', RO: 'ro', RU: 'ru', SR: 'sr', SIN: 'si', SK: 'sk',
+  SL: 'sl', 'ES-ES': 'es-ES', ES: 'es', SW: 'sw', SV: 'sv', TGL: 'fil', TA: 'ta',
+  TEL: 'te', TH: 'th', TR: 'tr', UK: 'uk', UR: 'ur', VI: 'vi', CY: 'cy',
+};
+
+function importedLanguageTag(value: unknown, fallback = 'en') {
+  const candidate = collapsed(text(value)) || fallback;
+  const normalised = qualtricsLanguageTags[candidate.toUpperCase()] ?? candidate.replace(/_/g, '-');
+  if (!/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(normalised)) return fallback;
+  try {
+    return Intl.getCanonicalLocales(normalised)[0] ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function buildDraft(
   title: string,
   sourceLabel: string,
   introPrompt: string,
+  language: string,
   items: ImportedScaleItem[],
   state: ImportAccumulator,
 ): CustomQuestionnaireDraft | null {
@@ -275,6 +304,7 @@ function buildDraft(
   });
 
   return {
+    language,
     name: title.slice(0, 120),
     shortName: defaultShortName(title),
     version: '1.0.0',
@@ -541,6 +571,7 @@ function parseQualtricsQsf(
   }
   const importState = state();
   const title = collapsed(text(entry.SurveyName)) || 'Imported Qualtrics questionnaire';
+  const language = importedLanguageTag(entry.SurveyLanguage, 'en');
   const elements = root.SurveyElements
     .map(asRecord)
     .filter((element): element is Record<string, unknown> => Boolean(element));
@@ -713,6 +744,7 @@ function parseQualtricsQsf(
     title,
     'Imported from Qualtrics QSF',
     introPrompt,
+    language,
     items,
     importState,
   );
@@ -1498,6 +1530,7 @@ function parseLimeSurveyXml(
     groupTitle,
     `Imported from ${sourceName}`,
     intro ?? 'Answer each imported item about the task that you have just completed.',
+    importedLanguageTag(language, 'en'),
     items,
     importState,
   );

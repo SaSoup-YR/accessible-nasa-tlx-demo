@@ -241,6 +241,7 @@ describe('interruption recovery', () => {
 describe('speech support integration', () => {
   it('produces audible browser speech when built-in audio guidance is enabled', async () => {
     const spoken: string[] = [];
+    const focusedWhenSpoken: Array<string | undefined> = [];
     const cancel = vi.fn();
     class FakeUtterance {
       lang = '';
@@ -255,7 +256,10 @@ describe('speech support integration', () => {
       value: {
         cancel,
         resume: vi.fn(),
-        speak: (utterance: FakeUtterance) => spoken.push(utterance.text),
+        speak: (utterance: FakeUtterance) => {
+          spoken.push(utterance.text);
+          focusedWhenSpoken.push((document.activeElement as HTMLElement | null)?.id);
+        },
         getVoices: () => [],
       },
     });
@@ -303,7 +307,10 @@ describe('speech support integration', () => {
       .find((button) => button.textContent?.includes('Next question'))!
       .click();
     await component.updateComplete;
+    await Promise.resolve();
     expect(spoken.at(-1)).toContain('There is a problem');
+    expect(document.activeElement).toBe(component.querySelector('#error-summary'));
+    expect(focusedWhenSpoken.at(-1)).toBe('error-summary');
 
     component.querySelector<HTMLInputElement>('.smiley-option input[value="75"]')!.click();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -462,7 +469,7 @@ describe('speech support integration', () => {
       onresult: ((event: any) => void) | null = null;
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
-      start() {
+    start() {
         this.onresult?.({
           results: {
             0: {
@@ -484,12 +491,14 @@ describe('speech support integration', () => {
       .find((button) => button.textContent?.includes('Start voice input'))!
       .click();
     await component.updateComplete;
+    await Promise.resolve();
 
     expect(component.querySelector('.voice-confirmation')).toBeNull();
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
-    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+    expect(component.querySelector('[data-voice-error]')?.textContent).toContain(
       'The answer was not recognised',
     );
+    expect(document.activeElement).toBe(component.querySelector('[data-voice-error]'));
   });
 
   it('synchronises a confirmed voice landmark with the visible smiley radio group', async () => {
