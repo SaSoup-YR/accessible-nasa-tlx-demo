@@ -17,6 +17,10 @@ using short, synthetic questionnaire content.
   contains one-row numeric Array questions, blank intermediate labels, generated
   inert attributes and an exported group relevance expression. The review must
   expose every conversion decision instead of silently discarding it.
+- `limesurvey-question-rating.lsq` is a sanitised single-question export using
+  LimeSurvey's `Question` document type. It checks that one ordered rating item
+  can be reviewed without pretending that its original survey or group context
+  is present.
 
 The fixtures contain no participant responses, credentials, tokens or
 identifying information.

@@ -7,7 +7,8 @@ import {
 export type QuestionnaireImportSource =
   | 'qualtrics-qsf'
   | 'limesurvey-lss'
-  | 'limesurvey-lsg';
+  | 'limesurvey-lsg'
+  | 'limesurvey-lsq';
 export type QuestionnaireImportSourceSelection = QuestionnaireImportSource | 'auto';
 
 export interface LimeSurveyGroupOption {
@@ -997,13 +998,19 @@ function parseLimeSurveyXml(
     throw new Error('The LimeSurvey file is not valid XML.');
   }
   const documentType = document.querySelector('LimeSurveyDocType')?.textContent?.trim();
-  if (documentType !== 'Survey' && documentType !== 'Group') {
-    throw new Error('The XML file is not a LimeSurvey survey or question-group export.');
+  if (documentType !== 'Survey' && documentType !== 'Group' && documentType !== 'Question') {
+    throw new Error('The XML file is not a LimeSurvey survey, question-group or question export.');
   }
   const source: QuestionnaireImportSource = documentType === 'Group'
     ? 'limesurvey-lsg'
-    : 'limesurvey-lss';
-  const sourceName = documentType === 'Group' ? 'LimeSurvey LSG' : 'LimeSurvey LSS';
+    : documentType === 'Question'
+      ? 'limesurvey-lsq'
+      : 'limesurvey-lss';
+  const sourceName = documentType === 'Group'
+    ? 'LimeSurvey LSG'
+    : documentType === 'Question'
+      ? 'LimeSurvey LSQ'
+      : 'LimeSurvey LSS';
   const importState = state();
   const languages = [...document.querySelectorAll('languages > language')]
     .map((language) => language.textContent?.trim() ?? '')
@@ -1032,9 +1039,27 @@ function parseLimeSurveyXml(
   ) ?? surveyLanguages[0];
   const title = collapsed(surveyLanguage?.surveyls_title ?? '') ||
     'Imported LimeSurvey questionnaire';
-  const groups = xmlRows(document, 'groups');
-  const groupL10ns = xmlRows(document, 'group_l10ns');
-  const questions = xmlRows(document, 'questions');
+  const rawQuestions = xmlRows(document, 'questions')
+    .filter((row) => !row.language || !language || row.language === language);
+  const firstParentQuestion = rawQuestions.find(
+    (question) => !question.parent_qid || question.parent_qid === '0',
+  );
+  const questionGroupId = firstParentQuestion?.gid || '__lsq__';
+  const groups: Record<string, string>[] = documentType === 'Question'
+    ? [{ gid: questionGroupId, group_order: '0', grelevance: '1', randomization_group: '' }]
+    : xmlRows(document, 'groups');
+  const groupL10ns: Record<string, string>[] = documentType === 'Question'
+    ? [{
+        gid: questionGroupId,
+        group_name: firstParentQuestion?.title || 'Imported LimeSurvey question',
+        description: '',
+        language,
+      }]
+    : xmlRows(document, 'group_l10ns');
+  const questions: Record<string, string>[] = rawQuestions.map((question) => ({
+    ...question,
+    gid: question.gid || questionGroupId,
+  }));
   if (!groups.length) {
     throw new Error('The LimeSurvey export contains no questionnaire group.');
   }
@@ -1092,7 +1117,9 @@ function parseLimeSurveyXml(
   const selectedQuestions = questions.filter(
     (question) => question.gid === selectedGroup.gid,
   );
-  const allSubquestions = xmlRows(document, 'subquestions');
+  const allSubquestions: Record<string, string>[] = xmlRows(document, 'subquestions')
+    .filter((row) => !row.language || !language || row.language === language)
+    .map((question) => ({ ...question, gid: question.gid || questionGroupId }));
   const groupSubquestions = allSubquestions.filter(
     (question) => question.gid === selectedGroup.gid ||
       selectedQuestions.some((parent) => parent.qid === question.parent_qid),
@@ -1101,7 +1128,8 @@ function parseLimeSurveyXml(
     .filter((question) => !question.parent_qid || question.parent_qid === '0')
     .sort((left, right) =>
       (Number(left.question_order) || 0) - (Number(right.question_order) || 0));
-  const answers = xmlRows(document, 'answers');
+  const answers = xmlRows(document, 'answers')
+    .filter((row) => !row.language || !language || row.language === language);
   const ratingSetOptions = limeSurveyRatingSetOptions(
     allParentQuestions,
     groupSubquestions,
@@ -1115,6 +1143,15 @@ function parseLimeSurveyXml(
       detail:
         `${groups.length - 1} other survey group${groups.length === 2 ? '' : 's'} will remain outside the converted questionnaire. ` +
         'The researcher selected this group explicitly; no other group is silently flattened or removed.',
+    });
+  }
+  if (documentType === 'Question') {
+    addConfirmation(importState, {
+      code: 'limesurvey-question-context-not-retained',
+      title: 'The LimeSurvey question will run as a standalone questionnaire',
+      detail:
+        'An LSQ contains one question and its local answer settings, but not its original survey or group context. ' +
+        'Confirm that standalone use is intended.',
     });
   }
   if (selectedGroup.grelevance && selectedGroup.grelevance !== '1') {
@@ -1444,9 +1481,11 @@ function parseLimeSurveyXml(
     }
   }
 
-  const description = selectedGroupLocalisation?.description ||
-    selectedGroup.description || surveyLanguage?.surveyls_description ||
-    surveyLanguage?.surveyls_welcometext || '';
+  const description = documentType === 'Question'
+    ? ''
+    : selectedGroupLocalisation?.description ||
+      selectedGroup.description || surveyLanguage?.surveyls_description ||
+      surveyLanguage?.surveyls_welcometext || '';
   const intro = collapsed(description)
     ? safeVisibleText(
         description,
@@ -1484,16 +1523,61 @@ function detectSource(
 ): QuestionnaireImportSource {
   const extension = fileName.toLowerCase().split('.').at(-1);
   const trimmed = contents.trimStart();
-  if (extension === 'qsf' || (trimmed.startsWith('{') && /"SurveyElements"/.test(contents))) {
+  if (trimmed.startsWith('{') && /"SurveyElements"/.test(contents)) {
     return 'qualtrics-qsf';
   }
-  if (extension === 'lss' || (trimmed.startsWith('<') && /<LimeSurveyDocType>Survey</.test(contents))) {
+  if (trimmed.startsWith('<') && /<LimeSurveyDocType>Survey</.test(contents)) {
     return 'limesurvey-lss';
   }
-  if (extension === 'lsg' || (trimmed.startsWith('<') && /<LimeSurveyDocType>Group</.test(contents))) {
+  if (trimmed.startsWith('<') && /<LimeSurveyDocType>Group</.test(contents)) {
     return 'limesurvey-lsg';
   }
-  throw new Error('Choose a Qualtrics .qsf file or a LimeSurvey .lss or .lsg file.');
+  if (trimmed.startsWith('<') && /<LimeSurveyDocType>Question</.test(contents)) {
+    return 'limesurvey-lsq';
+  }
+  if (extension === 'qsf') return 'qualtrics-qsf';
+  if (extension === 'lss') return 'limesurvey-lss';
+  if (extension === 'lsg') return 'limesurvey-lsg';
+  if (extension === 'lsq') return 'limesurvey-lsq';
+  if (extension === 'lsa') {
+    throw new Error(
+      'LimeSurvey LSA archives are not imported because they may contain responses, tokens and participant data. Export survey structure as LSS instead.',
+    );
+  }
+  if (extension === 'lsl') {
+    throw new Error(
+      'A LimeSurvey LSL file contains only a reusable label set, not a questionnaire. Export the containing question as LSQ, group as LSG or survey as LSS.',
+    );
+  }
+  if (extension === 'csv' || extension === 'tsv' || extension === 'xls' ||
+      extension === 'xlsx') {
+    throw new Error(
+      'CSV, TSV and spreadsheet files are ambiguous table formats used for response data or platform-specific bulk authoring. Import the file into its source platform, review it there, then export Qualtrics QSF or LimeSurvey LSS, LSG or LSQ.',
+    );
+  }
+  if (extension === 'sav' || extension === 'spss' || extension === 'vv') {
+    throw new Error(
+      'This is a response-data format, not a reusable questionnaire definition. Export Qualtrics QSF or LimeSurvey LSS, LSG or LSQ from the source questionnaire.',
+    );
+  }
+  if (extension === 'txt' || extension === 'doc' || extension === 'docx' ||
+      extension === 'rtf' || extension === 'odt') {
+    throw new Error(
+      'Text and word-processing files may be manually prepared authoring files or readable exports; they are not an unambiguous native structure export. Import the file into Qualtrics or LimeSurvey first, review it there, then export QSF, LSS, LSG or LSQ.',
+    );
+  }
+  if (extension === 'pdf' || extension === 'html' || extension === 'htm' ||
+      extension === 'xml' || extension === 'zip') {
+    throw new Error(
+      'This print, generic XML or archive format is not an unambiguous native questionnaire structure export. Export Qualtrics QSF or LimeSurvey LSS, LSG or LSQ.',
+    );
+  }
+  if (extension === 'json') {
+    throw new Error(
+      'This JSON file is not a Qualtrics QSF. If it is an AQP questionnaire definition, use the separate “Reuse an AQP questionnaire definition” route; otherwise export Qualtrics QSF.',
+    );
+  }
+  throw new Error('Choose a Qualtrics .qsf file or a LimeSurvey .lss, .lsg or .lsq file.');
 }
 
 export function reviewQuestionnaireExport(
@@ -1514,7 +1598,9 @@ export function reviewQuestionnaireExport(
       ? 'Qualtrics QSF'
       : detectedSource === 'limesurvey-lss'
         ? 'LimeSurvey LSS'
-        : 'LimeSurvey LSG';
+        : detectedSource === 'limesurvey-lsg'
+          ? 'LimeSurvey LSG'
+          : 'LimeSurvey LSQ';
     throw new Error(
       `The selected file looks like ${detectedName}, not the chosen format.`,
     );

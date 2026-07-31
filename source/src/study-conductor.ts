@@ -622,7 +622,7 @@ export class StudyConductorApp extends LitElement {
             <strong>AQP definition JSON</strong>
             <span>
               Use an AQP definition file here—not a Qualtrics <code>.qsf</code> or
-              LimeSurvey <code>.lss</code> export.
+              LimeSurvey <code>.lss</code>, <code>.lsg</code> or <code>.lsq</code> export.
             </span>
             <input
               data-custom-definition-import
@@ -888,9 +888,10 @@ export class StudyConductorApp extends LitElement {
         <h4 id="platform-questionnaire-import-heading">
           1. Import a Qualtrics or LimeSurvey export
         </h4>
-        <p>
+        <p class="platform-import-introduction">
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
-          <code>.lss</code> survey export or <code>.lsg</code> question-group export.
+          <code>.lss</code> survey export, <code>.lsg</code> question-group export,
+          or <code>.lsq</code> single-question export.
           A multi-group LSS asks you to choose one group. If that group contains
           different numeric scales, it then asks you to choose one compatible rating
           set. Questions outside that set are listed explicitly and remain in the source
@@ -900,15 +901,32 @@ export class StudyConductorApp extends LitElement {
         <p class="support-boundary">
           Use <strong>QSF</strong> for a Qualtrics survey, <strong>LSS</strong> for a
           complete LimeSurvey survey, or <strong>LSG</strong> for one LimeSurvey
-          question group. LimeSurvey LSQ question files, LSA archives, printable
-          files and response-data exports are not questionnaire inputs here.
+          question group. Use <strong>LSQ</strong> only when one exported question is
+          intended to become a standalone questionnaire. LimeSurvey LSA archives,
+          printable files and response-data exports are not questionnaire inputs here.
         </p>
+        <details class="support-boundary platform-import-guide">
+          <summary><strong>Which source file should I use?</strong></summary>
+          <ul>
+            <li><strong>Qualtrics QSF:</strong> one complete Qualtrics survey.</li>
+            <li><strong>LimeSurvey LSS:</strong> one survey; choose one group during review if needed.</li>
+            <li><strong>LimeSurvey LSG:</strong> one exported question group.</li>
+            <li><strong>LimeSurvey LSQ:</strong> one exported question, reviewed as a standalone questionnaire.</li>
+          </ul>
+          <p>
+            LSA archives may contain participant data and LSL contains only labels.
+            Response-data, bulk-authoring, word-processing and printable formats are
+            ambiguous or incomplete for this conversion. They are identified and rejected
+            with a safer native-export instruction.
+          </p>
+        </details>
         <div class="form-grid">
           <label>
             <strong>Source format</strong>
-            <span>Automatic detection is recommended.</span>
+            <span id="platform-import-source-hint">Automatic detection is recommended.</span>
             <select
               data-platform-import-source
+              aria-describedby="platform-import-source-hint"
               .value=${this.platformImportSource}
               @change=${(event: Event) => {
                 this.platformImportSource = (event.currentTarget as HTMLSelectElement)
@@ -925,15 +943,19 @@ export class StudyConductorApp extends LitElement {
               <option value="qualtrics-qsf">Qualtrics QSF</option>
               <option value="limesurvey-lss">LimeSurvey LSS</option>
               <option value="limesurvey-lsg">LimeSurvey LSG</option>
+              <option value="limesurvey-lsq">LimeSurvey LSQ</option>
             </select>
           </label>
           <label class="file-import-control">
             <strong>Questionnaire export</strong>
-            <span>Maximum file size: 2 MB.</span>
+            <span id="platform-import-file-hint">
+              QSF, LSS, LSG or LSQ; maximum file size: 2 MB.
+            </span>
             <input
               data-platform-questionnaire-import
               type="file"
-              accept=".qsf,.lss,.lsg,application/json,application/xml,text/xml"
+              aria-describedby="platform-import-file-hint"
+              accept=".qsf,.lss,.lsg,.lsq,.lsa,.lsl,.csv,.tsv,.xls,.xlsx,.vv,.txt,.doc,.docx,.rtf,.odt,.pdf,.html,.htm,.xml,.zip,.sav,.json,application/json,application/xml,text/xml"
               @change=${this.importPlatformQuestionnaire}
             />
           </label>

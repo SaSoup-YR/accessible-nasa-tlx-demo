@@ -149,6 +149,23 @@ describe('automated structural accessibility scan', () => {
     expect(result.violations).toEqual([]);
   });
 
+  it('finds no detectable violations in the expanded import instructions', async () => {
+    const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
+    document.body.append(conductor);
+    await conductor.updateComplete;
+    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await conductor.updateComplete;
+
+    const guide = conductor.querySelector<HTMLDetailsElement>('.platform-import-guide')!;
+    guide.open = true;
+    const result = await axe.run(conductor, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations).toEqual([]);
+  });
+
   it('finds no detectable violations in the LimeSurvey group-selection review', async () => {
     const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
     document.body.append(conductor);

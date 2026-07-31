@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+ <LimeSurveyDocType>Question</LimeSurveyDocType>
+ <DBVersion>600</DBVersion>
+ <languages><language>en</language></languages>
+ <questions>
+  <fields><fieldname>qid</fieldname><fieldname>parent_qid</fieldname><fieldname>sid</fieldname><fieldname>gid</fieldname><fieldname>type</fieldname><fieldname>title</fieldname><fieldname>other</fieldname><fieldname>mandatory</fieldname><fieldname>question_order</fieldname><fieldname>relevance</fieldname><fieldname>question</fieldname><fieldname>help</fieldname><fieldname>script</fieldname><fieldname>language</fieldname></fields>
+  <rows>
+   <row><qid>301</qid><parent_qid>0</parent_qid><sid>100001</sid><gid>30</gid><type>L</type><title>CLARITY</title><other>N</other><mandatory>Y</mandatory><question_order>0</question_order><relevance>1</relevance><question>The task instructions were clear.</question><help/><script/><language>en</language></row>
+  </rows>
+ </questions>
+ <answers>
+  <fields><fieldname>aid</fieldname><fieldname>qid</fieldname><fieldname>code</fieldname><fieldname>sortorder</fieldname><fieldname>assessment_value</fieldname><fieldname>scale_id</fieldname><fieldname>answer</fieldname><fieldname>language</fieldname></fields>
+  <rows>
+   <row><aid>3011</aid><qid>301</qid><code>1</code><sortorder>0</sortorder><assessment_value>1</assessment_value><scale_id>0</scale_id><answer>Strongly disagree</answer><language>en</language></row>
+   <row><aid>3012</aid><qid>301</qid><code>2</code><sortorder>1</sortorder><assessment_value>2</assessment_value><scale_id>0</scale_id><answer>Disagree</answer><language>en</language></row>
+   <row><aid>3013</aid><qid>301</qid><code>3</code><sortorder>2</sortorder><assessment_value>3</assessment_value><scale_id>0</scale_id><answer>Neither agree nor disagree</answer><language>en</language></row>
+   <row><aid>3014</aid><qid>301</qid><code>4</code><sortorder>3</sortorder><assessment_value>4</assessment_value><scale_id>0</scale_id><answer>Agree</answer><language>en</language></row>
+   <row><aid>3015</aid><qid>301</qid><code>5</code><sortorder>4</sortorder><assessment_value>5</assessment_value><scale_id>0</scale_id><answer>Strongly agree</answer><language>en</language></row>
+  </rows>
+ </answers>
+</document>
