@@ -10,6 +10,25 @@ import { scoreQuestionnaire } from '../src/scoring';
 const fixture = (name: string) =>
   readFileSync(resolve(import.meta.dirname, 'fixtures', name), 'utf8');
 
+function mixedLimeSurveyRatingSets() {
+  let lss = fixture('limesurvey-current-rating.lss');
+  for (let index = 1; index <= 5; index += 1) {
+    lss = lss.replace(
+      `<qid><![CDATA[202]]></qid><code><![CDATA[A00${index}]]></code>`,
+      `<qid><![CDATA[202]]></qid><code><![CDATA[${index * 10}]]></code>`,
+    );
+  }
+  return lss
+    .replace(
+      '  </rows>\n </questions>',
+      '   <row><qid><![CDATA[203]]></qid><parent_qid><![CDATA[0]]></parent_qid><sid><![CDATA[100001]]></sid><gid><![CDATA[10]]></gid><type><![CDATA[T]]></type><title><![CDATA[NOTES]]></title><other><![CDATA[N]]></other><mandatory><![CDATA[N]]></mandatory><question_order><![CDATA[3]]></question_order><relevance><![CDATA[1]]></relevance></row>\n  </rows>\n </questions>',
+    )
+    .replace(
+      '  </rows>\n </question_l10ns>',
+      '   <row><qid><![CDATA[203]]></qid><question><![CDATA[Optional notes for the source survey.]]></question><help/><script/><language><![CDATA[en]]></language></row>\n  </rows>\n </question_l10ns>',
+    );
+}
+
 describe('structured questionnaire export import', () => {
   it('imports ordered Qualtrics QSF choices and requires scoring confirmation', () => {
     const review = reviewQuestionnaireExport(
@@ -178,6 +197,81 @@ describe('structured questionnaire export import', () => {
     expect(selected.confirmations.map(({ code }) => code)).toContain(
       'limesurvey-selected-group-only',
     );
+  });
+
+  it('asks the researcher to choose one compatible rating set instead of mixing scales', () => {
+    const initial = reviewQuestionnaireExport(
+      mixedLimeSurveyRatingSets(),
+      'mixed-rating-sets.lss',
+    );
+
+    expect(initial.requiresRatingSetSelection).toBe(true);
+    expect(initial.canConvert).toBe(false);
+    expect(initial.ratingSetOptions?.map((option) => ({
+      id: option.id,
+      items: option.itemCount,
+      values: option.responseValues,
+    }))).toEqual([
+      { id: 'values-1-2-3-4-5', items: 1, values: [1, 2, 3, 4, 5] },
+      { id: 'values-10-20-30-40-50', items: 1, values: [10, 20, 30, 40, 50] },
+    ]);
+
+    const fivePoint = reviewQuestionnaireExport(
+      mixedLimeSurveyRatingSets(),
+      'mixed-rating-sets.lss',
+      'auto',
+      '10',
+      'values-1-2-3-4-5',
+    );
+    expect(fivePoint.canConvert).toBe(true);
+    expect(fivePoint.unsupported).toEqual([]);
+    expect(fivePoint.draft?.items.map(({ name }) => name)).toEqual(['CLARITY']);
+    expect(fivePoint.draft?.minimum).toBe(1);
+    expect(fivePoint.draft?.maximum).toBe(5);
+    expect(fivePoint.confirmations.find(
+      ({ code }) => code === 'limesurvey-selected-rating-set-only',
+    )?.detail).toContain('CONTROL [type L], NOTES [type T]');
+
+    const tenPointSteps = reviewQuestionnaireExport(
+      mixedLimeSurveyRatingSets(),
+      'mixed-rating-sets.lss',
+      'auto',
+      '10',
+      'values-10-20-30-40-50',
+    );
+    expect(tenPointSteps.canConvert).toBe(true);
+    expect(tenPointSteps.draft?.items.map(({ name }) => name)).toEqual(['CONTROL']);
+    expect(tenPointSteps.draft?.minimum).toBe(10);
+    expect(tenPointSteps.draft?.maximum).toBe(50);
+    expect(tenPointSteps.draft?.step).toBe(10);
+  });
+
+  it('converts the rating set while explicitly reporting optional text left in LimeSurvey', () => {
+    const oneScaleWithText = mixedLimeSurveyRatingSets().replace(
+      /<row><aid><!\[CDATA\[106\]\]><\/aid><qid><!\[CDATA\[202\]\]><\/qid>[\s\S]*?<row><aid><!\[CDATA\[110\]\]><\/aid><qid><!\[CDATA\[202\]\]><\/qid>.*?<\/row>\n/,
+      '',
+    );
+    const review = reviewQuestionnaireExport(oneScaleWithText, 'rating-and-notes.lss');
+
+    expect(review.canConvert).toBe(true);
+    expect(review.draft?.items.map(({ name }) => name)).toEqual(['CLARITY']);
+    expect(review.confirmations.map(({ code }) => code)).toContain(
+      'limesurvey-selected-rating-set-only',
+    );
+    expect(review.unsupported).toEqual([]);
+  });
+
+  it('accepts a required LimeSurvey dropdown list as an ordered single-choice scale', () => {
+    const dropdown = fixture('limesurvey-current-rating.lss')
+      .replaceAll('<type><![CDATA[L]]></type>', '<type><![CDATA[!]]></type>');
+    const review = reviewQuestionnaireExport(dropdown, 'dropdown-rating.lss');
+
+    expect(review.canConvert).toBe(true);
+    expect(review.unsupported).toEqual([]);
+    expect(review.draft?.items.map(({ name }) => name)).toEqual([
+      'CLARITY',
+      'CONTROL',
+    ]);
   });
 
   it('still blocks active LimeSurvey attributes and scripts', () => {

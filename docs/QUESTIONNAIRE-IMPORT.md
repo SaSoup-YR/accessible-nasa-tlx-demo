@@ -20,6 +20,14 @@ The selected file is not uploaded.
 Do not rename a response-data export to `.qsf`, `.lss` or `.lsg`. Do not hand-edit the
 source export to make it pass.
 
+LimeSurvey also uses `.lsq` for one question and `.lsa` for a survey archive. They
+are intentionally not accepted here: an LSQ does not preserve a complete
+questionnaire-group context, while an LSA may include participant responses.
+Export the containing group as LSG or survey as LSS instead. Printable HTML is not
+a complete structured definition. For Qualtrics, QSF is the supported
+survey-structure export; response CSV, SPSS and similar files contain answers
+rather than a reusable survey definition.
+
 ## Why AQP JSON is a separate import
 
 The conductor offers three different routes:
@@ -56,9 +64,13 @@ LimeSurvey support:
 - one base language and one explicitly selected question group. A multi-group
   LSS first presents the group names, source question counts and type codes. It
   does not flatten the survey automatically. An LSG selects its one group;
+- when a selected group contains more than one compatible numeric scale, a second
+  review step lists the rating sets separately. The researcher chooses one set;
+  questions using another scale or a non-rating type remain in LimeSurvey and are
+  named in the confirmation panel. They are never silently merged into one score;
 - if the export also contains additional languages, only the declared base
   language is proposed and the omission is shown for explicit confirmation;
-- mandatory `List (Radio)` (`L`) questions with explicit increasing numeric
+- mandatory `List (Radio)` (`L`) and `Dropdown list` (`!`) questions with explicit increasing numeric
   answer codes or assessment values, or current default `A001` through `A00N`
   codes converted to ordered positions `1` through `N` after confirmation;
 - mandatory `5 Point Choice` (`5`) questions; and
@@ -68,10 +80,10 @@ LimeSurvey support:
 
 Empty and known inert/default LimeSurvey question attributes do not block
 conversion. Group relevance, omitted survey groups, Array expansion, blank
-intermediate labels and platform presentation settings are reported for explicit
-confirmation. Active or unknown validation, question-level branching,
-randomisation, timing, visibility or presentation attributes still block the
-selected group.
+intermediate labels, the selected rating-set boundary and platform presentation
+settings are reported for explicit confirmation. Active or unknown validation,
+question-level branching, randomisation, timing, visibility or presentation
+attributes still block an item selected for conversion.
 
 The source question order, response order, displayed labels and accepted numeric
 values are preserved. Imported response labels remain visible in the participant
@@ -82,12 +94,13 @@ interface and can be used as exact confirmed voice answers.
 The importer does not silently drop or approximate active content. Conversion is
 blocked when the export contains unsupported items or behaviour, including:
 
-- free text, multiple answers, ranking or unsupported matrix types;
-- optional questions or “Other” free-text answers;
+- free text, multiple answers, ranking or unsupported matrix types selected for
+  conversion;
+- optional rating questions or “Other” free-text answers selected for conversion;
 - branching, skip/display/relevance logic, randomisation or carry-forward;
 - question help or group text that would otherwise be lost;
-- mixed item scales, missing order, unsafe recodes or non-default opaque answer
-  codes;
+- mixed item scales when no compatible set can be selected, missing order, unsafe
+  recodes or non-default opaque answer codes;
 - custom JavaScript, executable markup, event handlers, JavaScript URLs,
   expression text or arbitrary formulas;
 - participant-visible media, tables or interactive controls embedded in item
@@ -107,12 +120,17 @@ reported and excluded.
    file** selected unless format checking is part of the test.
 3. Select one `.qsf`, `.lss` or `.lsg` export.
 4. The page moves keyboard focus to the import review. If an LSS contains
-   several groups, choose one group and select **Review selected group**.
+   several groups, choose one group and select **Review selected group**. If that
+   group contains different numeric scales, choose one compatible rating set and
+   select **Review selected rating set**.
 5. Check all three review sections:
    - **Imported safely** lists every accepted item and its ordered values.
    - **Requires researcher confirmation** lists transformations and decisions
      that cannot be inferred safely.
    - **Unsupported content** lists every detected blocker.
+   Confirm that every source question outside the selected rating set is named in
+   **Requires researcher confirmation**. Those questions remain in the source
+   survey and are not part of the converted standalone questionnaire.
 6. If conversion is blocked, correct the source questionnaire and export it
    again. No partial definition is created.
 7. If conversion is available, compare the item wording, order, labels and values
