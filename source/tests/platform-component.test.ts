@@ -362,6 +362,115 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(csv).toContain('Strongly agree');
   });
 
+  it('renders expanded Qualtrics matrix rows as accessible sequential items and completes scoring', async () => {
+    const qsf = JSON.parse(readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
+      'utf8',
+    ));
+    const matrix = qsf.SurveyElements.find(
+      (element: any) => element.PrimaryAttribute === 'QID_CLARITY',
+    );
+    matrix.Payload.QuestionType = 'Matrix';
+    matrix.Payload.Selector = 'Likert';
+    matrix.Payload.SubSelector = 'SingleAnswer';
+    matrix.Payload.QuestionText = 'Rate each statement.';
+    matrix.Payload.Choices = {
+      2: { Display: 'I felt in control.' },
+      1: { Display: 'The instructions were clear.' },
+    };
+    matrix.Payload.ChoiceOrder = [1, 2];
+    matrix.Payload.Answers = {
+      1: { Display: 'Strongly disagree' },
+      2: { Display: 'Disagree' },
+      3: { Display: 'Neither agree nor disagree' },
+      4: { Display: 'Agree' },
+      5: { Display: 'Strongly agree' },
+    };
+    matrix.Payload.AnswerOrder = [1, 2, 3, 4, 5];
+
+    const review = reviewQuestionnaireExport(JSON.stringify(qsf), 'matrix.qsf');
+    expect(review.confirmations.map(({ code }) => code)).toContain(
+      'qualtrics-matrix-expanded',
+    );
+    const definition = createCustomQuestionnaireDefinition(review.draft!);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'QSF-MATRIX-01',
+      studyTitle: 'Expanded matrix evaluation',
+      taskLabel: 'using the route-planning system',
+      showScoreToParticipant: true,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-MATRIX-01';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 3 items'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('.step-label')?.textContent).toContain('Rating 1 of 3');
+    expect(component.querySelector('#rating-heading')?.textContent).toBe(
+      'The instructions were clear.',
+    );
+    expect(component.querySelector('.rating-fieldset')).not.toBeNull();
+    expect(component.querySelector('.rating-fieldset legend')?.textContent).toContain(
+      'Strongly disagree',
+    );
+    expect(component.querySelectorAll<HTMLInputElement>('.rating-option input')).toHaveLength(5);
+    expect(
+      component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('5, Strongly agree, for The instructions were clear.');
+
+    for (const [index, value] of ['5', '4', '3'].entries()) {
+      component.querySelector<HTMLInputElement>(
+        `.rating-option input[value="${value}"]`,
+      )!.click();
+      await component.updateComplete;
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes(
+          index === 2 ? 'Review responses' : 'Next question',
+        ))!
+        .click();
+      await component.updateComplete;
+      if (index === 0) {
+        expect(component.querySelector('.step-label')?.textContent).toContain('Rating 2 of 3');
+        expect(component.querySelector('#rating-heading')?.textContent).toBe('I felt in control.');
+      }
+    }
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit responses'))!
+      .click();
+    await component.updateComplete;
+
+    const [record] = loadCompletedResults();
+    expect(record.instrument.definition?.items.map(({ name }) => name)).toEqual([
+      'The instructions were clear.',
+      'I felt in control.',
+      'CONTROL',
+    ]);
+    expect(record.result.primaryScore).toBe(4);
+  });
+
   it('runs SUS through the same participant component without NASA comparison logic', async () => {
     const config = createStudyConfig({
       instrumentId: 'system-usability-scale',

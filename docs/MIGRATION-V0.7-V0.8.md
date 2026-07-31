@@ -9,6 +9,11 @@ the selected questionnaire definition.
 - The legacy `<accessible-nasa-tlx>` element and completion event remain available.
 - The Version 0.7 local-first backup, exact-origin receipt, short Qualtrics
   handoff and failed-navigation recovery logic are retained.
+- A valid Version 0.7 unfinished weighted NASA-TLX session is discovered under
+  its legacy browser-storage key, strictly validated and rewritten under the
+  Version 0.8 instrument-aware key before Resume is offered. This migration is
+  deliberately limited to weighted NASA-TLX; an old session is never guessed to
+  belong to another questionnaire.
 - `source/demo/accessible-nasa-tlx-v0.7.html` remains as the frozen baseline.
 
 ## Required Qualtrics change

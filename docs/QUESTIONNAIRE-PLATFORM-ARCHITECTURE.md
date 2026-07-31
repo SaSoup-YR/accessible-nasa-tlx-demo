@@ -108,6 +108,16 @@ scale, anchors, pairwise stage and score label from the selected definition. The
 legacy `<accessible-nasa-tlx>` custom-element name remains as a bounded migration
 alias.
 
+The supported import profile does not introduce a second matrix renderer. When
+an explicitly ordered Qualtrics single-answer Likert matrix is accepted, the
+adapter converts each source row into an ordered ordinary item before the
+definition boundary. The runner then presents those rows sequentially, one item
+per page. Each item uses a native radio group inside a `fieldset` and `legend`,
+with the item name, visible response labels, selected state and native keyboard
+order preserved. This is a documented presentation transformation requiring
+researcher confirmation; it is not a claim that arbitrary source-matrix layout,
+logic or interaction is reproduced.
+
 ### 3. Accessibility-support layer
 
 Large text, spoken guidance, confirmed voice input, interruption recovery, gaze
@@ -164,6 +174,18 @@ record in bounded raw JSON chunks. It no longer assumes six NASA dimensions.
 Exact-origin messaging, a matching submission receipt, local backup before the
 handoff and navigation recovery are retained from the Version 0.7 implementation.
 
+### 6. Configuration and interruption-recovery migration
+
+Version 0.7 study configurations are normalised to Version 4 as weighted
+NASA-TLX configurations. Version 0.7 in-progress recovery copies use the same
+strict response shape but an older storage key and no instrument ID. The runner
+therefore looks for that legacy key only when the active definition is weighted
+NASA-TLX, validates the saved stage, indexes, pair count, participant code and
+configuration ID, then rewrites it under the Version 0.8 instrument-aware key.
+It never assigns a legacy recovery copy to a researcher-supplied or other
+instrument definition. A legacy copy that cannot be validated or rewritten is
+left untouched rather than guessed or silently destroyed.
+
 ## Relationship to mature systems
 
 The separation follows established patterns without copying an implementation:
@@ -210,6 +232,12 @@ Automated evidence must show more than successful rendering:
     completion, scoring and result export;
 17. the three-part import review has focus movement, visible status and
     representative structural accessibility coverage.
+18. an explicitly ordered imported Qualtrics matrix is expanded, rendered as
+    sequential labelled radio groups, completed, scored and exported through the
+    same participant component;
+19. a valid Version 0.7 weighted NASA-TLX recovery copy migrates to the Version 0.8
+    key and remains resumable, while the migration is not applied to another
+    instrument.
 
 These tests establish architectural reuse and data integrity. They do not establish
 that either optional support improves accessibility or preserves psychometric

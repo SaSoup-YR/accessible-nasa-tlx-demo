@@ -33,8 +33,8 @@ gate below is repeated; it does not change the immutable `rc.3` evidence.
 Verification on the current unreleased candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 167 passing tests;
-- 11 representative axe structural accessibility scans passed;
+- 18 test files passed, containing 171 passing tests;
+- 12 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups and safely
   converted the explicitly selected five-item Spatial Presence group; and
@@ -120,7 +120,9 @@ accessible or that it improves a questionnaire's psychometric properties.
   LimeSurvey group, but it does not convert free text, multiple answers, ranking,
   branching, arbitrary formulas or general matrix behaviour. Qualtrics
   single-answer Likert matrix rows may be expanded only when their order and
-  numeric scale are explicit.
+  numeric scale are explicit. Accepted rows are presented sequentially as
+  labelled native radio groups; the platform does not reproduce the source
+  matrix layout or logic.
 - Structural validation cannot determine copyright permission, measurement
   validity, population suitability or equivalence to an original instrument.
 - Passing automated and manual technical checks is not a claim of complete WCAG
@@ -328,7 +330,8 @@ npm run build:release
 
 Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS,
 UEQ-S, researcher-supplied and QSF/LSS/LSG/LSQ-imported end-to-end workflows,
-configuration migration, conservative voice parsing, direct and iframe-parent
+configuration and Version 0.7 saved-progress migration, imported-matrix row
+rendering, conservative voice parsing, direct and iframe-parent
 focus/error movement, saved-session semantics, visible-state contrast, result
 validation/export, exact-origin receipts, Qualtrics adverse paths, standalone
 packaging and structural axe scans. Passing automation is software evidence, not
