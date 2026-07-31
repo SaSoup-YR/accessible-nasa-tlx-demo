@@ -92,6 +92,10 @@ interface SavedSession {
   };
 }
 
+type LegacySavedSessionV3 = Omit<SavedSession, 'version' | 'instrumentId'> & {
+  version: 3;
+};
+
 interface SpeechRecognitionAlternativeLike {
   transcript: string;
 }
@@ -2843,20 +2847,49 @@ export class AccessibleNasaTlx extends LitElement {
   private findSavedSession() {
     const storageKey = this.currentProgressStorageKey();
     if (!storageKey) return;
+    let legacyStorageKey: string | null = null;
     try {
-      const raw = localStorage.getItem(storageKey);
+      let raw = localStorage.getItem(storageKey);
+      if (!raw && this.definition.id === DEFAULT_QUESTIONNAIRE_ID) {
+        const code = this.studyConfig ? this.participantCode : 'DEMO';
+        if (validParticipantCode(code)) {
+          legacyStorageKey = `accessible-nasa-tlx-v0.7-progress:${this.studyConfig?.configId ?? 'demo-config'}:${code}`;
+          raw = localStorage.getItem(legacyStorageKey);
+        }
+      }
       if (!raw) return;
-      const session = JSON.parse(raw) as SavedSession;
+      const session = this.normaliseSavedSession(JSON.parse(raw));
       if (this.validSavedSession(session)) {
+        if (legacyStorageKey) {
+          // Version 0.7 used the same strictly validated progress shape but did
+          // not record the instrument ID. It can only represent weighted
+          // NASA-TLX, so migrate it to the current, instrument-aware key.
+          localStorage.setItem(storageKey, JSON.stringify(session));
+          localStorage.removeItem(legacyStorageKey);
+        }
         this.savedSession = session;
         this.applySavedRecoveryPresentation(session);
         this.announceSavedSessionOffer(session);
-      } else {
+      } else if (!legacyStorageKey) {
         this.clearSavedProgress();
       }
     } catch {
-      this.clearSavedProgress();
+      // Do not destroy a legacy recovery copy if migration or parsing fails.
+      // A current-version invalid copy remains safe to discard as before.
+      if (!legacyStorageKey) this.clearSavedProgress();
     }
+  }
+
+  private normaliseSavedSession(value: unknown): SavedSession | null {
+    if (!value || typeof value !== 'object') return null;
+    const session = value as SavedSession | LegacySavedSessionV3;
+    if (session.version === 4) return session;
+    if (session.version !== 3 || this.definition.id !== DEFAULT_QUESTIONNAIRE_ID) return null;
+    return {
+      ...session,
+      version: 4,
+      instrumentId: DEFAULT_QUESTIONNAIRE_ID,
+    };
   }
 
   private findCompletedBackup() {
@@ -2869,20 +2902,75 @@ export class AccessibleNasaTlx extends LitElement {
     this.recoveredCompletedRecord = matching.at(-1) ?? null;
   }
 
-  private validSavedSession(session: SavedSession) {
-    return (
-      session?.version === 4 &&
-      session.instrumentId === this.definition.id &&
-      session.configId === (this.studyConfig?.configId ?? 'demo-config') &&
-      session.participantCode === (this.studyConfig ? this.participantCode : 'DEMO') &&
-      typeof session.startedAt === 'string' &&
-      ['ratings', 'pairs', 'review'].includes(session.stage) &&
-      Array.isArray(session.pairOrder) &&
-      session.pairOrder.length === this.pairs.length &&
-      Number.isInteger(session.ratingIndex) &&
-      Number.isInteger(session.pairIndex) &&
-      Array.isArray(session.supportChanges)
-    );
+  private validSavedSession(session: SavedSession | null): session is SavedSession {
+    if (
+      session?.version !== 4 ||
+      session.instrumentId !== this.definition.id ||
+      session.configId !== (this.studyConfig?.configId ?? 'demo-config') ||
+      session.participantCode !== (this.studyConfig ? this.participantCode : 'DEMO') ||
+      !Number.isFinite(session.savedAt) ||
+      typeof session.startedAt !== 'string' ||
+      !['ratings', 'pairs', 'review'].includes(session.stage) ||
+      !Number.isInteger(session.ratingIndex) ||
+      session.ratingIndex < 0 ||
+      session.ratingIndex >= this.dimensions.length ||
+      !Number.isInteger(session.pairIndex) ||
+      session.pairIndex < 0 ||
+      session.pairIndex >= Math.max(1, this.pairs.length) ||
+      (session.stage === 'pairs' && this.pairs.length === 0) ||
+      !Array.isArray(session.pairOrder) ||
+      !Array.isArray(session.supportChanges) ||
+      !session.ratings || typeof session.ratings !== 'object' ||
+      !session.pairResponses || typeof session.pairResponses !== 'object' ||
+      !session.ratingInputRoutes || typeof session.ratingInputRoutes !== 'object' ||
+      !session.pairInputRoutes || typeof session.pairInputRoutes !== 'object' ||
+      !session.support || typeof session.support !== 'object' ||
+      !['standard', 'smiley'].includes(session.support.answerMode) ||
+      typeof session.support.showSimpleLanguage !== 'boolean' ||
+      typeof session.support.largeText !== 'boolean' ||
+      (session.support.audioGuidance !== undefined &&
+        typeof session.support.audioGuidance !== 'boolean')
+    ) return false;
+
+    const itemIds = new Set(this.dimensions.map(({ id }) => id));
+    const allowedValues = new Set(this.ratingValues);
+    if (Object.entries(session.ratings).some(
+      ([id, value]) =>
+        !itemIds.has(id) || typeof value !== 'number' || !allowedValues.has(value),
+    )) return false;
+    if (Object.entries(session.ratingInputRoutes).some(
+      ([id, route]) =>
+        !itemIds.has(id) ||
+        typeof route !== 'string' ||
+        !['standard-scale', 'smiley-landmark', 'voice', 'gaze-standard-scale', 'gaze-smiley-landmark']
+          .includes(route),
+    )) return false;
+
+    const pairById = new Map(this.pairs.map((pair) => [pair.id, pair]));
+    const presentedPairIds = new Set<string>();
+    for (const pair of session.pairOrder) {
+      const expected = pairById.get(pair?.id);
+      if (
+        !expected ||
+        expected.left !== pair.left ||
+        expected.right !== pair.right ||
+        presentedPairIds.has(pair.id)
+      ) return false;
+      presentedPairIds.add(pair.id);
+    }
+    if (presentedPairIds.size !== pairById.size) return false;
+    if (Object.entries(session.pairResponses).some(([pairId, selected]) => {
+      const pair = pairById.get(pairId);
+      return !pair || (selected !== pair.left && selected !== pair.right);
+    })) return false;
+    if (Object.entries(session.pairInputRoutes).some(
+      ([pairId, route]) =>
+        !pairById.has(pairId) ||
+        typeof route !== 'string' ||
+        !['standard-choice', 'voice', 'gaze'].includes(route),
+    )) return false;
+
+    return true;
   }
 
   private restoreSavedSession = () => {
