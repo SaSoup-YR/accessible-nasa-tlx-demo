@@ -203,8 +203,9 @@ Automated evidence must show more than successful rendering:
     scales and oversized definitions are rejected.
 14. representative QSF, LSS and LSG fixtures preserve item, response and numeric
     order through conversion;
-15. malformed files, unsupported types, flow logic, dynamic content and mixed
-    scales block the whole conversion;
+15. malformed files, flow logic and dynamic content block conversion; mixed
+    LimeSurvey groups require an explicit compatible rating-set choice, while
+    every non-selected source question is reported rather than silently removed;
 16. a reviewed imported definition survives JSON round-trip, participant
     completion, scoring and result export;
 17. the three-part import review has focus movement, visible status and

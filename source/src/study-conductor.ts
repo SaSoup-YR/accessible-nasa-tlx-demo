@@ -98,6 +98,7 @@ export class StudyConductorApp extends LitElement {
   @state() private platformImportReview: QuestionnaireImportReview | null = null;
   @state() private platformImportConfirmed = false;
   @state() private platformImportSelectedGroupId = '';
+  @state() private platformImportSelectedRatingSetId = '';
   private platformImportContents = '';
   private platformImportFileName = '';
   @state() private studyId = '';
@@ -890,9 +891,17 @@ export class StudyConductorApp extends LitElement {
         <p>
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
           <code>.lss</code> survey export or <code>.lsg</code> question-group export.
-          A multi-group LSS asks you to choose one group before conversion. The file
-          is reviewed in this browser and is not uploaded. Nothing is converted until
-          you review and confirm the result.
+          A multi-group LSS asks you to choose one group. If that group contains
+          different numeric scales, it then asks you to choose one compatible rating
+          set. Questions outside that set are listed explicitly and remain in the source
+          survey. The file is reviewed in this browser and is not uploaded. Nothing is
+          converted until you review and confirm the result.
+        </p>
+        <p class="support-boundary">
+          Use <strong>QSF</strong> for a Qualtrics survey, <strong>LSS</strong> for a
+          complete LimeSurvey survey, or <strong>LSG</strong> for one LimeSurvey
+          question group. LimeSurvey LSQ question files, LSA archives, printable
+          files and response-data exports are not questionnaire inputs here.
         </p>
         <div class="form-grid">
           <label>
@@ -907,6 +916,7 @@ export class StudyConductorApp extends LitElement {
                 this.platformImportReview = null;
                 this.platformImportConfirmed = false;
                 this.platformImportSelectedGroupId = '';
+                this.platformImportSelectedRatingSetId = '';
                 this.platformImportContents = '';
                 this.platformImportFileName = '';
               }}
@@ -1002,6 +1012,61 @@ export class StudyConductorApp extends LitElement {
               @click=${this.reviewSelectedLimeSurveyGroup}
             >
               Review selected group
+            </button>
+          </fieldset>
+        </section>
+      `;
+    }
+
+    if (review.requiresRatingSetSelection && review.ratingSetOptions?.length) {
+      return html`
+        <section
+          class="platform-import-review import-selection"
+          id="platform-import-review"
+          tabindex="-1"
+          aria-labelledby="platform-import-review-heading"
+        >
+          <div class="platform-import-review-heading">
+            <span class="selection-icon" aria-hidden="true">→</span>
+            <div>
+              <h5 id="platform-import-review-heading">Choose one compatible rating set</h5>
+              <p><strong>${review.title}</strong> · ${review.sourceName} · ${review.fileName}</p>
+            </div>
+          </div>
+          <p>
+            This group contains different response scales or non-rating questions. One AQP
+            questionnaire needs one reviewed numeric scale, so choose the rating set that should
+            become the standalone questionnaire. Everything else remains in the source file and
+            will be listed for confirmation.
+          </p>
+          <fieldset class="platform-import-group-selection">
+            <legend>Rating set</legend>
+            <label>
+              <strong>Set to review</strong>
+              <select
+                data-platform-import-rating-set
+                .value=${this.platformImportSelectedRatingSetId}
+                @change=${(event: Event) => {
+                  this.platformImportSelectedRatingSetId =
+                    (event.currentTarget as HTMLSelectElement).value;
+                }}
+              >
+                <option value="">Choose a rating set</option>
+                ${review.ratingSetOptions.map((set) => html`
+                  <option value=${set.id}>
+                    ${set.name} · ${set.itemCount} item${set.itemCount === 1 ? '' : 's'} ·
+                    values ${set.responseValues.join(', ')}
+                  </option>
+                `)}
+              </select>
+            </label>
+            <button
+              class="primary-button"
+              type="button"
+              ?disabled=${!this.platformImportSelectedRatingSetId}
+              @click=${this.reviewSelectedLimeSurveyRatingSet}
+            >
+              Review selected rating set
             </button>
           </fieldset>
         </section>
@@ -1284,15 +1349,19 @@ export class StudyConductorApp extends LitElement {
       this.platformImportContents = contents;
       this.platformImportFileName = file.name;
       this.platformImportSelectedGroupId = '';
+      this.platformImportSelectedRatingSetId = '';
       const review = reviewQuestionnaireExport(
         contents,
         file.name,
         this.platformImportSource,
       );
       this.platformImportReview = review;
+      this.platformImportSelectedGroupId = review.selectedGroupId ?? '';
       if (review.draft) this.customDraft = structuredClone(review.draft);
       this.message = review.requiresGroupSelection
         ? 'Choose one LimeSurvey questionnaire group to review.'
+        : review.requiresRatingSetSelection
+          ? 'Choose one compatible LimeSurvey rating set to review.'
         : review.canConvert
           ? 'Import review ready. Check every section and confirm scoring before conversion.'
           : 'Import review found unsupported content. No partial questionnaire was created.';
@@ -1325,8 +1394,11 @@ export class StudyConductorApp extends LitElement {
         this.platformImportSelectedGroupId,
       );
       this.platformImportReview = review;
+      this.platformImportSelectedRatingSetId = '';
       if (review.draft) this.customDraft = structuredClone(review.draft);
-      this.message = review.canConvert
+      this.message = review.requiresRatingSetSelection
+        ? 'Choose one compatible rating set in the selected LimeSurvey group.'
+        : review.canConvert
         ? 'Selected group review ready. Check every section and confirm scoring before conversion.'
         : 'The selected group contains unsupported content. No partial questionnaire was created.';
       this.revealConductorResult('#platform-import-review');
@@ -1335,6 +1407,39 @@ export class StudyConductorApp extends LitElement {
         error instanceof Error
           ? error.message
           : 'The selected LimeSurvey group could not be reviewed.',
+      );
+    }
+  };
+
+  private reviewSelectedLimeSurveyRatingSet = () => {
+    if (
+      !this.platformImportContents ||
+      !this.platformImportFileName ||
+      !this.platformImportSelectedGroupId ||
+      !this.platformImportSelectedRatingSetId
+    ) return;
+    this.errorMessage = '';
+    this.definitionConfirmation = '';
+    this.platformImportConfirmed = false;
+    try {
+      const review = reviewQuestionnaireExport(
+        this.platformImportContents,
+        this.platformImportFileName,
+        this.platformImportSource,
+        this.platformImportSelectedGroupId,
+        this.platformImportSelectedRatingSetId,
+      );
+      this.platformImportReview = review;
+      if (review.draft) this.customDraft = structuredClone(review.draft);
+      this.message = review.canConvert
+        ? 'Selected rating-set review ready. Check every section and confirm scoring before conversion.'
+        : 'The selected rating set contains unsupported content. No partial questionnaire was created.';
+      this.revealConductorResult('#platform-import-review');
+    } catch (error) {
+      this.showError(
+        error instanceof Error
+          ? error.message
+          : 'The selected LimeSurvey rating set could not be reviewed.',
       );
     }
   };
@@ -1473,6 +1578,7 @@ export class StudyConductorApp extends LitElement {
     this.platformImportReview = null;
     this.platformImportConfirmed = false;
     this.platformImportSelectedGroupId = '';
+    this.platformImportSelectedRatingSetId = '';
     this.platformImportContents = '';
     this.platformImportFileName = '';
     this.message =
