@@ -23,14 +23,16 @@ earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
 The current source is the prepared **`v0.8.0-rc.4` candidate**. It adds `.lsg`
 question-group and `.lsq` single-question imports, explicit selection when an
 `.lss` survey contains several groups, source-language propagation and exact
-visible-label voice answers for imported questionnaires. It remains unreleased
+visible-label voice answers for imported questionnaires. It also restores a
+separate English-number voice route when a non-English browser speech service is
+unavailable. It remains unreleased
 until the synchronized files are deployed and the short live-browser release
 gate below is repeated; it does not change the immutable `rc.3` evidence.
 
 Verification on the current unreleased candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 168 passing tests;
+- 18 test files passed, containing 170 passing tests;
 - 11 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups and safely
@@ -39,8 +41,11 @@ Verification on the current unreleased candidate:
   response scale with no unsupported content; and
 - a sanitised LimeSurvey LSQ converted one required rating question while
   explicitly warning that its former survey and group context is unavailable;
-- the attached German LSS propagated `de` to browser recognition, preserved its
-  complete visible labels and mapped an exact label to the reviewed value; and
+- the attached German LSS propagated `de` as the browser-compatible `de-DE`
+  recognition request, preserved its complete visible labels and mapped an exact
+  label to the reviewed value; and
+- a simulated unavailable German speech service preserved a separate confirmed
+  `en-GB` shown-number route; and
 - partial, similar, ambiguous and negated speech remained rejected, with a
   focused visible error and the ordinary answer buttons retained.
 
@@ -120,12 +125,17 @@ accessible or that it improves a questionnaire's psychometric properties.
 - Passing automated and manual technical checks is not a claim of complete WCAG
   2.2 conformance or coverage of every browser, screen reader and assistive-
   technology combination.
-- Voice recognition depends on the browser and operating system. It accepts an
+- Voice recognition depends on the browser, operating system and any network-backed
+  speech service. It accepts an
   allowed displayed number or one complete exact visible answer label from the
   current item; it deliberately does not translate, fuzzily match or guess a
-  partial phrase. Unsupported recognition languages and inaccurate transcripts
-  leave the ordinary answer buttons available. Webcam gaze input remains
-  experimental and requires conventional keyboard/pointer fallbacks.
+  partial phrase. Base questionnaire language tags are requested through a common
+  browser-compatible regional locale, and non-English rating items retain a
+  separate English-number fallback. Permission, microphone, no-speech, network,
+  abort and language errors are distinguished. Unsupported recognition languages
+  and inaccurate transcripts leave the ordinary answer buttons available. Webcam
+  gaze input remains experimental and requires conventional keyboard/pointer
+  fallbacks.
 - A disconnected submission is not centrally recorded until the connection is
   restored and Qualtrics accepts the response. The recovery copy remains on the
   same browser and device, so it should be downloaded before that local state is
