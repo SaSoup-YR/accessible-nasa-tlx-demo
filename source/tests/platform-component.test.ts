@@ -175,7 +175,7 @@ describe('instrument-independent questionnaire workflow', () => {
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
-        expect(this.lang).toBe('de');
+        expect(this.lang).toBe('de-DE');
         this.onresult?.({
           results: {
             0: { 0: { transcript: 'Stimme vollkommen zu' }, length: 1 },
@@ -208,6 +208,101 @@ describe('instrument-independent questionnaire workflow', () => {
       'Stimme vollkommen zu, value 5, for real2',
     );
     expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(false);
+    component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
+  });
+
+  it('preserves an English-number voice route when the imported language is unavailable', async () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'de';
+    draft.name = 'Realismus';
+    draft.shortName = 'REAL';
+    draft.items = [
+      createCustomItemDraft({
+        name: 'real2',
+        prompt: 'Die Umgebung entsprach einer echten Einsatzstelle.',
+        lowAnchor: 'Stimme überhaupt nicht zu',
+        highAnchor: 'Stimme vollkommen zu',
+        responseLabels: {
+          1: 'Stimme überhaupt nicht zu',
+          2: 'Stimme nicht zu',
+          3: 'Stimme weder zu noch nicht zu',
+          4: 'Stimme zu',
+          5: 'Stimme vollkommen zu',
+        },
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'IMPORTED-DE-FALLBACK-01',
+      studyTitle: 'Imported German questionnaire',
+      taskLabel: 'using the prototype',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: false,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        if (this.lang === 'de-DE') {
+          this.onerror?.({ error: 'language-not-supported' });
+          return;
+        }
+        expect(this.lang).toBe('en-GB');
+        this.onresult?.({
+          results: {
+            0: { 0: { transcript: 'five' }, length: 1 },
+            length: 1,
+          },
+        });
+      }
+      stop() {}
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-DE-FALLBACK-01';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 1 item'))!
+      .click();
+    await component.updateComplete;
+
+    component.querySelector<HTMLButtonElement>('[data-voice-questionnaire-language]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('[data-voice-error]')?.textContent).toContain(
+      'does not support speech recognition for de-DE',
+    );
+
+    component.querySelector<HTMLButtonElement>('[data-voice-english-number]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
+      'Stimme vollkommen zu, value 5, for real2',
+    );
     component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
     await component.updateComplete;
     expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
