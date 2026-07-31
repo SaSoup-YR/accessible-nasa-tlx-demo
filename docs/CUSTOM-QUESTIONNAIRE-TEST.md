@@ -104,7 +104,7 @@ retyping the questionnaire.
 1. Open the versioned conductor page in a new private browser window.
 2. Open **Add your own questionnaire**.
 3. Under **2. Reuse an AQP questionnaire definition**, choose the definition
-   file downloaded above. Do not use the separate QSF/LSS/LSG source-export input.
+   file downloaded above. Do not use the separate QSF/LSS/LSG/LSQ source-export input.
 4. Confirm that the page moves to the visible **Questionnaire ready** summary and
    that Task Support Check is selected with the same three items, 1–5 scale and
    mean rule.

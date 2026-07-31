@@ -16,17 +16,26 @@ The selected file is not uploaded.
   LimeSurvey survey. LimeSurvey documents LSS/LSG structure exports as containing
   groups, questions, subquestions, answers and conditions, without response data:
   <https://www.limesurvey.org/manual/Display/Export_survey/en>
+- **LimeSurvey question:** an `.lsq` XML question export. Use this only when the
+  exported question is intended to run as a standalone questionnaire. The
+  review explicitly warns that the original survey and group context are not
+  present: <https://www.limesurvey.org/manual/Export_question>
 
-Do not rename a response-data export to `.qsf`, `.lss` or `.lsg`. Do not hand-edit the
+Do not rename a response-data export to `.qsf`, `.lss`, `.lsg` or `.lsq`. Do not hand-edit the
 source export to make it pass.
 
-LimeSurvey also uses `.lsq` for one question and `.lsa` for a survey archive. They
-are intentionally not accepted here: an LSQ does not preserve a complete
-questionnaire-group context, while an LSA may include participant responses.
-Export the containing group as LSG or survey as LSS instead. Printable HTML is not
-a complete structured definition. For Qualtrics, QSF is the supported
-survey-structure export; response CSV, SPSS and similar files contain answers
-rather than a reusable survey definition.
+LimeSurvey `.lsa` archives are intentionally rejected because they may include
+participant responses, tokens and timings. `.lsl` contains only a reusable label
+set. LimeSurvey text/tabular bulk-authoring files, VV response data, queXML,
+printable HTML/PDF and response-data exports are not accepted by this bounded
+converter. Import an authoring file into LimeSurvey if necessary, review it
+there, then export the required scope as LSS, LSG or LSQ.
+
+For Qualtrics, QSF is the supported survey-structure export. Qualtrics TXT/DOCX
+authoring files and readable Word exports are not equivalent to a QSF. CSV,
+TSV, Excel, XML and SPSS are also used for response data. The importer recognises
+these categories and provides a specific safer export instruction instead of
+guessing whether a generic file represents authoring content or collected data.
 
 ## Why AQP JSON is a separate import
 
@@ -34,7 +43,7 @@ The conductor offers three different routes:
 
 | Route | Input | Purpose |
 | --- | --- | --- |
-| Qualtrics/LimeSurvey import | `.qsf`, `.lss` or `.lsg` | Review and convert an external source-platform export |
+| Qualtrics/LimeSurvey import | `.qsf`, `.lss`, `.lsg` or `.lsq` | Review and convert an external source-platform export |
 | AQP definition reuse | `.json` downloaded from this platform | Reproduce an already converted and validated questionnaire |
 | Manual builder | Form fields | Create a small questionnaire without a source export |
 
@@ -61,7 +70,8 @@ Qualtrics support:
 
 LimeSurvey support:
 
-- one base language and one explicitly selected question group. A multi-group
+- one base language and one explicitly selected question scope. LSS represents
+  a survey, LSG a group, and LSQ a single question. A multi-group
   LSS first presents the group names, source question counts and type codes. It
   does not flatten the survey automatically. An LSG selects its one group;
 - when a selected group contains more than one compatible numeric scale, a second
@@ -118,7 +128,7 @@ reported and excluded.
 1. Open `study.html` and choose **Add your own questionnaire**.
 2. Under **1. Import a Qualtrics or LimeSurvey export**, leave **Detect from
    file** selected unless format checking is part of the test.
-3. Select one `.qsf`, `.lss` or `.lsg` export.
+3. Select one `.qsf`, `.lss`, `.lsg` or `.lsq` export.
 4. The page moves keyboard focus to the import review. If an LSS contains
    several groups, choose one group and select **Review selected group**. If that
    group contains different numeric scales, choose one compatible rating set and
@@ -152,14 +162,15 @@ expected result, observed result and Pass/Partial/Fail.
 
 ### 1. Known-file check
 
-Run the two sanitised files included with the automated tests:
+Run the sanitised files included with the automated tests:
 
 - [`qualtrics-rating.qsf`](../source/tests/fixtures/qualtrics-rating.qsf)
 - [`limesurvey-rating.lss`](../source/tests/fixtures/limesurvey-rating.lss)
 - [`limesurvey-current-rating.lss`](../source/tests/fixtures/limesurvey-current-rating.lss)
 - [`limesurvey-group-rating.lsg`](../source/tests/fixtures/limesurvey-group-rating.lsg)
+- [`limesurvey-question-rating.lsq`](../source/tests/fixtures/limesurvey-question-rating.lsq)
 
-For each file:
+For the QSF, LSS and LSG fixtures:
 
 1. Open the versioned conductor page in a new private window.
 2. Select **Add your own questionnaire**.
@@ -184,6 +195,10 @@ For each file:
 9. Export the result and confirm the two raw answers, primary score, instrument
    definition and source labels are present.
 
+For the LSQ fixture, repeat the same route but expect one safely imported
+`CLARITY` item. Confirm the explicit warning that the original survey and group
+context are unavailable, answer `4`, and verify a one-item mean score of `4.00`.
+
 ### 2. AQP JSON reproduction
 
 1. Download the current questionnaire definition after either conversion.
@@ -191,7 +206,7 @@ For each file:
 3. Under **2. Reuse an AQP questionnaire definition**, choose the downloaded
    `.json` file.
 4. Confirm that the same name, two items, 1–5 labels, mean rule and source
-   information are selected without a QSF/LSS/LSG conversion review.
+   information are selected without a QSF/LSS/LSG/LSQ conversion review.
 5. Generate and complete the same `4`, `2` local test. The score must again be
    `3.00`.
 
@@ -203,11 +218,13 @@ actual Qualtrics and LimeSurvey accounts.
 
 1. Create the same two-item, required, single-choice 1–5 questionnaire in
    Qualtrics and export a fresh QSF.
-2. Create the same questionnaire as one LimeSurvey group and export both a fresh
-   LSG question-group structure and, if available, the containing LSS survey
-   structure.
-3. Import the QSF and LSG separately. Import the LSS and confirm that the same
-   group must be selected before its review appears.
+2. Create the same questionnaire as one LimeSurvey group and export a fresh LSG
+   question-group structure and the containing LSS survey structure. Export one
+   supported question as LSQ as a separate scope test.
+3. Import the QSF, LSG and LSQ separately. Import the LSS and confirm that the
+   same group must be selected before its review appears. Confirm that LSQ is
+   presented as a standalone question and does not claim to preserve its former
+   survey or group context.
 4. Compare the source and review line by line: title, item count, item order,
    wording, answer order, displayed labels and numeric values.
 5. Complete one local result from each converted definition.
