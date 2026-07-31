@@ -20,16 +20,16 @@ bounded formative evaluation. The tag is an immutable evidence point: any later
 functional change requires a new tag and proportionate re-verification. The
 earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
 
-The current `main` branch also contains post-`rc.3` LimeSurvey compatibility
+The current release candidate also contains post-`rc.3` LimeSurvey compatibility
 work. It accepts `.lsg` question-group and `.lsq` single-question exports and
 asks the researcher to choose one group when an `.lss` survey contains several
-groups. This remains an unreleased candidate until the real-file and release
-gates are repeated; it does not change the immutable `rc.3` evidence.
+groups. This remains a candidate for `v0.8.0-rc.4` until the live-browser release
+gate is repeated; it does not change the immutable `rc.3` evidence.
 
 Verification on the current unreleased candidate:
 
-- 18 test files passed, containing 160 passing tests;
-- 10 representative axe structural accessibility scans passed;
+- 18 test files passed, containing 162 passing tests;
+- 11 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups and safely
   converted the explicitly selected five-item Spatial Presence group; and
@@ -38,8 +38,8 @@ Verification on the current unreleased candidate:
 - a sanitised LimeSurvey LSQ converted one required rating question while
   explicitly warning that its former survey and group context is unavailable.
 
-A live-browser re-test is still required before assigning the next immutable
-release-candidate tag.
+A live-browser re-test of QSF, LSS, LSG and LSQ is still required before
+assigning the next immutable release-candidate tag.
 
 ### Verification recorded for `v0.8.0-rc.3`
 

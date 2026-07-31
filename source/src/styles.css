@@ -1189,6 +1189,29 @@ button:disabled {
   margin-top: 0;
 }
 
+.platform-import-introduction,
+.platform-questionnaire-import > .support-boundary {
+  max-width: 78ch;
+}
+
+.platform-import-guide {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 5px solid #294c70;
+  background: #f6f8fa;
+}
+
+.platform-import-guide summary {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.platform-import-guide[open] summary {
+  margin-bottom: 0.5rem;
+}
+
 .file-import-control input[type='file'] {
   min-height: 3rem;
   padding: 0.55rem;
@@ -1287,6 +1310,7 @@ button:disabled {
   border: 2px solid #6f8092;
   border-radius: 6px;
   background: #fff;
+  overflow-wrap: anywhere;
 }
 
 .platform-import-finding h5 {

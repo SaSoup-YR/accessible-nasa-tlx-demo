@@ -30,16 +30,21 @@ Follow the exact acceptance procedure in
 
 At minimum:
 
-1. Import the repository's sanitised QSF and LSS fixtures separately.
-2. Confirm two items, source order, 1–5 numeric values, visible labels and zero
-   unsupported items.
-3. Convert with reviewed mean scoring, complete answers `4` and `2`, and confirm
-   a score of `3.00`.
-4. Download the AQP definition JSON and re-import it through the separate
+1. Import the repository's sanitised QSF, LSS, LSG and LSQ fixtures separately.
+2. For QSF, LSS and LSG, confirm two items, source order, 1–5 numeric values,
+   visible labels and zero unsupported items. For LSQ, confirm one item and the
+   explicit warning that survey and group context is unavailable.
+3. Convert QSF, LSS and LSG with reviewed mean scoring, complete answers `4` and
+   `2`, and confirm a score of `3.00`. Convert LSQ and confirm its one response
+   and score.
+4. Download each AQP definition JSON and re-import it through the separate
    **Reuse an AQP questionnaire definition** route.
-5. Repeat with one fresh real QSF and one fresh real LSS export.
-6. Verify newly dated local and Qualtrics results and exports.
-7. Treat any silent omission, approximation, order/value mismatch, wrong score
+5. Repeat with a fresh real QSF and real LimeSurvey structure exports. Use LSS
+   for a whole survey, LSG for one group and LSQ for one standalone question.
+6. For a multi-group LSS, confirm that group and compatible rating-set selection
+   name every excluded group/question rather than silently flattening the file.
+7. Verify newly dated local and Qualtrics results and exports.
+8. Treat any silent omission, approximation, order/value mismatch, wrong score
    or failed round-trip as a release blocker.
 
 ## 3. Participant workflows

@@ -1,4 +1,4 @@
-import{w as nt,g as Ge,x as it,M as Re,a as g,t as rt,i as ot,D as st,m as me,y as at,z as lt,u as ut,o as ct,B as dt,h as pt,C as Le,P as ye,A as Q,l as m,k as ve,j as mt,E as ht,F as ft,f as Ne}from"./shared-BRA3mK6s.js";const we=`__js_AQP_ACCEPTED
+import{w as nt,g as Ge,x as it,M as Re,a as g,t as rt,i as ot,D as st,m as me,y as at,z as lt,u as ut,o as ct,B as dt,h as pt,C as Le,P as ye,A as Q,l as m,k as ve,j as mt,E as ht,F as ft,f as Ne}from"./shared-BxaaGoEU.js";const we=`__js_AQP_ACCEPTED
 __js_AQP_BRIDGE_READY
 __js_AQP_BRIDGE_BUILD
 __js_AQP_SCHEMA
@@ -1413,7 +1413,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         <h4 id="platform-questionnaire-import-heading">
           1. Import a Qualtrics or LimeSurvey export
         </h4>
-        <p>
+        <p class="platform-import-introduction">
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
           <code>.lss</code> survey export, <code>.lsg</code> question-group export,
           or <code>.lsq</code> single-question export.
@@ -1430,7 +1430,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           intended to become a standalone questionnaire. LimeSurvey LSA archives,
           printable files and response-data exports are not questionnaire inputs here.
         </p>
-        <details class="support-boundary">
+        <details class="support-boundary platform-import-guide">
           <summary><strong>Which source file should I use?</strong></summary>
           <ul>
             <li><strong>Qualtrics QSF:</strong> one complete Qualtrics survey.</li>
@@ -1448,9 +1448,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         <div class="form-grid">
           <label>
             <strong>Source format</strong>
-            <span>Automatic detection is recommended.</span>
+            <span id="platform-import-source-hint">Automatic detection is recommended.</span>
             <select
               data-platform-import-source
+              aria-describedby="platform-import-source-hint"
               .value=${this.platformImportSource}
               @change=${n=>{this.platformImportSource=n.currentTarget.value,this.platformImportReview=null,this.platformImportConfirmed=!1,this.platformImportSelectedGroupId="",this.platformImportSelectedRatingSetId="",this.platformImportContents="",this.platformImportFileName=""}}
             >
@@ -1463,10 +1464,13 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
           </label>
           <label class="file-import-control">
             <strong>Questionnaire export</strong>
-            <span>Maximum file size: 2 MB.</span>
+            <span id="platform-import-file-hint">
+              QSF, LSS, LSG or LSQ; maximum file size: 2 MB.
+            </span>
             <input
               data-platform-questionnaire-import
               type="file"
+              aria-describedby="platform-import-file-hint"
               accept=".qsf,.lss,.lsg,.lsq,.lsa,.lsl,.csv,.tsv,.xls,.xlsx,.vv,.txt,.doc,.docx,.rtf,.odt,.pdf,.html,.htm,.xml,.zip,.sav,.json,application/json,application/xml,text/xml"
               @change=${this.importPlatformQuestionnaire}
             />

@@ -888,7 +888,7 @@ export class StudyConductorApp extends LitElement {
         <h4 id="platform-questionnaire-import-heading">
           1. Import a Qualtrics or LimeSurvey export
         </h4>
-        <p>
+        <p class="platform-import-introduction">
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
           <code>.lss</code> survey export, <code>.lsg</code> question-group export,
           or <code>.lsq</code> single-question export.
@@ -905,7 +905,7 @@ export class StudyConductorApp extends LitElement {
           intended to become a standalone questionnaire. LimeSurvey LSA archives,
           printable files and response-data exports are not questionnaire inputs here.
         </p>
-        <details class="support-boundary">
+        <details class="support-boundary platform-import-guide">
           <summary><strong>Which source file should I use?</strong></summary>
           <ul>
             <li><strong>Qualtrics QSF:</strong> one complete Qualtrics survey.</li>
@@ -923,9 +923,10 @@ export class StudyConductorApp extends LitElement {
         <div class="form-grid">
           <label>
             <strong>Source format</strong>
-            <span>Automatic detection is recommended.</span>
+            <span id="platform-import-source-hint">Automatic detection is recommended.</span>
             <select
               data-platform-import-source
+              aria-describedby="platform-import-source-hint"
               .value=${this.platformImportSource}
               @change=${(event: Event) => {
                 this.platformImportSource = (event.currentTarget as HTMLSelectElement)
@@ -947,10 +948,13 @@ export class StudyConductorApp extends LitElement {
           </label>
           <label class="file-import-control">
             <strong>Questionnaire export</strong>
-            <span>Maximum file size: 2 MB.</span>
+            <span id="platform-import-file-hint">
+              QSF, LSS, LSG or LSQ; maximum file size: 2 MB.
+            </span>
             <input
               data-platform-questionnaire-import
               type="file"
+              aria-describedby="platform-import-file-hint"
               accept=".qsf,.lss,.lsg,.lsq,.lsa,.lsl,.csv,.tsv,.xls,.xlsx,.vv,.txt,.doc,.docx,.rtf,.odt,.pdf,.html,.htm,.xml,.zip,.sav,.json,application/json,application/xml,text/xml"
               @change=${this.importPlatformQuestionnaire}
             />
