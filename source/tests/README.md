@@ -13,7 +13,7 @@ verified release build.
   rejection, and weighted NASA-TLX, Raw TLX, SUS and UEQ-S scoring.
 - `custom-questionnaire.test.ts` — no-code definition creation, bounded embedding,
   mean/sum and reverse scoring, and executable/oversize rejection.
-- `platform-questionnaire-import.test.ts` — bounded QSF/LSS/LSG format detection,
+- `platform-questionnaire-import.test.ts` — bounded QSF/LSS/LSG/LSQ format detection,
   current default recode/code shapes, base-language selection, inert versus
   active attributes, multi-group selection, reviewed Array-row expansion,
   question/answer order, safe conversion, malformed input, unsupported content,

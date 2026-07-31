@@ -3,7 +3,7 @@
 ## Evaluation claim
 
 A researcher can import an existing questionnaire within the supported
-Qualtrics QSF or LimeSurvey LSS/LSG profile, review the conversion, configure
+Qualtrics QSF or LimeSurvey LSS/LSG/LSQ profile, review the conversion, configure
 accessibility support and prepare a study without rebuilding the questionnaire
 or editing source code.
 
@@ -15,7 +15,7 @@ participants find a questionnaire more accessible.
 Each researcher receives:
 
 - the same release tag and clean browser;
-- the same supported QSF, LSS or LSG file;
+- the same supported QSF, LSS, LSG or LSQ file;
 - the public import guide;
 - a study ID, study title and task label; and
 - a request to import, review, configure, generate, test and download the

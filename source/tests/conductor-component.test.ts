@@ -368,6 +368,65 @@ describe('study conductor defaults and guidance', () => {
     expect(document.activeElement).toBe(review);
   });
 
+  it('reviews a LimeSurvey LSQ as one standalone question', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const lsq = readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'limesurvey-question-rating.lsq'),
+      'utf8',
+    );
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{ name: 'clarity.lsq', text: async () => lsq }],
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    const review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('LimeSurvey LSQ');
+    expect(review.textContent).toContain('Imported safely (1)');
+    expect(review.textContent).toContain('standalone questionnaire');
+    expect(review.textContent).toContain('Unsupported content (0)');
+    expect(document.activeElement).toBe(review);
+  });
+
+  it('exposes every supported native import format with linked instructions', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const source = component.querySelector<HTMLSelectElement>(
+      '[data-platform-import-source]',
+    )!;
+    expect([...source.options].map((option) => option.value)).toEqual([
+      'auto',
+      'qualtrics-qsf',
+      'limesurvey-lss',
+      'limesurvey-lsg',
+      'limesurvey-lsq',
+    ]);
+    expect(source.getAttribute('aria-describedby')).toBe('platform-import-source-hint');
+
+    const file = component.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    expect(file.accept).toContain('.qsf');
+    expect(file.accept).toContain('.lss');
+    expect(file.accept).toContain('.lsg');
+    expect(file.accept).toContain('.lsq');
+    expect(file.getAttribute('aria-describedby')).toBe('platform-import-file-hint');
+  });
+
   it('asks for one compatible rating set and then reviews only that set', async () => {
     const component = await renderConductor();
     [...component.querySelectorAll<HTMLButtonElement>('button')]

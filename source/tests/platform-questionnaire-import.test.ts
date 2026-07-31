@@ -170,6 +170,25 @@ describe('structured questionnaire export import', () => {
     );
   });
 
+  it('imports a LimeSurvey LSQ question while making the missing survey context explicit', () => {
+    const review = reviewQuestionnaireExport(
+      fixture('limesurvey-question-rating.lsq'),
+      'clarity.lsq',
+    );
+
+    expect(review.source).toBe('limesurvey-lsq');
+    expect(review.canConvert).toBe(true);
+    expect(review.unsupported).toEqual([]);
+    expect(review.draft?.name).toBe('CLARITY');
+    expect(review.draft?.items.map(({ name, prompt }) => ({ name, prompt }))).toEqual([
+      { name: 'CLARITY', prompt: 'The task instructions were clear.' },
+    ]);
+    expect(review.draft?.items[0].responseLabels?.['5']).toBe('Strongly agree');
+    expect(review.confirmations.map(({ code }) => code)).toContain(
+      'limesurvey-question-context-not-retained',
+    );
+  });
+
   it('requires an explicit group choice for a multi-group LSS before reviewing one group', () => {
     const lss = fixture('limesurvey-group-rating.lsg')
       .replace('<LimeSurveyDocType>Group</LimeSurveyDocType>', '<LimeSurveyDocType>Survey</LimeSurveyDocType>')
@@ -361,6 +380,33 @@ describe('structured questionnaire export import', () => {
         'task-support.qsf',
         'limesurvey-lss',
       )).toThrow(/not the chosen format/i);
+  });
+
+  it('explains unsupported platform file categories instead of guessing', () => {
+    expect(() => reviewQuestionnaireExport('archive', 'study.lsa')).toThrow(
+      /may contain responses, tokens and participant data/i,
+    );
+    expect(() => reviewQuestionnaireExport('labels', 'scale.lsl')).toThrow(
+      /contains only a reusable label set/i,
+    );
+    expect(() => reviewQuestionnaireExport('responses', 'results.csv')).toThrow(
+      /ambiguous table formats/i,
+    );
+    expect(() => reviewQuestionnaireExport('document', 'survey.docx')).toThrow(
+      /not an unambiguous native structure export/i,
+    );
+    expect(() => reviewQuestionnaireExport('template', 'survey.txt')).toThrow(
+      /not an unambiguous native structure export/i,
+    );
+    expect(() => reviewQuestionnaireExport('workbook', 'survey.xlsx')).toThrow(
+      /ambiguous table formats/i,
+    );
+    expect(() => reviewQuestionnaireExport('responses', 'results.sav')).toThrow(
+      /response-data format/i,
+    );
+    expect(() => reviewQuestionnaireExport('{"responses":[]}', 'results.json')).toThrow(
+      /not a Qualtrics QSF/i,
+    );
   });
 
   it('blocks unsupported question types instead of silently dropping them', () => {

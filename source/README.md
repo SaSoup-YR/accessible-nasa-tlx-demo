@@ -8,7 +8,7 @@ This directory builds the public Accessible Questionnaire Platform candidate.
 - `instruments/questionnaire-definition.schema.json` — published structural schema.
 - `src/questionnaire-definition.ts` — discovery, embedded-definition resolution and strict semantic validation.
 - `src/custom-questionnaire.ts` — bounded no-code questionnaire builder and import validation.
-- `src/platform-questionnaire-import.ts` — fail-closed Qualtrics QSF and LimeSurvey LSS/LSG review and conversion.
+- `src/platform-questionnaire-import.ts` — fail-closed Qualtrics QSF and LimeSurvey LSS/LSG/LSQ review and conversion.
 - `src/scoring.ts` — allowlisted instrument scorers plus reviewed generic mean and sum scorers.
 - `src/study.ts` — Version 4 configuration/result schemas and exports.
 - `src/result-sink.ts` — exact-origin, exact-build Qualtrics handshake and child
@@ -32,9 +32,9 @@ Development routes are `/` for participants and `/study.html` for conductors.
 collect centrally from `file://`.
 
 The conductor presents three separate no-code routes: review and convert a
-supported Qualtrics QSF or LimeSurvey LSS/LSG source export; reuse an AQP definition
+supported Qualtrics QSF or LimeSurvey LSS/LSG/LSQ source export; reuse an AQP definition
 JSON previously downloaded from this platform; or build a small questionnaire
-manually. QSF/LSS/LSG conversion and AQP JSON reproduction are deliberately labelled
+manually. QSF/LSS/LSG/LSQ conversion and AQP JSON reproduction are deliberately labelled
 as different operations. These routes are limited to 1–20 required integer
 single-choice items on one shared scale, with a researcher-confirmed mean or sum
 and optional reverse scoring.
@@ -45,7 +45,9 @@ closed.
 
 For LimeSurvey, a question-group export (`.lsg`) can be reviewed directly. A
 multi-group survey export (`.lss`) first requires an explicit group choice. The
-adapter can expand reviewed numeric Array rows into rating items, but it does not
+single-question export (`.lsq`) is reviewed as a standalone questionnaire with
+an explicit context warning. The adapter can expand reviewed numeric Array rows
+into rating items, but it does not
 flatten an entire mixed, conditional survey or silently discard unsupported
 questions.
 
