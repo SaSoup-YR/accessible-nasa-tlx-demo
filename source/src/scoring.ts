@@ -290,6 +290,7 @@ export function calculateResult(
 ): TlxResult {
   const definition: QuestionnaireDefinition = {
     schemaVersion: 1,
+    language: 'en-GB',
     id: 'nasa-tlx-weighted',
     version: 'compatibility',
     name: 'NASA Task Load Index',

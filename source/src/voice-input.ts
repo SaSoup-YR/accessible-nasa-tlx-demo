@@ -113,7 +113,7 @@ const numberWords = new Set([
 ]);
 
 const unsafeMeaning =
-  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b|\b(?:anything\s+but|other\s+than|don\s+t)\b/;
+  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong|nicht|nein|abbrechen|ohne|stattdessen|unsicher|vielleicht|fehler|falsch)\b|\b(?:anything\s+but|other\s+than|don\s+t)\b/;
 
 const dimensionAliases: Record<string, readonly string[]> = {
   mental: ['mental demand', 'mental'],
@@ -126,12 +126,84 @@ const dimensionAliases: Record<string, readonly string[]> = {
 
 function normalise(transcript: string) {
   return transcript
-    .toLowerCase()
-    .replace(/[-–—]/g, ' ')
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .normalize('NFKD')
+    .toLocaleLowerCase()
+    .replace(/\p{Mark}+/gu, '')
+    .replace(/ß/g, 'ss')
+    .replace(/[\p{Dash_Punctuation}]/gu, ' ')
+    .replace(/[^\p{Letter}\p{Number}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+function exactTextForms(value: string) {
+  const spaced = normalise(value);
+  if (!spaced) return new Set<string>();
+  // Speech engines sometimes insert spaces into scripts that are normally
+  // written without them (for example Chinese, Japanese or Thai). Comparing a
+  // second whitespace-free form remains deterministic rather than fuzzy. If
+  // two visible labels collapse to the same form, the caller rejects the
+  // ambiguity instead of choosing one.
+  return new Set([spaced, spaced.replace(/\s+/g, '')]);
+}
+
+function hasSharedExactTextForm(left: string, right: string) {
+  const rightForms = exactTextForms(right);
+  return [...exactTextForms(left)].some((form) => rightForms.has(form));
+}
+
+const germanSmallNumberWords = [
+  'null',
+  'eins',
+  'zwei',
+  'drei',
+  'vier',
+  'fünf',
+  'sechs',
+  'sieben',
+  'acht',
+  'neun',
+  'zehn',
+  'elf',
+  'zwölf',
+  'dreizehn',
+  'vierzehn',
+  'fünfzehn',
+  'sechzehn',
+  'siebzehn',
+  'achtzehn',
+  'neunzehn',
+] as const;
+const germanTensWords = [
+  '',
+  '',
+  'zwanzig',
+  'dreißig',
+  'vierzig',
+  'fünfzig',
+  'sechzig',
+  'siebzig',
+  'achtzig',
+  'neunzig',
+] as const;
+
+function germanIntegerWords(value: number) {
+  if (value < 20) return germanSmallNumberWords[value];
+  if (value === 100) return 'einhundert';
+  const tens = Math.floor(value / 10);
+  const units = value % 10;
+  if (units === 0) return germanTensWords[tens];
+  const unit = units === 1 ? 'ein' : germanSmallNumberWords[units];
+  return `${unit}und${germanTensWords[tens]}`;
+}
+
+const germanSpokenNumbers = new Map<string, number>();
+for (let value = 0; value <= 100; value += 1) {
+  germanSpokenNumbers.set(normalise(germanIntegerWords(value)), value);
+}
+germanSpokenNumbers.set('ein', 1);
+germanSpokenNumbers.set('hundert', 100);
+germanSpokenNumbers.set('ein hundert', 100);
 
 export interface RankedSpeechAnswer<T> {
   transcript: string;
@@ -205,7 +277,7 @@ function exactDeclaredLabelCandidate(
     )
     .trim();
   const matches = allowedValues.filter(
-    (value) => normalise(dimension.responseLabels?.[String(value)] ?? '') === answer,
+    (value) => hasSharedExactTextForm(dimension.responseLabels?.[String(value)] ?? '', answer),
   );
   if (matches.length === 0) return undefined;
   return matches.length === 1 ? matches[0] : null;
@@ -218,6 +290,9 @@ function numericCandidates(text: string, allowedValues: readonly number[]) {
   for (const token of tokens) {
     if (/^(?:100|[0-9]{1,2})$/.test(token)) {
       const value = Number(token);
+      candidates.push(allowedValues.includes(value) ? value : null);
+    } else if (germanSpokenNumbers.has(token)) {
+      const value = germanSpokenNumbers.get(token)!;
       candidates.push(allowedValues.includes(value) ? value : null);
     }
   }

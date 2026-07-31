@@ -37,6 +37,7 @@ describe('structured questionnaire export import', () => {
     );
 
     expect(review.source).toBe('qualtrics-qsf');
+    expect(review.draft?.language).toBe('en');
     expect(review.canConvert).toBe(true);
     expect(review.unsupported).toEqual([]);
     expect(review.draft?.items.map(({ name, prompt }) => ({ name, prompt }))).toEqual([
@@ -81,6 +82,25 @@ describe('structured questionnaire export import', () => {
     );
   });
 
+  it('maps Qualtrics survey language codes to browser speech language tags', () => {
+    const qsf = JSON.parse(fixture('qualtrics-rating.qsf'));
+
+    qsf.SurveyEntry.SurveyLanguage = 'ZH-S';
+    expect(
+      reviewQuestionnaireExport(JSON.stringify(qsf), 'simplified-chinese.qsf').draft?.language,
+    ).toBe('zh-CN');
+
+    qsf.SurveyEntry.SurveyLanguage = 'ZH-T';
+    expect(
+      reviewQuestionnaireExport(JSON.stringify(qsf), 'traditional-chinese.qsf').draft?.language,
+    ).toBe('zh-TW');
+
+    qsf.SurveyEntry.SurveyLanguage = 'FR-CA';
+    expect(
+      reviewQuestionnaireExport(JSON.stringify(qsf), 'canadian-french.qsf').draft?.language,
+    ).toBe('fr-CA');
+  });
+
   it('does not infer Qualtrics values from non-default choice IDs', () => {
     const qsf = JSON.parse(fixture('qualtrics-rating.qsf'));
     const question = qsf.SurveyElements.find(
@@ -106,6 +126,7 @@ describe('structured questionnaire export import', () => {
     );
 
     expect(review.source).toBe('limesurvey-lss');
+    expect(review.draft?.language).toBe('en');
     expect(review.canConvert).toBe(true);
     expect(review.unsupported).toEqual([]);
     expect(review.draft?.items.map(({ name }) => name)).toEqual([

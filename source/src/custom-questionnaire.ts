@@ -23,6 +23,7 @@ export interface CustomQuestionnaireItemDraft {
 }
 
 export interface CustomQuestionnaireDraft {
+  language: string;
   name: string;
   shortName: string;
   version: string;
@@ -59,6 +60,7 @@ export function createCustomItemDraft(
 
 export function createCustomQuestionnaireDraft(): CustomQuestionnaireDraft {
   return {
+    language: 'en-GB',
     name: '',
     shortName: '',
     version: '1.0.0',
@@ -151,6 +153,7 @@ export function createCustomQuestionnaireDefinition(
 
   const candidate: QuestionnaireDefinition = {
     schemaVersion: 1,
+    language: clean(draft.language, 'Questionnaire language'),
     id: `custom-${idPart}`,
     version: clean(draft.version, 'Questionnaire version'),
     name,
