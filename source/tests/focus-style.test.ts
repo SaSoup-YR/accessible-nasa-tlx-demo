@@ -24,9 +24,9 @@ describe('visible keyboard focus', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toContain('--focus-outline: #0b0c0c');
     expect(css).toContain('--focus-halo: #ffdd00');
-    expect(css.match(/outline: 3px solid var\(--focus-outline\)/g)?.length).toBeGreaterThanOrEqual(6);
-    expect(css.match(/box-shadow: 0 0 0 6px var\(--focus-halo\)/g)?.length).toBeGreaterThanOrEqual(5);
-    expect(css).toContain('.voice-feedback-error:focus');
+    expect(css.match(/outline: 3px solid var\(--focus-outline\)/g)?.length).toBeGreaterThanOrEqual(5);
+    expect(css.match(/box-shadow: 0 0 0 6px var\(--focus-halo\)/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(css).not.toContain('.voice-feedback-error');
     expect(css).toContain('box-shadow: 0 0 0 7px var(--focus-halo)');
 
     for (const surface of ['#ffffff', '#eef2f6', '#e8f3fb', '#fff9dc']) {

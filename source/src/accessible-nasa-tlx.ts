@@ -121,34 +121,6 @@ interface SpeechRecognitionLike {
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-type VoiceRecognitionMode = 'questionnaire' | 'english-number';
-
-const SPEECH_LANGUAGE_DEFAULTS: Readonly<Record<string, string>> = {
-  ar: 'ar-SA',
-  de: 'de-DE',
-  en: 'en-GB',
-  es: 'es-ES',
-  fr: 'fr-FR',
-  hi: 'hi-IN',
-  it: 'it-IT',
-  ja: 'ja-JP',
-  ko: 'ko-KR',
-  nl: 'nl-NL',
-  pl: 'pl-PL',
-  pt: 'pt-PT',
-  ru: 'ru-RU',
-  sv: 'sv-SE',
-  tr: 'tr-TR',
-  zh: 'zh-CN',
-};
-
-function speechRecognitionLanguage(language: string) {
-  const trimmed = language.trim();
-  if (!trimmed) return 'en-GB';
-  const primary = trimmed.toLocaleLowerCase().split('-')[0];
-  if (trimmed.includes('-')) return trimmed;
-  return SPEECH_LANGUAGE_DEFAULTS[primary] ?? trimmed;
-}
 
 function isEnglishLanguage(language: string) {
   return language.trim().toLocaleLowerCase().split('-')[0] === 'en';
@@ -1245,49 +1217,26 @@ export class AccessibleNasaTlx extends LitElement {
       context === 'rating'
         ? this.ratingVoicePrompt(first)
         : `Say “${first.name}” or “${second!.name}”.`;
-    const questionnaireSpeechLanguage = speechRecognitionLanguage(this.definition.language);
-    const showEnglishNumberFallback =
-      context === 'rating' && !isEnglishLanguage(questionnaireSpeechLanguage);
     return html`
       <details class="voice-input" .open=${this.voiceState !== 'idle'}>
         <summary>Answer this question by voice</summary>
         <div class="voice-input-content">
           <p>${prompt}</p>
           <p class="support-boundary">
-            Voice is optional. The main button requests the questionnaire language
-            (<code>${questionnaireSpeechLanguage}</code>). Say one complete visible answer label or a shown
-            number in that language; partial or similar phrases are not guessed. Browser and operating-system
-            language support varies. This prototype does not store audio, and the visible answer buttons remain
-            available.
+            Voice input uses English recognition. Say one shown number in English. For an English questionnaire,
+            you may instead say one complete exact visible answer label. Non-English answer labels are not
+            recognised. Voice is optional, this prototype does not store audio, and the visible answer buttons
+            remain available.
           </p>
-          <div class="button-row compact">
-            <button
-              class="secondary-button large-answer-button"
-              type="button"
-              data-voice-questionnaire-language
-              ?disabled=${!available || this.voiceState === 'listening'}
-              @click=${() => this.startVoiceInput(context, first, second, 'questionnaire')}
-            >
-              ${this.voiceState === 'listening' ? 'Listening…' : `Start voice input (${questionnaireSpeechLanguage})`}
-            </button>
-            ${showEnglishNumberFallback
-              ? html`<button
-                  class="secondary-button large-answer-button"
-                  type="button"
-                  data-voice-english-number
-                  ?disabled=${!available || this.voiceState === 'listening'}
-                  @click=${() => this.startVoiceInput(context, first, second, 'english-number')}
-                >
-                  Speak a shown number in English
-                </button>`
-              : nothing}
-          </div>
-          ${showEnglishNumberFallback
-            ? html`<p class="support-boundary">
-                If this browser cannot recognise <code>${questionnaireSpeechLanguage}</code>, the English-number
-                button preserves a predictable voice route. It accepts only a number shown on this question.
-              </p>`
-            : nothing}
+          <button
+            class="secondary-button large-answer-button"
+            type="button"
+            data-voice-start
+            ?disabled=${!available || this.voiceState === 'listening'}
+            @click=${() => this.startVoiceInput(context, first, second)}
+          >
+            ${this.voiceState === 'listening' ? 'Listening…' : 'Start voice input'}
+          </button>
           ${!available
             ? html`<p role="status">
                 Built-in voice recognition is unavailable in this browser. System voice control can still activate
@@ -1295,19 +1244,7 @@ export class AccessibleNasaTlx extends LitElement {
               </p>`
             : nothing}
           ${this.voiceMessage
-            ? this.voiceState === 'error'
-              ? html`<div
-                  class="voice-feedback-error"
-                  role="alert"
-                  aria-live="assertive"
-                  aria-atomic="true"
-                  tabindex="-1"
-                  data-voice-error
-                >
-                  <strong>Voice answer not accepted.</strong>
-                  <span>${this.voiceMessage}</span>
-                </div>`
-              : html`<p role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>`
+            ? html`<p role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>`
             : nothing}
           ${activeForContext && this.pendingVoiceAnswer
             ? html`
@@ -1862,7 +1799,7 @@ export class AccessibleNasaTlx extends LitElement {
         const label = dimension.responseLabels?.[String(value)];
         return label ? [`${value}, ${label}`] : [];
       });
-      if (labelledValues.length > 0) {
+      if (labelledValues.length > 0 && isEnglishLanguage(this.definition.language)) {
         return `${numericPrompt} You may instead say one exact visible answer label.`;
       }
       return this.definition.scale.type === 'magnitude'
@@ -2620,7 +2557,6 @@ export class AccessibleNasaTlx extends LitElement {
     context: 'rating' | 'pair',
     first: TlxDimension,
     second?: TlxDimension,
-    mode: VoiceRecognitionMode = 'questionnaire',
   ) {
     this.stopReading();
     const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -2631,10 +2567,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.voiceState = 'listening';
     const recognition = new Constructor();
     this.recognition = recognition;
-    const recognitionLanguage = mode === 'english-number'
-      ? 'en-GB'
-      : speechRecognitionLanguage(this.definition.language);
-    recognition.lang = recognitionLanguage;
+    recognition.lang = 'en-GB';
     recognition.continuous = false;
     recognition.interimResults = false;
     // Ask for ranked alternatives so a harmless primary transcription such as
@@ -2657,7 +2590,7 @@ export class AccessibleNasaTlx extends LitElement {
           this.ratingValues,
           this.smileyLandmarks,
         );
-        const allowedProposal = mode === 'questionnaire'
+        const allowedProposal = isEnglishLanguage(this.definition.language)
           ? proposal
           : proposal && /\p{Number}|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b/iu.test(proposal.transcript)
             ? proposal
@@ -2700,40 +2633,40 @@ export class AccessibleNasaTlx extends LitElement {
         }
       }
       this.releaseRecognition(recognition);
-      this.showVoiceError(
-        mode === 'english-number'
-          ? `The answer was not recognised as one shown number in English. ${this.ratingVoicePrompt(first)}`
-          : `The answer was not recognised in ${recognitionLanguage}. ${context === 'rating' ? this.ratingVoicePrompt(first) : `Say ${first.name} or ${second!.name}.`}`,
+      this.showVoiceNotice(
+        context === 'rating'
+          ? 'No answer was selected. Say one shown number in English, or use a visible answer button.'
+          : `No answer was selected. Say ${first.name} or ${second!.name}, or use a visible answer button.`,
       );
     };
     recognition.onerror = (event) => {
       if (this.recognition !== recognition) return;
       this.releaseRecognition(recognition);
-      this.showVoiceError(this.voiceRecognitionErrorMessage(event.error, recognitionLanguage));
+      this.showVoiceNotice(this.voiceRecognitionErrorMessage(event.error));
     };
     recognition.onend = () => {
       if (this.recognition !== recognition) return;
       this.recognition = null;
       if (this.voiceState === 'listening') {
-        this.showVoiceError('No answer was recognised. Try again or use the visible answer buttons.');
+        this.showVoiceNotice('No answer was selected. Try again, or use a visible answer button.');
       }
     };
     try {
       recognition.start();
     } catch {
       this.releaseRecognition(recognition);
-      this.showVoiceError('Voice recognition could not start in this browser context. Use the visible answer buttons.');
+      this.showVoiceNotice('Voice input is unavailable in this browser context. Use a visible answer button.');
     }
   }
 
-  private voiceRecognitionErrorMessage(error: string | undefined, language: string) {
+  private voiceRecognitionErrorMessage(error: string | undefined) {
     switch (error) {
       case 'not-allowed':
       case 'service-not-allowed':
         return 'Microphone or speech-service permission was not granted. Allow microphone access, or use the visible answer buttons.';
       case 'language-not-supported':
       case 'language-unavailable':
-        return `This browser does not support speech recognition for ${language}. Try the English-number button if shown, or use the visible answer buttons.`;
+        return 'English voice input is unavailable in this browser. Use a visible answer button.';
       case 'no-speech':
         return 'No speech was detected. Try again after the microphone starts listening, or use the visible answer buttons.';
       case 'audio-capture':
@@ -2743,23 +2676,14 @@ export class AccessibleNasaTlx extends LitElement {
       case 'aborted':
         return 'Voice input stopped before a result was returned. Try again, or use the visible answer buttons.';
       default:
-        return `The browser speech service did not return an answer${error ? ` (${error})` : ''}. Try again, try the English-number button if shown, or use the visible answer buttons.`;
+        return `Voice input is unavailable${error ? ` (${error})` : ''}. Try again, or use a visible answer button.`;
     }
   }
 
-  private showVoiceError(message: string) {
+  private showVoiceNotice(message: string) {
     this.voiceState = 'error';
     this.voiceMessage = message;
-    void this.updateComplete.then(() => {
-      const feedback = this.querySelector<HTMLElement>('[data-voice-error]');
-      if (!feedback) return;
-      focusAndReveal(feedback, {
-        block: 'center',
-        forceCoordinateScroll: true,
-        onReveal: () => this.requestParentReveal(feedback),
-      });
-      this.announceAutomatic(`Voice answer not accepted. ${message}`);
-    });
+    this.announceAutomatic(message);
   }
 
   private confirmVoiceAnswer = () => {

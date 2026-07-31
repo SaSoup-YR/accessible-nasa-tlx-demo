@@ -106,14 +106,15 @@ hypotheses remain rejected. The explicit proposal and confirmation step is there
 the semantic boundary: recognition can help propose an answer but cannot silently
 change the measurement.
 
-For imported non-English rating questionnaires, the main recogniser requests a
-common regional form of the declared language (for example `de` becomes `de-DE`).
-Because Web Speech language availability varies by browser, operating system and
-speech-service connection, the interface also provides a separate `en-GB` shown-
-number route. This restores a conservative numeric fallback without treating an
-English transcript as a foreign-language answer label. Permission, microphone,
-no-speech, network, abort and unsupported-language failures are reported separately.
-Visible answer buttons always remain available.
+The participant interface exposes one English voice control. It requests `en-GB`
+and accepts a displayed value spoken as an English number for every supported
+questionnaire. When the questionnaire itself is English, it also accepts one complete
+exact visible English answer label. Non-English label recognition, translation and
+fuzzy matching are outside the tested boundary. A transcript that does not meet this
+boundary leaves the response unchanged and produces a neutral retry message rather
+than a form error. Permission, microphone, no-speech, network and abort failures are
+reported as voice-service availability messages. Visible answer buttons always remain
+available.
 
 The parser rejects `not low`, `anything but low`, `other than high`, uncertainty,
 multiple anchors and non-scale numbers such as `twenty three`. `Twenty three` is not

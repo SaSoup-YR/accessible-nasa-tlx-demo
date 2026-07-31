@@ -22,17 +22,18 @@ earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
 
 The current source is the prepared **`v0.8.0-rc.4` candidate**. It adds `.lsg`
 question-group and `.lsq` single-question imports, explicit selection when an
-`.lss` survey contains several groups, source-language propagation and exact
-visible-label voice answers for imported questionnaires. It also restores a
-separate English-number voice route when a non-English browser speech service is
-unavailable. It remains unreleased
+`.lss` survey contains several groups and source-language metadata for correct
+page semantics. Voice input has one deliberately bounded English route: every
+supported questionnaire accepts a displayed number spoken in English, while an
+English questionnaire also accepts one complete exact visible English answer
+label. It remains unreleased
 until the synchronized files are deployed and the short live-browser release
 gate below is repeated; it does not change the immutable `rc.3` evidence.
 
 Verification on the current unreleased candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 170 passing tests;
+- 18 test files passed, containing 167 passing tests;
 - 11 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups and safely
@@ -41,16 +42,16 @@ Verification on the current unreleased candidate:
   response scale with no unsupported content; and
 - a sanitised LimeSurvey LSQ converted one required rating question while
   explicitly warning that its former survey and group context is unavailable;
-- the attached German LSS propagated `de` as the browser-compatible `de-DE`
-  recognition request, preserved its complete visible labels and mapped an exact
-  label to the reviewed value; and
-- a simulated unavailable German speech service preserved a separate confirmed
-  `en-GB` shown-number route; and
-- partial, similar, ambiguous and negated speech remained rejected, with a
-  focused visible error and the ordinary answer buttons retained.
+- an imported English questionnaire accepted both a displayed number and an exact
+  visible English label through one `en-GB` voice control;
+- an imported German questionnaire retained the same single control and accepted
+  its displayed values when spoken as English numbers, without claiming German
+  label recognition; and
+- partial, similar, ambiguous and negated speech remained unselected, with a
+  neutral retry message and the ordinary answer buttons retained.
 
 A deployed live-browser re-test of QSF, LSS, LSG and LSQ, one real microphone
-label answer in the imported language, and one accepted Qualtrics row are still
+English number or label answer, and one accepted Qualtrics row are still
 required before assigning the next immutable release-candidate tag.
 
 ### Verification recorded for `v0.8.0-rc.3`
@@ -126,14 +127,11 @@ accessible or that it improves a questionnaire's psychometric properties.
   2.2 conformance or coverage of every browser, screen reader and assistive-
   technology combination.
 - Voice recognition depends on the browser, operating system and any network-backed
-  speech service. It accepts an
-  allowed displayed number or one complete exact visible answer label from the
-  current item; it deliberately does not translate, fuzzily match or guess a
-  partial phrase. Base questionnaire language tags are requested through a common
-  browser-compatible regional locale, and non-English rating items retain a
-  separate English-number fallback. Permission, microphone, no-speech, network,
-  abort and language errors are distinguished. Unsupported recognition languages
-  and inaccurate transcripts leave the ordinary answer buttons available. Webcam
+  speech service. The single control requests `en-GB`. It accepts an allowed displayed
+  number spoken in English for every questionnaire and, only for English questionnaires,
+  one complete exact visible English answer label. It does not translate, fuzzily match
+  or claim non-English label recognition. Permission, microphone, no-speech, network
+  and abort failures leave the ordinary answer buttons available. Webcam
   gaze input remains experimental and requires conventional keyboard/pointer
   fallbacks.
 - A disconnected submission is not centrally recorded until the connection is
@@ -257,15 +255,12 @@ Instrument-specific capability checks prevent smileys or unvalidated simpler wor
 from appearing in SUS or UEQ-S. Their standard response positions keep the official
 endpoint labels without inventing meanings such as `Neutral` or `Agree` for
 intermediate values. Imported blank intermediate labels likewise remain numbered rather
-than being given invented meanings. Confirmed voice input uses the definition's declared
-language and accepts a displayed number or one complete, unique visible answer label.
-Label matching is derived from the current item rather than a fixed English vocabulary:
-Unicode letters, diacritics, punctuation and speech-engine whitespace differences are
-normalised, but partial or fuzzy labels are not guessed. Qualtrics survey language codes
-are mapped to browser speech-language tags, including simplified and traditional Chinese.
-Recognition availability and transcription accuracy still depend on the participant's
-browser and operating system; buttons always remain available. Every voice proposal
-requires confirmation. NASA-TLX smileys and simpler explanations
+than being given invented meanings. Confirmed voice input is deliberately English-only:
+all supported rating questionnaires accept their displayed values as English numbers,
+and English questionnaires additionally accept one complete exact visible English label.
+Non-English label recognition is not claimed. Recognition availability and transcription
+accuracy still depend on the participant's browser and operating system; buttons always
+remain available and every proposal requires confirmation. NASA-TLX smileys and simpler explanations
 remain definition-specific experimental support routes, not psychometrically equivalent
 replacements that can be applied safely to every imported scale.
 
