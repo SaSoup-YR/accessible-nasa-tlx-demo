@@ -101,9 +101,11 @@ accessible or that it improves a questionnaire's psychometric properties.
 - The no-code custom path is deliberately bounded to 1–20 required single-choice
   items on one shared integer scale, with reviewed mean or sum scoring and optional
   reverse scoring. Structured import supports the same definition profile. It
-  does not support free text, multiple answers, ranking, branching, arbitrary
-  formulas or general matrix behaviour. Qualtrics single-answer Likert matrix
-  rows may be expanded only when their order and numeric scale are explicit.
+  can extract one explicitly selected compatible rating set from a mixed
+  LimeSurvey group, but it does not convert free text, multiple answers, ranking,
+  branching, arbitrary formulas or general matrix behaviour. Qualtrics
+  single-answer Likert matrix rows may be expanded only when their order and
+  numeric scale are explicit.
 - Structural validation cannot determine copyright permission, measurement
   validity, population suitability or equivalence to an original instrument.
 - Passing automated and manual technical checks is not a claim of complete WCAG
@@ -161,8 +163,9 @@ conversion.
 
 External import detects the format, extracts only the supported questionnaire
 content and shows three separate lists: imported safely, requires confirmation
-and unsupported. Any unsupported active content blocks the whole conversion;
-the platform does not create a partial questionnaire. Before conversion, the
+and unsupported. Unsafe active content inside the selected rating set blocks
+conversion. Questions outside that set are listed explicitly and remain in the
+source survey; the platform never silently drops them. Before conversion, the
 researcher must confirm wording, order, displayed labels, numeric values,
 mean/sum scoring and reverse-scored items. Imported markup becomes safe plain
 text, and imported code is never executed.
@@ -175,12 +178,15 @@ conversion is exposed for researcher confirmation. Non-default opaque codes,
 active attributes, scripts and survey logic remain blocking.
 
 A multi-group LSS is not flattened silently. The conductor chooses one group to
-review as a standalone questionnaire. Reviewed List, 5 Point Choice and numeric
-Array rating rows may be converted. Group relevance, omitted groups, blank
-intermediate scale labels and Array expansion are shown for explicit
-confirmation. Question-level conditions and unsupported question types still
-block the selected group. An LSG is the clearest LimeSurvey input when the
-researcher intends to reuse one questionnaire group.
+review as a standalone questionnaire. If that group contains different numeric
+scales, the conductor then chooses one compatible rating set. Reviewed radio-list,
+dropdown-list, 5 Point Choice and numeric Array rating rows may be converted.
+Questions outside the selected set remain in LimeSurvey and are named explicitly;
+they are never silently merged or scored. Group relevance, omitted groups, blank
+intermediate scale labels and Array expansion are shown for confirmation.
+Question-level conditions and unsupported behaviour still block an item selected
+for conversion. An LSG is the clearest input when the researcher intends to reuse
+one questionnaire group.
 
 The full validated definition is embedded in the study configuration,
 participant link and result record, so another browser does not need a local
@@ -188,7 +194,9 @@ copy. Download the converted definition JSON with the protocol.
 
 This remains a bounded definition profile, not an arbitrary survey uploader.
 Free text, multiple answers, ranking, branching, unsupported matrices, custom
-formula strings and executable code are rejected. Theme, navigation,
+formula strings and executable code are not converted. Content outside a selected
+rating set is listed and remains in the source survey; unsafe behaviour inside the
+selected set blocks conversion. Theme, navigation,
 publication and notification settings remain in the source platform. The
 platform validates structure and calculation; the conductor remains responsible
 for permission, provenance, psychometric validity and study suitability.

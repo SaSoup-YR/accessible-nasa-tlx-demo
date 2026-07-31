@@ -28,6 +28,20 @@ function inputFor(component: HTMLElement, labelText: string) {
     .querySelector<HTMLInputElement>('input')!;
 }
 
+function mixedLimeSurveyRatingSets() {
+  let lss = readFileSync(
+    resolve(import.meta.dirname, 'fixtures', 'limesurvey-current-rating.lss'),
+    'utf8',
+  );
+  for (let index = 1; index <= 5; index += 1) {
+    lss = lss.replace(
+      `<qid><![CDATA[202]]></qid><code><![CDATA[A00${index}]]></code>`,
+      `<qid><![CDATA[202]]></qid><code><![CDATA[${index * 10}]]></code>`,
+    );
+  }
+  return lss;
+}
+
 beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
@@ -351,6 +365,52 @@ describe('study conductor defaults and guidance', () => {
     expect(review.textContent).toContain('Imported safely (2)');
     expect(review.textContent).toContain('Only “Task support” will be converted');
     expect(review.textContent).toContain('Blank scale positions');
+    expect(document.activeElement).toBe(review);
+  });
+
+  it('asks for one compatible rating set and then reviews only that set', async () => {
+    const component = await renderConductor();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await (component as any).updateComplete;
+
+    const fileInput = component.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [{
+        name: 'mixed-rating-sets.lss',
+        text: async () => mixedLimeSurveyRatingSets(),
+      }],
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (component as any).updateComplete;
+
+    let review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('Choose one compatible rating set');
+    expect(review.textContent).toContain('values 1, 2, 3, 4, 5');
+    expect(review.textContent).toContain('values 10, 20, 30, 40, 50');
+    expect(document.activeElement).toBe(review);
+
+    const ratingSet = component.querySelector<HTMLSelectElement>(
+      '[data-platform-import-rating-set]',
+    )!;
+    ratingSet.value = 'values-1-2-3-4-5';
+    ratingSet.dispatchEvent(new Event('change', { bubbles: true }));
+    await (component as any).updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Review selected rating set')!
+      .click();
+    await (component as any).updateComplete;
+
+    review = component.querySelector<HTMLElement>('#platform-import-review')!;
+    expect(review.textContent).toContain('Import review ready');
+    expect(review.textContent).toContain('Imported safely (1)');
+    expect(review.textContent).toContain('Only the 1–5 rating set will be converted');
+    expect(review.textContent).toContain('CONTROL [type L]');
     expect(document.activeElement).toBe(review);
   });
 

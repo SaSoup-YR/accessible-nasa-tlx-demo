@@ -17,6 +17,15 @@ export interface LimeSurveyGroupOption {
   questionTypes: string[];
 }
 
+export interface LimeSurveyRatingSetOption {
+  id: string;
+  name: string;
+  sourceQuestionCount: number;
+  itemCount: number;
+  responseValues: number[];
+  questionTypes: string[];
+}
+
 export interface QuestionnaireImportFinding {
   code: string;
   title: string;
@@ -36,6 +45,9 @@ export interface QuestionnaireImportReview {
   requiresGroupSelection?: boolean;
   groupOptions?: LimeSurveyGroupOption[];
   selectedGroupId?: string;
+  requiresRatingSetSelection?: boolean;
+  ratingSetOptions?: LimeSurveyRatingSetOption[];
+  selectedRatingSetId?: string;
 }
 
 interface ImportedScaleItem {
@@ -308,7 +320,12 @@ function makeReview(
   state: ImportAccumulator,
   extras: Pick<
     QuestionnaireImportReview,
-    'requiresGroupSelection' | 'groupOptions' | 'selectedGroupId'
+    | 'requiresGroupSelection'
+    | 'groupOptions'
+    | 'selectedGroupId'
+    | 'requiresRatingSetSelection'
+    | 'ratingSetOptions'
+    | 'selectedRatingSetId'
   > = {},
 ): QuestionnaireImportReview {
   return {
@@ -738,6 +755,7 @@ const safeLimeSurveyQuestionAttributeValues: Record<string, readonly string[]> =
   answer_order: ['normal'],
   array_filter_style: ['0'],
   clear_default: ['N'],
+  dropdown_prefix: ['0'],
   hidden: ['0'],
   hide_tip: ['0'],
   max_answers: ['1'],
@@ -814,6 +832,75 @@ function hasDefaultLimeSurveyAnswerCodes(answers: Record<string, string>[]) {
   return answers.every(
     (answer, index) => answer.code === `A${String(index + 1).padStart(3, '0')}`,
   );
+}
+
+function inferLimeSurveyResponseValues(
+  question: Record<string, string>,
+  answers: Record<string, string>[],
+): number[] | null {
+  if (question.type === '5') return [1, 2, 3, 4, 5];
+  if (question.type !== 'F' && question.type !== 'L' && question.type !== '!') {
+    return null;
+  }
+  const questionAnswers = answers
+    .filter((answer) =>
+      answer.qid === question.qid && (!answer.scale_id || answer.scale_id === '0'))
+    .sort((left, right) =>
+      (Number(left.sortorder) || 0) - (Number(right.sortorder) || 0));
+  if (!reliableLimeSurveyAnswerOrder(questionAnswers)) return null;
+  const codes = questionAnswers.map((answer) => parseInteger(answer.code));
+  if (codes.every((value) => value !== null) && validIncreasingScale(codes as number[])) {
+    return codes as number[];
+  }
+  const assessments = questionAnswers.map((answer) => parseInteger(answer.assessment_value));
+  if (
+    assessments.every((value) => value !== null) &&
+    validIncreasingScale(assessments as number[])
+  ) {
+    return assessments as number[];
+  }
+  if (hasDefaultLimeSurveyAnswerCodes(questionAnswers)) {
+    return questionAnswers.map((_, index) => index + 1);
+  }
+  return null;
+}
+
+function limeSurveyRatingSetOptions(
+  parentQuestions: Record<string, string>[],
+  subquestions: Record<string, string>[],
+  answers: Record<string, string>[],
+): LimeSurveyRatingSetOption[] {
+  const grouped = new Map<string, {
+    questions: Record<string, string>[];
+    values: number[];
+    itemCount: number;
+  }>();
+  for (const question of parentQuestions) {
+    if (
+      question.mandatory !== 'Y' ||
+      (question.other && question.other !== 'N') ||
+      (question.relevance && question.relevance !== '1')
+    ) continue;
+    const values = inferLimeSurveyResponseValues(question, answers);
+    if (!values) continue;
+    const rowCount = question.type === 'F'
+      ? subquestions.filter((row) => row.parent_qid === question.qid).length
+      : 1;
+    if (rowCount < 1) continue;
+    const signature = values.join('|');
+    const existing = grouped.get(signature) ?? { questions: [], values, itemCount: 0 };
+    existing.questions.push(question);
+    existing.itemCount += rowCount;
+    grouped.set(signature, existing);
+  }
+  return [...grouped.entries()].map(([signature, group]) => ({
+    id: `values-${signature.replace(/\|/g, '-')}`,
+    name: group.questions.map((question) => question.title || question.qid).join(' + '),
+    sourceQuestionCount: group.questions.length,
+    itemCount: group.itemCount,
+    responseValues: group.values,
+    questionTypes: [...new Set(group.questions.map((question) => question.type || 'unknown'))],
+  }));
 }
 
 function parseLimeSurveyAnswerScale(
@@ -899,6 +986,7 @@ function parseLimeSurveyXml(
   contents: string,
   fileName: string,
   selectedGroupId?: string,
+  selectedRatingSetId?: string,
 ): QuestionnaireImportReview {
   if (/<!DOCTYPE|<!ENTITY|<\?xml-stylesheet/i.test(contents)) {
     throw new Error('The LimeSurvey file contains a DTD, entity or stylesheet declaration and was not parsed.');
@@ -1004,13 +1092,21 @@ function parseLimeSurveyXml(
   const selectedQuestions = questions.filter(
     (question) => question.gid === selectedGroup.gid,
   );
-  const selectedQuestionIds = new Set(selectedQuestions.map((question) => question.qid));
   const allSubquestions = xmlRows(document, 'subquestions');
-  const selectedSubquestions = allSubquestions.filter(
+  const groupSubquestions = allSubquestions.filter(
     (question) => question.gid === selectedGroup.gid ||
-      selectedQuestionIds.has(question.parent_qid),
+      selectedQuestions.some((parent) => parent.qid === question.parent_qid),
   );
-  for (const subquestion of selectedSubquestions) selectedQuestionIds.add(subquestion.qid);
+  const allParentQuestions = selectedQuestions
+    .filter((question) => !question.parent_qid || question.parent_qid === '0')
+    .sort((left, right) =>
+      (Number(left.question_order) || 0) - (Number(right.question_order) || 0));
+  const answers = xmlRows(document, 'answers');
+  const ratingSetOptions = limeSurveyRatingSetOptions(
+    allParentQuestions,
+    groupSubquestions,
+    answers,
+  );
 
   if (documentType === 'Survey' && groups.length > 1) {
     addConfirmation(importState, {
@@ -1036,6 +1132,55 @@ function parseLimeSurveyXml(
       title: 'The source group randomisation setting will not be retained',
       detail:
         'The converted questionnaire uses the reviewed exported question order. Confirm that a fixed order is suitable.',
+    });
+  }
+
+  if (ratingSetOptions.length > 1 && !selectedRatingSetId) {
+    return makeReview(
+      source,
+      sourceName,
+      fileName,
+      groupTitle,
+      null,
+      importState,
+      {
+        groupOptions,
+        selectedGroupId: selectedGroup.gid,
+        requiresRatingSetSelection: true,
+        ratingSetOptions,
+      },
+    );
+  }
+  const selectedRatingSet = selectedRatingSetId
+    ? ratingSetOptions.find((option) => option.id === selectedRatingSetId)
+    : ratingSetOptions[0];
+  if (selectedRatingSetId && !selectedRatingSet) {
+    throw new Error('Choose a rating set contained in the selected LimeSurvey group.');
+  }
+  const selectedRatingSignature = selectedRatingSet?.responseValues.join('|');
+  const parentQuestions = selectedRatingSignature
+    ? allParentQuestions.filter((question) =>
+        inferLimeSurveyResponseValues(question, answers)?.join('|') === selectedRatingSignature &&
+        question.mandatory === 'Y' &&
+        (!question.other || question.other === 'N') &&
+        (!question.relevance || question.relevance === '1'))
+    : allParentQuestions;
+  const selectedParentIds = new Set(parentQuestions.map((question) => question.qid));
+  const selectedSubquestions = groupSubquestions.filter((question) =>
+    selectedParentIds.has(question.parent_qid));
+  const selectedQuestionIds = new Set(parentQuestions.map((question) => question.qid));
+  for (const subquestion of selectedSubquestions) selectedQuestionIds.add(subquestion.qid);
+
+  const omittedQuestions = allParentQuestions.filter((question) =>
+    !selectedParentIds.has(question.qid));
+  if (selectedRatingSet && omittedQuestions.length) {
+    addConfirmation(importState, {
+      code: 'limesurvey-selected-rating-set-only',
+      title: `Only the ${selectedRatingSet.responseValues[0]}–${selectedRatingSet.responseValues.at(-1)} rating set will be converted`,
+      detail:
+        `${omittedQuestions.length} other source question${omittedQuestions.length === 1 ? '' : 's'} ` +
+        `(${omittedQuestions.map((question) => `${question.title || question.qid} [type ${question.type || 'unknown'}]`).join(', ')}) ` +
+        'will remain in LimeSurvey. They are listed here rather than silently removed or mixed into an invalid score.',
     });
   }
 
@@ -1070,12 +1215,7 @@ function parseLimeSurveyXml(
   );
 
   const questionL10ns = xmlRows(document, 'question_l10ns');
-  const answers = xmlRows(document, 'answers');
   const answerL10ns = xmlRows(document, 'answer_l10ns');
-  const parentQuestions = selectedQuestions
-    .filter((question) => !question.parent_qid || question.parent_qid === '0')
-    .sort((left, right) =>
-      (Number(left.question_order) || 0) - (Number(right.question_order) || 0));
   const items: ImportedScaleItem[] = [];
 
   addConfirmation(importState, {
@@ -1175,7 +1315,7 @@ function parseLimeSurveyXml(
       };
       items.push(item);
       importState.imported.push(findingForItem(item));
-    } else if (question.type === 'L') {
+    } else if (question.type === 'L' || question.type === '!') {
       if (!parentPrompt) {
         importState.unsupported.push({
           code: 'missing-visible-text',
@@ -1332,6 +1472,8 @@ function parseLimeSurveyXml(
     {
       groupOptions,
       selectedGroupId: selectedGroup.gid,
+      ratingSetOptions,
+      selectedRatingSetId: selectedRatingSet?.id,
     },
   );
 }
@@ -1359,6 +1501,7 @@ export function reviewQuestionnaireExport(
   fileName: string,
   selectedSource: QuestionnaireImportSourceSelection = 'auto',
   selectedGroupId?: string,
+  selectedRatingSetId?: string,
 ): QuestionnaireImportReview {
   const byteLength = new TextEncoder().encode(contents).length;
   if (!contents.trim()) throw new Error('The selected questionnaire export is empty.');
@@ -1378,5 +1521,5 @@ export function reviewQuestionnaireExport(
   }
   return detectedSource === 'qualtrics-qsf'
     ? parseQualtricsQsf(contents, fileName)
-    : parseLimeSurveyXml(contents, fileName, selectedGroupId);
+    : parseLimeSurveyXml(contents, fileName, selectedGroupId, selectedRatingSetId);
 }
