@@ -7,6 +7,7 @@ import '../src/accessible-nasa-tlx';
 import '../src/study-conductor';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 import type { StudyConductorApp } from '../src/study-conductor';
+import { createCustomQuestionnaireDefinition } from '../src/custom-questionnaire';
 import {
   DEFAULT_QUESTIONNAIRE_ID,
   buildQuestionnairePairs,
@@ -17,6 +18,7 @@ import {
   createStudyConfig,
   progressStorageKey,
 } from '../src/study';
+import { reviewQuestionnaireExport } from '../src/platform-questionnaire-import';
 
 async function renderComponent() {
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
@@ -256,6 +258,70 @@ describe('automated structural accessibility scan', () => {
     const component = await renderComponent();
     expect(component.textContent).toContain('System Usability Scale');
     expect(component.textContent).not.toContain('Smiley landmarks');
+    const result = await scan(component);
+    expect(result.violations).toEqual([]);
+  });
+
+  it('finds no detectable violations when an imported Qualtrics matrix row is rendered', async () => {
+    const qsf = JSON.parse(readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
+      'utf8',
+    ));
+    const matrix = qsf.SurveyElements.find(
+      (element: any) => element.PrimaryAttribute === 'QID_CLARITY',
+    );
+    matrix.Payload.QuestionType = 'Matrix';
+    matrix.Payload.Selector = 'Likert';
+    matrix.Payload.SubSelector = 'SingleAnswer';
+    matrix.Payload.QuestionText = 'Rate each statement.';
+    matrix.Payload.Choices = {
+      1: { Display: 'The instructions were clear.' },
+      2: { Display: 'I felt in control.' },
+    };
+    matrix.Payload.ChoiceOrder = [1, 2];
+    matrix.Payload.Answers = {
+      1: { Display: 'Strongly disagree' },
+      2: { Display: 'Disagree' },
+      3: { Display: 'Neither agree nor disagree' },
+      4: { Display: 'Agree' },
+      5: { Display: 'Strongly agree' },
+    };
+    matrix.Payload.AnswerOrder = [1, 2, 3, 4, 5];
+    const review = reviewQuestionnaireExport(JSON.stringify(qsf), 'matrix.qsf');
+    const definition = createCustomQuestionnaireDefinition(review.draft!);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'A11Y-MATRIX-01',
+      studyTitle: 'Expanded matrix accessibility check',
+      taskLabel: 'using the test system',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: true,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const url = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', url.pathname + url.hash);
+    const component = await renderComponent();
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-A11Y-MATRIX';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 3 items'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('#rating-heading')?.textContent).toBe(
+      'The instructions were clear.',
+    );
     const result = await scan(component);
     expect(result.violations).toEqual([]);
   });

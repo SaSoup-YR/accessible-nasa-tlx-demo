@@ -79,6 +79,44 @@ describe('saved questionnaire recovery announcement', () => {
     );
   });
 
+  it('migrates a valid Version 0.7 weighted NASA-TLX recovery copy before offering resume', async () => {
+    const legacyKey = 'accessible-nasa-tlx-v0.7-progress:demo-config:DEMO';
+    const { instrumentId: _instrumentId, ...legacySession } = savedSession;
+    localStorage.setItem(
+      legacyKey,
+      JSON.stringify({ ...legacySession, version: 3 }),
+    );
+
+    const component = await renderComponent();
+    await Promise.resolve();
+    await component.updateComplete;
+
+    expect(component.querySelector('#saved-session-offer')).not.toBeNull();
+    expect(localStorage.getItem(legacyKey)).toBeNull();
+    expect(JSON.parse(
+      localStorage.getItem(progressStorageKey('demo-config', 'DEMO'))!,
+    )).toMatchObject({
+      version: 4,
+      instrumentId: 'nasa-tlx-weighted',
+      ratingIndex: 2,
+      ratings: { mental: 40, physical: 25 },
+    });
+  });
+
+  it('leaves an invalid Version 0.7 recovery copy untouched instead of guessing', async () => {
+    const legacyKey = 'accessible-nasa-tlx-v0.7-progress:demo-config:DEMO';
+    const { instrumentId: _instrumentId, ...legacySession } = savedSession;
+    const invalidLegacy = { ...legacySession, version: 3, pairOrder: [] };
+    localStorage.setItem(legacyKey, JSON.stringify(invalidLegacy));
+
+    const component = await renderComponent();
+    await component.updateComplete;
+
+    expect(component.querySelector('#saved-session-offer')).toBeNull();
+    expect(localStorage.getItem(legacyKey)).toBe(JSON.stringify(invalidLegacy));
+    expect(localStorage.getItem(progressStorageKey('demo-config', 'DEMO'))).toBeNull();
+  });
+
   it('focuses the saved-session region and exposes the exact saved count and choices', async () => {
     const component = await renderComponent();
     component.savedSession = savedSession;
