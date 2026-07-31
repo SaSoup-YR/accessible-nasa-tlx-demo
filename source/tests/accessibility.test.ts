@@ -149,6 +149,47 @@ describe('automated structural accessibility scan', () => {
     expect(result.violations).toEqual([]);
   });
 
+  it('finds no detectable violations in the LimeSurvey group-selection review', async () => {
+    const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
+    document.body.append(conductor);
+    await conductor.updateComplete;
+    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
+      .click();
+    await conductor.updateComplete;
+    const lss = readFileSync(
+      resolve(import.meta.dirname, 'fixtures', 'limesurvey-group-rating.lsg'),
+      'utf8',
+    )
+      .replace(
+        '<LimeSurveyDocType>Group</LimeSurveyDocType>',
+        '<LimeSurveyDocType>Survey</LimeSurveyDocType>',
+      )
+      .replace(
+        '</rows>\n </groups>',
+        '<row><gid>20</gid><group_order>2</group_order><randomization_group/><grelevance>1</grelevance></row></rows>\n </groups>',
+      )
+      .replace(
+        '</rows>\n </group_l10ns>',
+        '<row><gid>20</gid><group_name>Other content</group_name><description/><language>en</language></row></rows>\n </group_l10ns>',
+      );
+    const input = conductor.querySelector<HTMLInputElement>(
+      '[data-platform-questionnaire-import]',
+    )!;
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: [{ name: 'multi-group.lss', text: async () => lss }],
+    });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await conductor.updateComplete;
+    expect(conductor.textContent).toContain('Choose one LimeSurvey questionnaire group');
+    const result = await axe.run(conductor, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations).toEqual([]);
+  });
+
   it('finds no detectable violations in the configured presentation-only preference route', async () => {
     const config = createStudyConfig({
       studyId: 'A11Y-01',

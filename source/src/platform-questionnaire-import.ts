@@ -4,8 +4,18 @@ import {
   type CustomQuestionnaireDraft,
 } from './custom-questionnaire';
 
-export type QuestionnaireImportSource = 'qualtrics-qsf' | 'limesurvey-lss';
+export type QuestionnaireImportSource =
+  | 'qualtrics-qsf'
+  | 'limesurvey-lss'
+  | 'limesurvey-lsg';
 export type QuestionnaireImportSourceSelection = QuestionnaireImportSource | 'auto';
+
+export interface LimeSurveyGroupOption {
+  id: string;
+  name: string;
+  questionCount: number;
+  questionTypes: string[];
+}
 
 export interface QuestionnaireImportFinding {
   code: string;
@@ -23,6 +33,9 @@ export interface QuestionnaireImportReview {
   confirmations: QuestionnaireImportFinding[];
   unsupported: QuestionnaireImportFinding[];
   canConvert: boolean;
+  requiresGroupSelection?: boolean;
+  groupOptions?: LimeSurveyGroupOption[];
+  selectedGroupId?: string;
 }
 
 interface ImportedScaleItem {
@@ -293,6 +306,10 @@ function makeReview(
   title: string,
   draft: CustomQuestionnaireDraft | null,
   state: ImportAccumulator,
+  extras: Pick<
+    QuestionnaireImportReview,
+    'requiresGroupSelection' | 'groupOptions' | 'selectedGroupId'
+  > = {},
 ): QuestionnaireImportReview {
   return {
     source,
@@ -304,6 +321,7 @@ function makeReview(
     confirmations: state.confirmations,
     unsupported: state.unsupported,
     canConvert: Boolean(draft) && state.unsupported.length === 0,
+    ...extras,
   };
 }
 
@@ -716,21 +734,29 @@ function lssLocalisedValue(
 }
 
 const safeLimeSurveyQuestionAttributeValues: Record<string, readonly string[]> = {
+  answer_width: ['0'],
   answer_order: ['normal'],
   array_filter_style: ['0'],
+  clear_default: ['N'],
   hidden: ['0'],
   hide_tip: ['0'],
+  max_answers: ['1'],
+  min_answers: ['1'],
   other_comment_mandatory: ['0'],
   other_numbers_only: ['0'],
   other_position: ['default'],
   page_break: ['0'],
   public_statistics: ['0'],
+  random_order: ['0'],
+  save_as_default: ['N'],
   scale_export: ['0'],
+  slider_rating: ['0'],
   statistics_graphtype: ['0'],
   statistics_showgraph: ['1'],
   time_limit_action: ['1'],
   time_limit_disable_next: ['0'],
   time_limit_disable_prev: ['0'],
+  use_dropdown: ['0'],
 };
 
 function reviewLimeSurveyQuestionAttributes(
@@ -790,9 +816,89 @@ function hasDefaultLimeSurveyAnswerCodes(answers: Record<string, string>[]) {
   );
 }
 
-function parseLimeSurveyLss(
+function parseLimeSurveyAnswerScale(
+  question: Record<string, string>,
+  answers: Record<string, string>[],
+  answerL10ns: Record<string, string>[],
+  language: string,
+  state: ImportAccumulator,
+) {
+  const questionId = question.qid || question.title || 'unknown-question';
+  const questionAnswers = answers
+    .filter((answer) =>
+      answer.qid === question.qid && (!answer.scale_id || answer.scale_id === '0'))
+    .sort((left, right) =>
+      (Number(left.sortorder) || 0) - (Number(right.sortorder) || 0));
+  if (!reliableLimeSurveyAnswerOrder(questionAnswers)) {
+    state.unsupported.push({
+      code: 'limesurvey-answer-order',
+      title: `${question.title || questionId} has no reliable answer order`,
+      detail: 'Every answer needs one unique consecutive sort order starting at 0 or 1.',
+    });
+    return null;
+  }
+  const codes = questionAnswers.map((answer) => parseInteger(answer.code));
+  const assessments = questionAnswers.map((answer) => parseInteger(answer.assessment_value));
+  let values: number[];
+  if (codes.every((value) => value !== null) && validIncreasingScale(codes as number[])) {
+    values = codes as number[];
+  } else if (
+    assessments.every((value) => value !== null) &&
+    validIncreasingScale(assessments as number[])
+  ) {
+    values = assessments as number[];
+    addConfirmation(state, {
+      code: 'limesurvey-assessment-values',
+      title: 'LimeSurvey assessment values were used as response values',
+      detail: 'Verify every imported value against the LimeSurvey answer table.',
+    });
+  } else if (hasDefaultLimeSurveyAnswerCodes(questionAnswers)) {
+    values = questionAnswers.map((_, index) => index + 1);
+    addConfirmation(state, {
+      code: 'limesurvey-positional-values',
+      title: 'LimeSurvey default answer codes were converted to ordered positions',
+      detail:
+        'The source uses A001 through A00N rather than numeric scores. The converted scale uses positions 1 through N. ' +
+        'Confirm the intended values and scoring before conversion.',
+    });
+  } else {
+    state.unsupported.push({
+      code: 'limesurvey-unsupported-values',
+      title: `${question.title || questionId} has no safe increasing numeric recode`,
+      detail:
+        'Answer codes or assessment values must form one increasing whole-number scale with a constant step.',
+    });
+    return null;
+  }
+
+  const labels = questionAnswers.map((answer, index) => {
+    const rawAnswer =
+      lssLocalisedValue(answerL10ns, 'aid', answer.aid, 'answer', language) ||
+      answer.answer;
+    if (!collapsed(rawAnswer ?? '')) {
+      addConfirmation(state, {
+        code: 'limesurvey-blank-scale-labels',
+        title: 'Blank scale positions will be shown as their numeric values',
+        detail:
+          'LimeSurvey leaves one or more intermediate labels blank. The converted questionnaire shows the reviewed numeric response value at those positions.',
+      });
+      return String(values[index]);
+    }
+    return safeVisibleText(
+      rawAnswer,
+      `Answer ${index + 1}`,
+      `${question.title || questionId}/${answer.code}`,
+      state,
+    );
+  });
+  if (labels.some((label) => !label)) return null;
+  return { values, labels: labels as string[] };
+}
+
+function parseLimeSurveyXml(
   contents: string,
   fileName: string,
+  selectedGroupId?: string,
 ): QuestionnaireImportReview {
   if (/<!DOCTYPE|<!ENTITY|<\?xml-stylesheet/i.test(contents)) {
     throw new Error('The LimeSurvey file contains a DTD, entity or stylesheet declaration and was not parsed.');
@@ -800,11 +906,16 @@ function parseLimeSurveyLss(
   const parser = new DOMParser();
   const document = parser.parseFromString(contents, 'application/xml');
   if (document.querySelector('parsererror')) {
-    throw new Error('The LimeSurvey LSS file is not valid XML.');
+    throw new Error('The LimeSurvey file is not valid XML.');
   }
-  if (document.querySelector('LimeSurveyDocType')?.textContent?.trim() !== 'Survey') {
-    throw new Error('The XML file is not a LimeSurvey survey-structure export.');
+  const documentType = document.querySelector('LimeSurveyDocType')?.textContent?.trim();
+  if (documentType !== 'Survey' && documentType !== 'Group') {
+    throw new Error('The XML file is not a LimeSurvey survey or question-group export.');
   }
+  const source: QuestionnaireImportSource = documentType === 'Group'
+    ? 'limesurvey-lsg'
+    : 'limesurvey-lss';
+  const sourceName = documentType === 'Group' ? 'LimeSurvey LSG' : 'LimeSurvey LSS';
   const importState = state();
   const languages = [...document.querySelectorAll('languages > language')]
     .map((language) => language.textContent?.trim() ?? '')
@@ -835,37 +946,106 @@ function parseLimeSurveyLss(
     'Imported LimeSurvey questionnaire';
   const groups = xmlRows(document, 'groups');
   const groupL10ns = xmlRows(document, 'group_l10ns');
-  if (groups.length !== 1) {
-    importState.unsupported.push({
-      code: 'limesurvey-multiple-groups',
-      title: 'The LimeSurvey export is outside the supported single-group subset',
-      detail: 'Multiple group headings and group-level navigation are not flattened.',
+  const questions = xmlRows(document, 'questions');
+  if (!groups.length) {
+    throw new Error('The LimeSurvey export contains no questionnaire group.');
+  }
+
+  const groupOptions = groups
+    .slice()
+    .sort((left, right) =>
+      (Number(left.group_order) || 0) - (Number(right.group_order) || 0))
+    .map((group) => {
+      const localised = groupL10ns.find(
+        (row) => row.gid === group.gid && (!row.language || row.language === language),
+      );
+      const groupQuestions = questions.filter(
+        (question) => question.gid === group.gid &&
+          (!question.parent_qid || question.parent_qid === '0'),
+      );
+      return {
+        id: group.gid,
+        name: collapsed(localised?.group_name ?? group.group_name ?? '') ||
+          `Group ${group.gid}`,
+        questionCount: groupQuestions.length,
+        questionTypes: [...new Set(groupQuestions.map((question) =>
+          question.type || 'unknown'))],
+      };
+    });
+
+  if (documentType === 'Survey' && groups.length > 1 && !selectedGroupId) {
+    return makeReview(
+      source,
+      sourceName,
+      fileName,
+      title,
+      null,
+      importState,
+      {
+        requiresGroupSelection: true,
+        groupOptions,
+      },
+    );
+  }
+
+  const selectedGroup = selectedGroupId
+    ? groups.find((group) => group.gid === selectedGroupId)
+    : groups[0];
+  if (!selectedGroup) {
+    throw new Error('Choose a questionnaire group contained in this LimeSurvey export.');
+  }
+  const selectedGroupLocalisation = groupL10ns.find(
+    (row) => row.gid === selectedGroup.gid &&
+      (!row.language || row.language === language),
+  );
+  const groupTitle = collapsed(
+    selectedGroupLocalisation?.group_name ?? selectedGroup.group_name ?? '',
+  ) || `Group ${selectedGroup.gid}`;
+  const selectedQuestions = questions.filter(
+    (question) => question.gid === selectedGroup.gid,
+  );
+  const selectedQuestionIds = new Set(selectedQuestions.map((question) => question.qid));
+  const allSubquestions = xmlRows(document, 'subquestions');
+  const selectedSubquestions = allSubquestions.filter(
+    (question) => question.gid === selectedGroup.gid ||
+      selectedQuestionIds.has(question.parent_qid),
+  );
+  for (const subquestion of selectedSubquestions) selectedQuestionIds.add(subquestion.qid);
+
+  if (documentType === 'Survey' && groups.length > 1) {
+    addConfirmation(importState, {
+      code: 'limesurvey-selected-group-only',
+      title: `Only “${groupTitle}” will be converted`,
+      detail:
+        `${groups.length - 1} other survey group${groups.length === 2 ? '' : 's'} will remain outside the converted questionnaire. ` +
+        'The researcher selected this group explicitly; no other group is silently flattened or removed.',
     });
   }
-  for (const group of groups) {
-    if (group.grelevance && group.grelevance !== '1') {
-      importState.unsupported.push({
-        code: 'limesurvey-group-relevance',
-        title: `Group ${group.gid || ''} uses relevance logic`,
-        detail: 'Group conditions are not imported.',
-      });
-    }
-    const localised = groupL10ns.find(
-      (row) => row.gid === group.gid && (!row.language || row.language === language),
-    );
-    const description = localised?.description ?? group.description ?? '';
-    if (collapsed(description)) {
-      importState.unsupported.push({
-        code: 'limesurvey-group-description',
-        title: `Group ${group.gid || ''} has participant-visible description text`,
-        detail: 'Group descriptions are not silently removed by this release.',
-      });
-    }
+  if (selectedGroup.grelevance && selectedGroup.grelevance !== '1') {
+    addConfirmation(importState, {
+      code: 'limesurvey-group-relevance-not-retained',
+      title: 'The source group display condition will not be retained',
+      detail:
+        `The LimeSurvey group condition is “${collapsed(selectedGroup.grelevance)}”. ` +
+        'The converted questionnaire runs this selected group as a standalone instrument. Confirm that this is intended.',
+    });
   }
-  if (xmlRows(document, 'conditions').length) {
+  if (collapsed(selectedGroup.randomization_group ?? '')) {
+    addConfirmation(importState, {
+      code: 'limesurvey-group-randomisation-not-retained',
+      title: 'The source group randomisation setting will not be retained',
+      detail:
+        'The converted questionnaire uses the reviewed exported question order. Confirm that a fixed order is suitable.',
+    });
+  }
+
+  const conditions = xmlRows(document, 'conditions').filter((condition) =>
+    selectedQuestionIds.has(condition.qid) ||
+    selectedQuestionIds.has(condition.cqid));
+  if (conditions.length) {
     importState.unsupported.push({
       code: 'limesurvey-conditions',
-      title: 'The LimeSurvey export contains conditions',
+      title: 'The selected LimeSurvey group contains question conditions',
       detail: 'Branching and conditional relevance are not imported.',
     });
   }
@@ -884,30 +1064,20 @@ function parseLimeSurveyLss(
     });
   }
   reviewLimeSurveyQuestionAttributes(
-    xmlRows(document, 'question_attributes'),
+    xmlRows(document, 'question_attributes').filter((row) =>
+      selectedQuestionIds.has(row.qid)),
     importState,
   );
 
-  const questions = xmlRows(document, 'questions');
   const questionL10ns = xmlRows(document, 'question_l10ns');
   const answers = xmlRows(document, 'answers');
   const answerL10ns = xmlRows(document, 'answer_l10ns');
-  const groupOrder = new Map(groups.map((group) => [group.gid, Number(group.group_order) || 0]));
-  const parentQuestions = questions
+  const parentQuestions = selectedQuestions
     .filter((question) => !question.parent_qid || question.parent_qid === '0')
     .sort((left, right) =>
-      (groupOrder.get(left.gid) ?? 0) - (groupOrder.get(right.gid) ?? 0) ||
       (Number(left.question_order) || 0) - (Number(right.question_order) || 0));
   const items: ImportedScaleItem[] = [];
 
-  if (questions.some((question) => question.parent_qid && question.parent_qid !== '0')) {
-    importState.unsupported.push({
-      code: 'limesurvey-subquestions',
-      title: 'The LimeSurvey export contains subquestions or matrix rows',
-      detail:
-        'This release imports only standalone List (Radio) and 5 Point Choice questions.',
-    });
-  }
   addConfirmation(importState, {
     code: 'limesurvey-platform-settings-not-imported',
     title: 'LimeSurvey platform and presentation settings are not imported',
@@ -978,96 +1148,164 @@ function parseLimeSurveyLss(
       });
       continue;
     }
-    const prompt = safeVisibleText(
-      rawQuestionText,
-      'Question text',
-      question.title || questionId,
-      importState,
-    );
-    if (!prompt) continue;
+    const parentPrompt = collapsed(rawQuestionText ?? '')
+      ? safeVisibleText(
+          rawQuestionText,
+          'Question text',
+          question.title || questionId,
+          importState,
+        )
+      : null;
 
-    let values: number[] = [];
-    let labels: string[] = [];
     if (question.type === '5') {
-      values = [1, 2, 3, 4, 5];
-      labels = ['1', '2', '3', '4', '5'];
-    } else if (question.type === 'L') {
-      const questionAnswers = answers
-        .filter((answer) => answer.qid === question.qid && (!answer.scale_id || answer.scale_id === '0'))
-        .sort((left, right) => (Number(left.sortorder) || 0) - (Number(right.sortorder) || 0));
-      if (!reliableLimeSurveyAnswerOrder(questionAnswers)) {
+      if (!parentPrompt) {
         importState.unsupported.push({
-          code: 'limesurvey-answer-order',
-          title: `${question.title || questionId} has no reliable answer order`,
-          detail:
-            'Every answer needs one unique consecutive sort order starting at 0 or 1.',
+          code: 'missing-visible-text',
+          title: 'Question text is empty',
+          detail: `${question.title || questionId} does not contain participant-visible text.`,
         });
         continue;
       }
-      const codes = questionAnswers.map((answer) => parseInteger(answer.code));
-      const assessments = questionAnswers.map((answer) => parseInteger(answer.assessment_value));
-      if (codes.every((value) => value !== null) && validIncreasingScale(codes as number[])) {
-        values = codes as number[];
-      } else if (
-        assessments.every((value) => value !== null) &&
-        validIncreasingScale(assessments as number[])
-      ) {
-        values = assessments as number[];
-        addConfirmation(importState, {
-          code: 'limesurvey-assessment-values',
-          title: 'LimeSurvey assessment values were used as response values',
-          detail: 'Verify every imported value against the LimeSurvey answer table.',
+      const item: ImportedScaleItem = {
+        sourceId: question.title || questionId,
+        name: question.title || `Item ${items.length + 1}`,
+        prompt: parentPrompt,
+        values: [1, 2, 3, 4, 5],
+        labels: ['1', '2', '3', '4', '5'],
+      };
+      items.push(item);
+      importState.imported.push(findingForItem(item));
+    } else if (question.type === 'L') {
+      if (!parentPrompt) {
+        importState.unsupported.push({
+          code: 'missing-visible-text',
+          title: 'Question text is empty',
+          detail: `${question.title || questionId} does not contain participant-visible text.`,
         });
-      } else if (hasDefaultLimeSurveyAnswerCodes(questionAnswers)) {
-        values = questionAnswers.map((_, index) => index + 1);
-        addConfirmation(importState, {
-          code: 'limesurvey-positional-values',
-          title: 'LimeSurvey default answer codes were converted to ordered positions',
+        continue;
+      }
+      const scale = parseLimeSurveyAnswerScale(
+        question,
+        answers,
+        answerL10ns,
+        language,
+        importState,
+      );
+      if (!scale) continue;
+      const item: ImportedScaleItem = {
+        sourceId: question.title || questionId,
+        name: question.title || `Item ${items.length + 1}`,
+        prompt: parentPrompt,
+        ...scale,
+      };
+      items.push(item);
+      importState.imported.push(findingForItem(item));
+    } else if (question.type === 'F') {
+      const rows = selectedSubquestions
+        .filter((row) => row.parent_qid === question.qid)
+        .sort((left, right) =>
+          (Number(left.question_order) || 0) - (Number(right.question_order) || 0));
+      if (!rows.length) {
+        importState.unsupported.push({
+          code: 'limesurvey-array-without-rows',
+          title: `${question.title || questionId} has no array row`,
           detail:
-            'The source uses A001 through A00N rather than numeric scores. The converted scale uses positions 1 through N. ' +
-            'Confirm the intended values and scoring before conversion.',
+            'A LimeSurvey Array question must contain at least one explicit row before it can be converted.',
+        });
+        continue;
+      }
+      if (rows.some((row) =>
+        (row.relevance && row.relevance !== '1') ||
+        (row.other && row.other !== 'N') ||
+        (row.scale_id && row.scale_id !== '0'))) {
+        importState.unsupported.push({
+          code: 'limesurvey-array-row-behaviour',
+          title: `${question.title || questionId} contains an unsupported array row`,
+          detail: 'Conditional, “Other” or secondary-scale array rows are not flattened.',
+        });
+        continue;
+      }
+      const scale = parseLimeSurveyAnswerScale(
+        question,
+        answers,
+        answerL10ns,
+        language,
+        importState,
+      );
+      if (!scale) continue;
+      if (rows.length === 1) {
+        addConfirmation(importState, {
+          code: 'limesurvey-single-row-array-expanded',
+          title: 'Single-row LimeSurvey Array questions were converted to rating items',
+          detail:
+            'Each source question contains one array row. Review the displayed item wording and response scale against LimeSurvey.',
         });
       } else {
-        importState.unsupported.push({
-          code: 'limesurvey-unsupported-values',
-          title: `${question.title || questionId} has no safe increasing numeric recode`,
+        addConfirmation(importState, {
+          code: 'limesurvey-array-expanded',
+          title: 'LimeSurvey Array rows were converted to separate rating items',
           detail:
-            'Answer codes or assessment values must form one increasing whole-number scale with a constant step.',
+            'The source array heading is combined with each visible row label when both contain text. Review the converted wording and order.',
         });
-        continue;
       }
-      labels = questionAnswers.map((answer, index) => {
-        const rawAnswer =
-          lssLocalisedValue(answerL10ns, 'aid', answer.aid, 'answer', language) ||
-          answer.answer;
-        return safeVisibleText(
-          rawAnswer,
-          `Answer ${index + 1}`,
-          `${question.title || questionId}/${answer.code}`,
-          importState,
-        );
-      }).filter((label): label is string => Boolean(label));
-      if (labels.length !== questionAnswers.length || labels.length !== values.length) continue;
+      for (const row of rows) {
+        const rowId = row.qid || row.title || `${questionId}-row`;
+        const rowText =
+          lssLocalisedValue(questionL10ns, 'qid', row.qid, 'question', language) ||
+          row.question;
+        const rowHelp =
+          lssLocalisedValue(questionL10ns, 'qid', row.qid, 'help', language) ||
+          row.help;
+        const rowScript =
+          lssLocalisedValue(questionL10ns, 'qid', row.qid, 'script', language) ||
+          row.script;
+        if (collapsed(rowScript || '') || executableMarkup.test(rowHelp || '') ||
+          dynamicText.test(rowHelp || '') || unsupportedStructuredMarkup.test(rowHelp || '') ||
+          visibleMarkupText(rowHelp || '')) {
+          importState.unsupported.push({
+            code: 'limesurvey-array-row-content',
+            title: `${row.title || rowId} contains unsupported row content`,
+            detail: 'Array-row scripts, dynamic content and help text are not imported.',
+          });
+          continue;
+        }
+        const rowPrompt = collapsed(rowText ?? '')
+          ? safeVisibleText(rowText, 'Array row text', row.title || rowId, importState)
+          : null;
+        const prompt = parentPrompt && rowPrompt
+          ? `${parentPrompt}: ${rowPrompt}`
+          : parentPrompt || rowPrompt;
+        if (!prompt) {
+          importState.unsupported.push({
+            code: 'missing-visible-text',
+            title: 'Array item text is empty',
+            detail: `${row.title || rowId} and its parent question contain no participant-visible text.`,
+          });
+          continue;
+        }
+        const item: ImportedScaleItem = {
+          sourceId: `${question.title || questionId}/${row.title || rowId}`,
+          name: rows.length === 1 && !rowPrompt
+            ? question.title || `Item ${items.length + 1}`
+            : row.title || question.title || `Item ${items.length + 1}`,
+          prompt,
+          values: [...scale.values],
+          labels: [...scale.labels],
+        };
+        items.push(item);
+        importState.imported.push(findingForItem(item));
+      }
     } else {
       importState.unsupported.push({
         code: 'limesurvey-unsupported-question',
         title: `${question.title || questionId} uses unsupported LimeSurvey type ${question.type || 'unknown'}`,
-        detail: 'Supported in this release: List (Radio) and 5 Point Choice.',
+        detail: 'Supported in this release: List (Radio), 5 Point Choice and reviewed Array rating rows.',
       });
-      continue;
     }
-    const item: ImportedScaleItem = {
-      sourceId: question.title || questionId,
-      name: question.title || `Item ${items.length + 1}`,
-      prompt,
-      values,
-      labels,
-    };
-    items.push(item);
-    importState.imported.push(findingForItem(item));
   }
 
-  const description = surveyLanguage?.surveyls_description ||
+  const description = selectedGroupLocalisation?.description ||
+    selectedGroup.description || surveyLanguage?.surveyls_description ||
     surveyLanguage?.surveyls_welcometext || '';
   const intro = collapsed(description)
     ? safeVisibleText(
@@ -1078,19 +1316,23 @@ function parseLimeSurveyLss(
       )
     : null;
   const draft = buildDraft(
-    title,
-    'Imported from LimeSurvey LSS',
+    groupTitle,
+    `Imported from ${sourceName}`,
     intro ?? 'Answer each imported item about the task that you have just completed.',
     items,
     importState,
   );
   return makeReview(
-    'limesurvey-lss',
-    'LimeSurvey LSS',
+    source,
+    sourceName,
     fileName,
-    title,
+    groupTitle,
     draft,
     importState,
+    {
+      groupOptions,
+      selectedGroupId: selectedGroup.gid,
+    },
   );
 }
 
@@ -1106,13 +1348,17 @@ function detectSource(
   if (extension === 'lss' || (trimmed.startsWith('<') && /<LimeSurveyDocType>Survey</.test(contents))) {
     return 'limesurvey-lss';
   }
-  throw new Error('Choose a Qualtrics .qsf file or a LimeSurvey .lss file.');
+  if (extension === 'lsg' || (trimmed.startsWith('<') && /<LimeSurveyDocType>Group</.test(contents))) {
+    return 'limesurvey-lsg';
+  }
+  throw new Error('Choose a Qualtrics .qsf file or a LimeSurvey .lss or .lsg file.');
 }
 
 export function reviewQuestionnaireExport(
   contents: string,
   fileName: string,
   selectedSource: QuestionnaireImportSourceSelection = 'auto',
+  selectedGroupId?: string,
 ): QuestionnaireImportReview {
   const byteLength = new TextEncoder().encode(contents).length;
   if (!contents.trim()) throw new Error('The selected questionnaire export is empty.');
@@ -1121,13 +1367,16 @@ export function reviewQuestionnaireExport(
   }
   const detectedSource = detectSource(contents, fileName);
   if (selectedSource !== 'auto' && selectedSource !== detectedSource) {
+    const detectedName = detectedSource === 'qualtrics-qsf'
+      ? 'Qualtrics QSF'
+      : detectedSource === 'limesurvey-lss'
+        ? 'LimeSurvey LSS'
+        : 'LimeSurvey LSG';
     throw new Error(
-      `The selected file looks like ${detectedSource === 'qualtrics-qsf'
-        ? 'Qualtrics QSF'
-        : 'LimeSurvey LSS'}, not the chosen format.`,
+      `The selected file looks like ${detectedName}, not the chosen format.`,
     );
   }
   return detectedSource === 'qualtrics-qsf'
     ? parseQualtricsQsf(contents, fileName)
-    : parseLimeSurveyLss(contents, fileName);
+    : parseLimeSurveyXml(contents, fileName, selectedGroupId);
 }

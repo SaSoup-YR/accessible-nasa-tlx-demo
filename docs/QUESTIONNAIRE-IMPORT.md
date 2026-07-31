@@ -9,11 +9,15 @@ The selected file is not uploaded.
 - **Qualtrics:** a `.qsf` survey export. Qualtrics documents QSF as its survey
   project format containing survey structure and settings, without response
   data: <https://www.qualtrics.com/support/survey-platform/survey-module/survey-tools/import-and-export-surveys/>
-- **LimeSurvey:** an `.lss` XML survey-structure export. LimeSurvey documents LSS
-  as containing groups, questions, subquestions, answers and conditions, without
-  response data: <https://www.limesurvey.org/manual/Display/Export_survey/en>
+- **LimeSurvey survey:** an `.lss` XML survey-structure export. A survey with
+  several groups requires the researcher to choose one group for review.
+- **LimeSurvey question group:** an `.lsg` XML question-group export. This is the
+  preferred input when one questionnaire is stored as one group inside a larger
+  LimeSurvey survey. LimeSurvey documents LSS/LSG structure exports as containing
+  groups, questions, subquestions, answers and conditions, without response data:
+  <https://www.limesurvey.org/manual/Display/Export_survey/en>
 
-Do not rename a response-data export to `.qsf` or `.lss`. Do not hand-edit the
+Do not rename a response-data export to `.qsf`, `.lss` or `.lsg`. Do not hand-edit the
 source export to make it pass.
 
 ## Why AQP JSON is a separate import
@@ -22,7 +26,7 @@ The conductor offers three different routes:
 
 | Route | Input | Purpose |
 | --- | --- | --- |
-| Qualtrics/LimeSurvey import | `.qsf` or `.lss` | Review and convert an external source-platform export |
+| Qualtrics/LimeSurvey import | `.qsf`, `.lss` or `.lsg` | Review and convert an external source-platform export |
 | AQP definition reuse | `.json` downloaded from this platform | Reproduce an already converted and validated questionnaire |
 | Manual builder | Form fields | Create a small questionnaire without a source export |
 
@@ -49,17 +53,25 @@ Qualtrics support:
 
 LimeSurvey support:
 
-- one base language and one question group. If the LSS also contains additional
-  languages, only the declared base language is proposed and the omission is
-  shown for explicit confirmation;
+- one base language and one explicitly selected question group. A multi-group
+  LSS first presents the group names, source question counts and type codes. It
+  does not flatten the survey automatically. An LSG selects its one group;
+- if the export also contains additional languages, only the declared base
+  language is proposed and the omission is shown for explicit confirmation;
 - mandatory `List (Radio)` (`L`) questions with explicit increasing numeric
   answer codes or assessment values, or current default `A001` through `A00N`
   codes converted to ordered positions `1` through `N` after confirmation;
-- mandatory `5 Point Choice` (`5`) questions.
+- mandatory `5 Point Choice` (`5`) questions; and
+- mandatory numeric `Array` (`F`) rating rows with one shared ordered scale.
+  Each row becomes one item. A one-row Array becomes one rating item. Blank
+  intermediate scale labels are displayed as their reviewed numeric values.
 
-Empty and known inert/default LimeSurvey question attributes are reported for
-confirmation but do not block conversion. Active or unknown validation,
-randomisation, timing, visibility or presentation attributes still block it.
+Empty and known inert/default LimeSurvey question attributes do not block
+conversion. Group relevance, omitted survey groups, Array expansion, blank
+intermediate labels and platform presentation settings are reported for explicit
+confirmation. Active or unknown validation, question-level branching,
+randomisation, timing, visibility or presentation attributes still block the
+selected group.
 
 The source question order, response order, displayed labels and accepted numeric
 values are preserved. Imported response labels remain visible in the participant
@@ -80,8 +92,8 @@ blocked when the export contains unsupported items or behaviour, including:
   expression text or arbitrary formulas;
 - participant-visible media, tables or interactive controls embedded in item
   text;
-- LimeSurvey subquestions, assessments, default answers, quotas or active
-  question attributes; or
+- unsupported LimeSurvey subquestion structures, assessments, default answers,
+  quotas or active question attributes; or
 - more than 20 supported items or an export larger than 2 MB.
 
 Source-platform theme, navigation, publication and notification settings are
@@ -93,8 +105,9 @@ reported and excluded.
 1. Open `study.html` and choose **Add your own questionnaire**.
 2. Under **1. Import a Qualtrics or LimeSurvey export**, leave **Detect from
    file** selected unless format checking is part of the test.
-3. Select one `.qsf` or `.lss` export.
-4. The page moves keyboard focus to the import review.
+3. Select one `.qsf`, `.lss` or `.lsg` export.
+4. The page moves keyboard focus to the import review. If an LSS contains
+   several groups, choose one group and select **Review selected group**.
 5. Check all three review sections:
    - **Imported safely** lists every accepted item and its ordered values.
    - **Requires researcher confirmation** lists transformations and decisions
@@ -126,6 +139,7 @@ Run the two sanitised files included with the automated tests:
 - [`qualtrics-rating.qsf`](../source/tests/fixtures/qualtrics-rating.qsf)
 - [`limesurvey-rating.lss`](../source/tests/fixtures/limesurvey-rating.lss)
 - [`limesurvey-current-rating.lss`](../source/tests/fixtures/limesurvey-current-rating.lss)
+- [`limesurvey-group-rating.lsg`](../source/tests/fixtures/limesurvey-group-rating.lsg)
 
 For each file:
 
@@ -142,6 +156,8 @@ For each file:
 5. For the current LimeSurvey fixture, also confirm that the English base
    language, omitted additional language, default question attributes and
    positional conversion of `A001`–`A005` are all reported rather than hidden.
+   For the LSG fixture, confirm the one-row Array expansion, blank numeric scale
+   labels and source group condition are all reported for confirmation.
 6. Choose **Agreement**, **Mean of reviewed item values**, no reverse-scored
    items, select the final confirmation checkbox, then convert.
 7. Confirm that the page moves to the green **Questionnaire ready** summary.
@@ -157,7 +173,7 @@ For each file:
 3. Under **2. Reuse an AQP questionnaire definition**, choose the downloaded
    `.json` file.
 4. Confirm that the same name, two items, 1–5 labels, mean rule and source
-   information are selected without a QSF/LSS conversion review.
+   information are selected without a QSF/LSS/LSG conversion review.
 5. Generate and complete the same `4`, `2` local test. The score must again be
    `3.00`.
 
@@ -169,9 +185,11 @@ actual Qualtrics and LimeSurvey accounts.
 
 1. Create the same two-item, required, single-choice 1–5 questionnaire in
    Qualtrics and export a fresh QSF.
-2. Create the same questionnaire in LimeSurvey and export a fresh LSS survey
+2. Create the same questionnaire as one LimeSurvey group and export both a fresh
+   LSG question-group structure and, if available, the containing LSS survey
    structure.
-3. Import both files separately.
+3. Import the QSF and LSG separately. Import the LSS and confirm that the same
+   group must be selected before its review appears.
 4. Compare the source and review line by line: title, item count, item order,
    wording, answer order, displayed labels and numeric values.
 5. Complete one local result from each converted definition.
