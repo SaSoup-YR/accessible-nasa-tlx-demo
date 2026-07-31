@@ -1,4 +1,4 @@
-import{w as it,g as Ge,x as rt,M as Pe,a as y,t as st,i as ot,D as at,m as pe,y as lt,z as ut,u as ct,o as dt,B as pt,h as mt,C as Le,P as ye,A as Q,l as m,k as ve,j as ht,E as ft,F as gt,f as Ne}from"./shared-o8MeAYs2.js";const we=`__js_AQP_ACCEPTED
+import{w as it,g as Ge,x as rt,M as Pe,a as y,t as st,i as ot,D as at,m as pe,y as lt,z as ut,u as ct,o as dt,B as pt,h as mt,C as Le,P as ye,A as Q,l as m,k as ve,j as ht,E as ft,F as gt,f as Ne}from"./shared-C1FlJX-T.js";const we=`__js_AQP_ACCEPTED
 __js_AQP_BRIDGE_READY
 __js_AQP_BRIDGE_BUILD
 __js_AQP_SCHEMA
@@ -859,10 +859,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
               </span>
               <span>
                 Questionnaire language: <code>${this.definition.language}</code>.
-                Confirmed voice input requests a browser-compatible regional form of this language
-                and accepts one complete exact visible answer label or one shown number. Non-English
-                rating questionnaires also retain an English-number fallback. Recognition support
-                still depends on the browser speech service; visible answer buttons remain available.
+                Voice input uses English recognition. Every supported questionnaire accepts a shown
+                number spoken in English. English questionnaires also accept one complete exact visible
+                English answer label. Non-English answer-label recognition is outside this prototype's
+                tested boundary. Visible answer buttons remain available.
               </span>
               ${this.definition.source.url?m`<a href=${this.definition.source.url} target="_blank" rel="noopener">
                     Instrument source: ${this.definition.source.label}
@@ -1638,11 +1638,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
                   <label>
                     <strong>Questionnaire language</strong>
                     <span>
-                      BCP 47 language used for the questionnaire and requested from the browser speech
-                      service. A base tag such as de is requested as de-DE. Voice accepts one complete
-                      exact visible answer label or shown number; it does not translate, fuzzily match
-                      or guess partial wording. Non-English rating questionnaires also retain an
-                      English-number fallback. Confirm this tag against the source.
+                      BCP 47 language used to mark the questionnaire text. Voice input remains English:
+                      participants may say a shown number in English, and may say a complete exact visible
+                      answer label only when the questionnaire is English. Confirm this tag against the source.
                     </span>
                     <input
                       data-platform-import-language

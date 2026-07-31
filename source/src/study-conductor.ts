@@ -268,10 +268,10 @@ export class StudyConductorApp extends LitElement {
               </span>
               <span>
                 Questionnaire language: <code>${this.definition.language}</code>.
-                Confirmed voice input requests a browser-compatible regional form of this language
-                and accepts one complete exact visible answer label or one shown number. Non-English
-                rating questionnaires also retain an English-number fallback. Recognition support
-                still depends on the browser speech service; visible answer buttons remain available.
+                Voice input uses English recognition. Every supported questionnaire accepts a shown
+                number spoken in English. English questionnaires also accept one complete exact visible
+                English answer label. Non-English answer-label recognition is outside this prototype's
+                tested boundary. Visible answer buttons remain available.
               </span>
               ${this.definition.source.url
                 ? html`<a href=${this.definition.source.url} target="_blank" rel="noopener">
@@ -1166,11 +1166,9 @@ export class StudyConductorApp extends LitElement {
                   <label>
                     <strong>Questionnaire language</strong>
                     <span>
-                      BCP 47 language used for the questionnaire and requested from the browser speech
-                      service. A base tag such as de is requested as de-DE. Voice accepts one complete
-                      exact visible answer label or shown number; it does not translate, fuzzily match
-                      or guess partial wording. Non-English rating questionnaires also retain an
-                      English-number fallback. Confirm this tag against the source.
+                      BCP 47 language used to mark the questionnaire text. Voice input remains English:
+                      participants may say a shown number in English, and may say a complete exact visible
+                      answer label only when the questionnaire is English. Confirm this tag against the source.
                     </span>
                     <input
                       data-platform-import-language

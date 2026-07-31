@@ -469,7 +469,7 @@ describe('speech support integration', () => {
       onresult: ((event: any) => void) | null = null;
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
-    start() {
+      start() {
         this.onresult?.({
           results: {
             0: {
@@ -495,10 +495,11 @@ describe('speech support integration', () => {
 
     expect(component.querySelector('.voice-confirmation')).toBeNull();
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
-    expect(component.querySelector('[data-voice-error]')?.textContent).toContain(
-      'The answer was not recognised',
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+      'No answer was selected',
     );
-    expect(document.activeElement).toBe(component.querySelector('[data-voice-error]'));
+    expect(component.textContent).not.toContain('Voice answer not accepted');
+    expect(component.querySelector('[data-voice-error]')).toBeNull();
   });
 
   it('reports a speech-service network failure without disabling NASA-TLX numeric answers', async () => {
@@ -520,13 +521,13 @@ describe('speech support integration', () => {
 
     const component = await renderComponent();
     await startRatings(component);
-    component.querySelector<HTMLButtonElement>('[data-voice-questionnaire-language]')!.click();
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await component.updateComplete;
 
-    expect(component.querySelector('[data-voice-error]')?.textContent).toContain(
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
       'speech service could not connect',
     );
-    expect(document.activeElement).toBe(component.querySelector('[data-voice-error]'));
+    expect(component.textContent).not.toContain('Voice answer not accepted');
 
     const visibleNumericAnswer = component.querySelector<HTMLInputElement>(
       '.rating-option input[value="50"]',

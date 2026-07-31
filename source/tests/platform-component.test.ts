@@ -123,23 +123,23 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(component.textContent).toContain('5.00');
   });
 
-  it('uses the imported language and exact visible labels for confirmed voice answers', async () => {
+  it('uses one English voice control and accepts an exact visible English answer label', async () => {
     const draft = createCustomQuestionnaireDraft();
-    draft.language = 'de';
-    draft.name = 'Realismus';
-    draft.shortName = 'REAL';
+    draft.language = 'en-GB';
+    draft.name = 'Task Support Check';
+    draft.shortName = 'TSC';
     draft.items = [
       createCustomItemDraft({
-        name: 'real2',
-        prompt: 'Die Umgebung entsprach einer echten Einsatzstelle.',
-        lowAnchor: 'Stimme überhaupt nicht zu',
-        highAnchor: 'Stimme vollkommen zu',
+        name: 'clarity',
+        prompt: 'The task instructions were clear.',
+        lowAnchor: 'Strongly disagree',
+        highAnchor: 'Strongly agree',
         responseLabels: {
-          1: 'Stimme überhaupt nicht zu',
-          2: 'Stimme nicht zu',
-          3: 'Stimme weder zu noch nicht zu',
-          4: 'Stimme zu',
-          5: 'Stimme vollkommen zu',
+          1: 'Strongly disagree',
+          2: 'Disagree',
+          3: 'Neither agree nor disagree',
+          4: 'Agree',
+          5: 'Strongly agree',
         },
       }),
     ];
@@ -147,8 +147,8 @@ describe('instrument-independent questionnaire workflow', () => {
     const config = createStudyConfig({
       instrumentId: definition.id,
       questionnaireDefinition: definition,
-      studyId: 'IMPORTED-DE-VOICE-01',
-      studyTitle: 'Imported German questionnaire',
+      studyId: 'IMPORTED-EN-VOICE-01',
+      studyTitle: 'Imported English questionnaire',
       taskLabel: 'using the prototype',
       showScoreToParticipant: false,
       support: {
@@ -175,10 +175,10 @@ describe('instrument-independent questionnaire workflow', () => {
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
-        expect(this.lang).toBe('de-DE');
+        expect(this.lang).toBe('en-GB');
         this.onresult?.({
           results: {
-            0: { 0: { transcript: 'Stimme vollkommen zu' }, length: 1 },
+            0: { 0: { transcript: 'Strongly agree' }, length: 1 },
             length: 1,
           },
         });
@@ -191,53 +191,47 @@ describe('instrument-independent questionnaire workflow', () => {
     document.body.append(component);
     await component.updateComplete;
     const code = component.querySelector<HTMLInputElement>('#participant-code')!;
-    code.value = 'P-DE-VOICE-01';
+    code.value = 'P-EN-VOICE-01';
     code.dispatchEvent(new Event('input', { bubbles: true }));
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Start the 1 item'))!
       .click();
     await component.updateComplete;
 
-    expect(component.querySelector('#rating-heading')?.getAttribute('lang')).toBe('de');
-    [...component.querySelectorAll<HTMLButtonElement>('.voice-input button')]
-      .find((button) => button.textContent?.includes('Start voice input'))!
-      .click();
+    expect(component.querySelectorAll('[data-voice-start]')).toHaveLength(1);
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await component.updateComplete;
-
     expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
-      'Stimme vollkommen zu, value 5, for real2',
+      'Strongly agree, value 5, for clarity',
     );
-    expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(false);
     component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
     await component.updateComplete;
     expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
   });
 
-  it('preserves an English-number voice route when the imported language is unavailable', async () => {
+  it('rejects non-English labels but keeps one English numeric route for an imported questionnaire', async () => {
     const draft = createCustomQuestionnaireDraft();
     draft.language = 'de';
     draft.name = 'Realismus';
     draft.shortName = 'REAL';
-    draft.items = [
-      createCustomItemDraft({
-        name: 'real2',
-        prompt: 'Die Umgebung entsprach einer echten Einsatzstelle.',
-        lowAnchor: 'Stimme überhaupt nicht zu',
-        highAnchor: 'Stimme vollkommen zu',
-        responseLabels: {
-          1: 'Stimme überhaupt nicht zu',
-          2: 'Stimme nicht zu',
-          3: 'Stimme weder zu noch nicht zu',
-          4: 'Stimme zu',
-          5: 'Stimme vollkommen zu',
-        },
-      }),
-    ];
+    draft.items = [createCustomItemDraft({
+      name: 'real2',
+      prompt: 'Die Umgebung entsprach einer echten Einsatzstelle.',
+      lowAnchor: 'Stimme überhaupt nicht zu',
+      highAnchor: 'Stimme vollkommen zu',
+      responseLabels: {
+        1: 'Stimme überhaupt nicht zu',
+        2: '2',
+        3: '3',
+        4: '4',
+        5: 'Stimme vollkommen zu',
+      },
+    })];
     const definition = createCustomQuestionnaireDefinition(draft);
     const config = createStudyConfig({
       instrumentId: definition.id,
       questionnaireDefinition: definition,
-      studyId: 'IMPORTED-DE-FALLBACK-01',
+      studyId: 'IMPORTED-DE-NUMBER-01',
       studyTitle: 'Imported German questionnaire',
       taskLabel: 'using the prototype',
       showScoreToParticipant: false,
@@ -256,6 +250,7 @@ describe('instrument-independent questionnaire workflow', () => {
     const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
     window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
 
+    let transcript = 'Stimme vollkommen zu';
     class FakeRecognition {
       lang = '';
       continuous = false;
@@ -265,17 +260,8 @@ describe('instrument-independent questionnaire workflow', () => {
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
-        if (this.lang === 'de-DE') {
-          this.onerror?.({ error: 'language-not-supported' });
-          return;
-        }
         expect(this.lang).toBe('en-GB');
-        this.onresult?.({
-          results: {
-            0: { 0: { transcript: 'five' }, length: 1 },
-            length: 1,
-          },
-        });
+        this.onresult?.({ results: { 0: { 0: { transcript }, length: 1 }, length: 1 } });
       }
       stop() {}
     }
@@ -285,27 +271,27 @@ describe('instrument-independent questionnaire workflow', () => {
     document.body.append(component);
     await component.updateComplete;
     const code = component.querySelector<HTMLInputElement>('#participant-code')!;
-    code.value = 'P-DE-FALLBACK-01';
+    code.value = 'P-DE-NUMBER-01';
     code.dispatchEvent(new Event('input', { bubbles: true }));
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Start the 1 item'))!
       .click();
     await component.updateComplete;
 
-    component.querySelector<HTMLButtonElement>('[data-voice-questionnaire-language]')!.click();
+    expect(component.querySelectorAll('[data-voice-start]')).toHaveLength(1);
+    expect(component.querySelector('.voice-input-content > p')?.textContent).not.toContain('answer label');
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await component.updateComplete;
-    expect(component.querySelector('[data-voice-error]')?.textContent).toContain(
-      'does not support speech recognition for de-DE',
-    );
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.querySelector('[role="status"]')?.textContent).toContain('No answer was selected');
+    expect(component.textContent).not.toContain('Voice answer not accepted');
 
-    component.querySelector<HTMLButtonElement>('[data-voice-english-number]')!.click();
+    transcript = 'five';
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await component.updateComplete;
     expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
       'Stimme vollkommen zu, value 5, for real2',
     );
-    component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
-    await component.updateComplete;
-    expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
   });
 
   it('runs an imported QSF definition through participant completion and result export', async () => {
