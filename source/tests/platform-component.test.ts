@@ -166,6 +166,7 @@ describe('instrument-independent questionnaire workflow', () => {
     const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
     window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
 
+    let alternatives = ['Strongly agree'];
     class FakeRecognition {
       lang = '';
       continuous = false;
@@ -176,9 +177,13 @@ describe('instrument-independent questionnaire workflow', () => {
       onend: (() => void) | null = null;
       start() {
         expect(this.lang).toBe('en-GB');
+        const result = Object.assign(
+          alternatives.map((transcript) => ({ transcript })),
+          { length: alternatives.length },
+        );
         this.onresult?.({
           results: {
-            0: { 0: { transcript: 'Strongly agree' }, length: 1 },
+            0: result,
             length: 1,
           },
         });
@@ -207,6 +212,14 @@ describe('instrument-independent questionnaire workflow', () => {
     component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
     await component.updateComplete;
     expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
+
+    alternatives = ['4', 'Note 4'];
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.textContent).toContain('No answer was selected');
+    expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
+    expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(false);
   });
 
   it('rejects non-English labels but keeps one English numeric route for an imported questionnaire', async () => {

@@ -12,6 +12,7 @@ import {
   buildParticipantUrl,
   clearCompletedResults,
   COMPLETED_RESULTS_KEY,
+  LEGACY_COMPLETED_RESULTS_KEY,
   createStudyConfig,
   createStudyResultRecord,
   decodeStudyConfig,
@@ -86,6 +87,25 @@ function record() {
     result: calculateResult(pairs, pairwiseChoices, ratings),
     supportMetadata: metadata,
   });
+}
+
+function legacyCompletedRecord() {
+  const current = record();
+  if (current.result.details.kind !== 'weighted-pairwise') {
+    throw new Error('The legacy fixture must use weighted NASA-TLX scoring.');
+  }
+  return {
+    ...current,
+    schemaVersion: 3,
+    prototype: { name: 'Accessible NASA-TLX', version: '0.7.0' },
+    instrument: { name: 'NASA Task Load Index', version: 'full weighted' },
+    result: {
+      ratings: { ...current.result.ratings },
+      weights: { ...current.result.details.weights },
+      adjustedRatings: { ...current.result.details.adjustedRatings },
+      weightedScore: current.result.primaryScore,
+    },
+  };
 }
 
 beforeEach(() => {
@@ -188,6 +208,38 @@ describe('study configuration', () => {
 });
 
 describe('completed result records', () => {
+  it('migrates a validated Version 0.7 completed backup without changing its answers or score', () => {
+    const legacy = legacyCompletedRecord();
+    localStorage.setItem(LEGACY_COMPLETED_RESULTS_KEY, JSON.stringify([legacy]));
+
+    const [migrated] = loadCompletedResults();
+
+    expect(migrated).toMatchObject({
+      schemaVersion: 4,
+      submissionId: legacy.submissionId,
+      participantCode: legacy.participantCode,
+      instrument: {
+        id: 'nasa-tlx-weighted',
+        scoringStrategy: 'nasa-tlx-weighted-v1',
+      },
+      responses: legacy.responses,
+      result: { primaryScore: 50 },
+    });
+    expect(JSON.parse(localStorage.getItem(COMPLETED_RESULTS_KEY)!)).toHaveLength(1);
+    expect(localStorage.getItem(LEGACY_COMPLETED_RESULTS_KEY)).toBeNull();
+  });
+
+  it('preserves an invalid Version 0.7 completed backup instead of guessing or deleting it', () => {
+    const legacy = legacyCompletedRecord();
+    legacy.result.weightedScore = 99;
+    const raw = JSON.stringify([legacy]);
+    localStorage.setItem(LEGACY_COMPLETED_RESULTS_KEY, raw);
+
+    expect(loadCompletedResults()).toEqual([]);
+    expect(localStorage.getItem(COMPLETED_RESULTS_KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_COMPLETED_RESULTS_KEY)).toBe(raw);
+  });
+
   it('stores a complete pseudonymous record and prevents duplicate submission IDs', () => {
     const result = record();
     expect(saveCompletedResult(result)).toBe(true);

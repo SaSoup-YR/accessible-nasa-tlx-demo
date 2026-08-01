@@ -112,8 +112,14 @@ const numberWords = new Set([
   'hundred',
 ]);
 
+// Speech services sometimes transcribe the negation "not" as a homophone
+// ("note", "knot", "naught" or "nought"). Treat those unresolved forms, and
+// explicit exclusion/correction language, as unsafe rather than extracting a
+// nearby number. An exact visible response label is still checked first by
+// parseRatingTranscript, so an official option is not disabled merely because
+// its wording contains one of these tokens.
 const unsafeMeaning =
-  /\b(?:not|no|cancel|neither|except|without|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b|\b(?:anything\s+but|other\s+than|don\s+t)\b/;
+  /\b(?:not|note|knot|naught|nought|no|nope|nah|never|cannot|cancel|neither|except|without|minus|negative|skip|avoid|exclude|reject|instead|rather|unsure|uncertain|maybe|perhaps|mistake|wrong)\b|\b(?:(?:anything|everything)\s+but|other\s+than|don\s+t|can\s+t|won\s+t|wouldn\s+t|shouldn\s+t|isn\s+t|wasn\s+t)\b/;
 
 const dimensionAliases: Record<string, readonly string[]> = {
   mental: ['mental demand', 'mental'],
@@ -149,14 +155,25 @@ function chooseConsistentAlternative<T>(
   const ranked = transcripts.map((transcript) => transcript.trim()).filter(Boolean);
   if (ranked.length === 0) return null;
 
-  const parsed = ranked
-    .map((transcript, index) => ({ transcript, value: parser(transcript), index }))
-    .filter(
+  const attempts = ranked.map((transcript, index) => ({
+    transcript,
+    value: parser(transcript),
+    index,
+  }));
+
+  // Reject the complete browser result when any ranked alternative contains
+  // unresolved negation or exclusion meaning. This is deliberately independent
+  // of rank: Web Speech can return "4" first and "Note 4" second after the user
+  // actually said "not four". A parsed exact official label such as the UEQ-S
+  // endpoint "Not interesting" is not unresolved and remains eligible.
+  if (attempts.some(({ transcript, value }) =>
+    value === null && hasUnsafeSpeechMeaning(transcript))) return null;
+
+  const parsed = attempts.filter(
       (candidate): candidate is RankedSpeechAnswer<T> & { index: number } =>
         candidate.value !== null,
     );
   if (parsed.length === 0) return null;
-  if (ranked.slice(0, parsed[0].index).some(hasUnsafeSpeechMeaning)) return null;
 
   // A lower-ranked hypothesis may rescue a harmless primary transcription such
   // as "hello" for "low". Conflicting valid hypotheses are never guessed
@@ -209,6 +226,23 @@ function exactDeclaredLabelCandidate(
   );
   if (matches.length === 0) return undefined;
   return matches.length === 1 ? matches[0] : null;
+}
+
+function exactNumericAnswerCandidate(text: string, allowedValues: readonly number[]) {
+  const answer = text
+    .replace(
+      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?)\s+/,
+      '',
+    )
+    .trim();
+  const tokens = answer.split(' ').filter(Boolean);
+  if (tokens.length === 0) return undefined;
+  const containsOnlyNumberTokens = tokens.every((token) =>
+    /^(?:100|[0-9]{1,2})$/.test(token) || numberWords.has(token));
+  if (!containsOnlyNumberTokens) return undefined;
+  const candidates = numericCandidates(answer, allowedValues);
+  if (candidates.length !== 1 || candidates[0] === null) return null;
+  return candidates[0];
 }
 
 function numericCandidates(text: string, allowedValues: readonly number[]) {
@@ -318,15 +352,28 @@ export function parseRatingTranscript(
   if (endpoint !== undefined) return endpoint;
   if (unsafeMeaning.test(text)) return null;
 
-  const candidates = numericCandidates(text, allowedValues);
   const anchor = anchorCandidate(text, dimension, landmarks);
-  if (candidates.length > 0) {
-    if (candidates.length !== 1 || candidates[0] === null || anchor === null) return null;
-    if (anchor !== undefined && anchor !== candidates[0]) return null;
-    return candidates[0];
+  const exactNumeric = exactNumericAnswerCandidate(text, allowedValues);
+  if (exactNumeric !== undefined) {
+    if (exactNumeric === null || anchor === null) return null;
+    if (anchor !== undefined && anchor !== exactNumeric) return null;
+    return exactNumeric;
   }
 
-  return anchor ?? null;
+  if (anchor === null) return null;
+  if (anchor !== undefined) {
+    // Keep the existing explicit landmark-plus-value route (for example,
+    // "closer to high 75") while rejecting any inconsistent extra value.
+    const candidates = numericCandidates(text, allowedValues);
+    if (candidates.length === 0) return anchor;
+    if (candidates.length !== 1 || candidates[0] === null || candidates[0] !== anchor) return null;
+    return anchor;
+  }
+
+  // Never extract a number from arbitrary surrounding prose. Numeric answers
+  // must be the complete utterance (optionally after choose/select/pick/answer
+  // wording) or part of one of the explicit NASA-TLX landmark patterns above.
+  return null;
 }
 
 export function parsePairTranscript(

@@ -1,16 +1,16 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "unreleased post-v0.8.0-rc.3 compatibility candidate; technical verification complete for bounded QSF, LSS and LSG import; live-browser re-test required before the next immutable tag",
+  "releaseStatus": "unreleased post-v0.8.0-rc.3 candidate; automated verification and release build complete; post-fix microphone plus candidate deployment smoke checks remain before the next immutable tag",
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
-  "builtAt": "2026-07-31T15:03:44Z",
+  "builtAt": "2026-08-01T11:04:11Z",
   "qualtricsBridgeBuild": "0.8.7-q7",
   "verification": {
     "testFilesPassed": 18,
-    "testsPassed": 153,
-    "axeStructuralScansPassed": 10,
+    "testsPassed": 178,
+    "axeStructuralScansPassed": 12,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
     "standaloneBuild": "passed",
@@ -19,16 +19,22 @@
     "weightedNasaRawTlxSusAndUeqsEndToEndTests": "passed",
     "researcherSuppliedNoCodeDefinitionScoringRoundTripAndEndToEndTests": "passed",
     "qualtricsQsfAndLimeSurveyLssLsgFixtureTests": "passed",
-    "realSupervisorLimeSurveyLssAndLsgRegressionTests": "passed",
+    "realWorldLimeSurveyLssAndLsgRegressionTests": "passed",
+    "multiRowLimeSurveyArrayJoinAndSharedScaleTests": "passed",
     "importOrderValuesLabelsMalformedUnsupportedLogicAndExecutableContentTests": "passed",
     "importConversionJsonRoundTripParticipantScoringAndResultExportTests": "passed",
     "questionnaireAndConfigurationSuccessFocusAndVisibilityTests": "passed",
     "genericQualtricsBridgeAndAdversePathTests": "passed",
+    "exactDocumentedEmbeddedDataManifestTest": "passed",
     "qualtricsExactBuildHandshakeFullViewportOneScrollAndPreflightTests": "passed",
     "mobileErrorFocusAndForcedCoordinateScrollTests": "passed",
     "savedSessionReloadFocusExactLiveRegionAndPriorOptInSpeechTests": "passed",
+    "savedProgressDefinitionSnapshotMismatchAndSafeRestartTests": "passed",
+    "legacyCompletedBackupValidationAndMigrationTests": "passed",
     "conservativeVoiceParsingTests": "passed",
-    "authoredContrastTokenTests": "passed"
+    "negationHomophoneAndAlternativeOrderTests": "passed",
+    "authoredContrastTokenTests": "passed",
+    "longImportedLabelResponsiveWrapTests": "passed"
   },
   "entryPoints": {
     "participant": "index.html",
@@ -46,7 +52,7 @@
   "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
   "releaseCandidate": "unreleased successor to v0.8.0-rc.3",
   "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "Live-browser re-test required before the next candidate tag; v0.8.0-rc.3 remains the immutable evaluation baseline.",
+  "evaluationStatus": "Post-fix microphone and candidate deployment smoke tests are required before the next candidate tag; v0.8.0-rc.3 remains the immutable evaluation baseline.",
   "manualVerification": {
     "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
     "researcherSuppliedDefinitionLocalJsonRoundTripAndQualtricsResult": "passed at v0.8.0-rc.2 baseline",
@@ -56,9 +62,11 @@
     "phoneAndTabletRecovery": "passed at v0.8.0-rc.2 baseline",
     "freshQualtricsQsfImportReviewConversionAndParticipantRun": "passed",
     "freshLimeSurveyLssImportReviewConversionAndParticipantRun": "passed at v0.8.0-rc.3",
-    "supervisorSixGroupLssSelectionAndSpatialPresenceConversion": "passed locally",
-    "supervisorSpatialPresenceLsgDirectConversion": "passed locally",
+    "realWorldSixGroupLssSelectionAndSpatialPresenceConversion": "passed locally",
+    "realWorldSpatialPresenceLsgDirectConversion": "passed locally",
     "importedLssDefinitionUclQualtricsRemoteSubmission": "passed",
+    "realWorldImportedLssNormalUclQualtricsSubmission20260801": "passed manually on the deployed pre-fix build; repeat a short smoke test after candidate deployment",
+    "englishVoiceNumberAndLabelMicrophone20260801": "passed manually on the deployed pre-fix build; the discovered negation-homophone case is fixed in current source and needs one post-fix retest",
     "twoQualtricsExportRowsAcceptedSchemaInstrumentAnswersAndScore": "passed"
   }
 }

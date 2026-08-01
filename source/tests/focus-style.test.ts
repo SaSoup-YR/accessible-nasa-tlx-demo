@@ -84,4 +84,13 @@ describe('visible keyboard focus', () => {
     expect(contrastRatio('#005ea5', '#f2f8fc')).toBeGreaterThanOrEqual(3);
     expect(contrastRatio('#b10e1e', '#fff7f7')).toBeGreaterThanOrEqual(3);
   });
+
+  it('allows long imported response labels to wrap inside responsive rating controls', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+
+    expect(css).toMatch(/\.rating-option\s*\{[\s\S]*?min-width:\s*0/);
+    expect(css).toMatch(/\.rating-option-content\s*\{[\s\S]*?min-width:\s*0/);
+    expect(css).toMatch(/\.rating-option-content small\s*\{[\s\S]*?overflow-wrap:\s*anywhere/);
+    expect(css).toMatch(/\.rating-option-content small\s*\{[\s\S]*?hyphens:\s*auto/);
+  });
 });

@@ -362,6 +362,13 @@ describe('approved host result sink', () => {
       .split(/\r?\n/);
     expect(embeddedDataFields).toHaveLength(62);
     expect(embeddedDataFields.every((field) => field.startsWith('__js_AQP_'))).toBe(true);
+    const bridgeFieldNames = new Set(
+      [...bridge.matchAll(/setField\('([A-Z0-9_]+)'/g)].map((match) => `__js_${match[1]}`),
+    );
+    Array.from({ length: 24 }, (_, index) => index + 1).forEach((index) => {
+      bridgeFieldNames.add(`__js_AQP_RAW_${String(index).padStart(2, '0')}`);
+    });
+    expect([...bridgeFieldNames].sort()).toEqual([...embeddedDataFields].sort());
 
     const questionHtml = readFileSync(
       resolve(process.cwd(), '../integrations/qualtrics/question-html-template.html'),

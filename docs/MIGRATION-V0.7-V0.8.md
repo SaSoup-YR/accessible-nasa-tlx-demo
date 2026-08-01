@@ -14,6 +14,21 @@ the selected questionnaire definition.
   Version 0.8 instrument-aware key before Resume is offered. This migration is
   deliberately limited to weighted NASA-TLX; an old session is never guessed to
   belong to another questionnaire.
+- Every new Version 0.8 in-progress session stores the complete versioned
+  questionnaire definition that it started with. Recovery requires an exact
+  definition match, so a changed imported definition cannot silently reuse old
+  answers. Early Version 4 built-in sessions can add the known versioned built-in
+  definition; an imported session without a verifiable snapshot fails closed and
+  shows a clear restart path.
+- A valid Version 0.7 completed-but-not-yet-submitted backup is independently
+  discovered under `accessible-nasa-tlx-v0.7-completed-results`. Its ratings,
+  pair choices, weights and score are recalculated with the current versioned
+  weighted NASA-TLX definition before a Version 4 copy is written. The legacy
+  key is removed only after every stored record migrated and the current copy was
+  written successfully. Invalid or mixed legacy data remains untouched.
+- An invalid in-progress copy is never used to calculate a result. The participant
+  sees that recovery failed and is directed to start again; an incompatible legacy
+  copy is retained rather than silently changed or deleted.
 - `source/demo/accessible-nasa-tlx-v0.7.html` remains as the frozen baseline.
 
 ## Required Qualtrics change

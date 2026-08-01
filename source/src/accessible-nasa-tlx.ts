@@ -71,6 +71,7 @@ interface PendingVoiceAnswer {
 interface SavedSession {
   version: 4;
   instrumentId: string;
+  questionnaireDefinition: QuestionnaireDefinition;
   savedAt: number;
   startedAt: string;
   configId: string;
@@ -92,9 +93,11 @@ interface SavedSession {
   };
 }
 
-type LegacySavedSessionV3 = Omit<SavedSession, 'version' | 'instrumentId'> & {
+type LegacySavedSessionV3 = Omit<SavedSession, 'version' | 'instrumentId' | 'questionnaireDefinition'> & {
   version: 3;
 };
+
+type SavedSessionV4WithoutDefinition = Omit<SavedSession, 'questionnaireDefinition'>;
 
 interface SpeechRecognitionAlternativeLike {
   transcript: string;
@@ -176,6 +179,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private recoveryEnabled = false;
   @state() private resumeSummaryVisible = false;
   @state() private savedSession: SavedSession | null = null;
+  @state() private savedSessionProblem = '';
   @state() private recoveredCompletedRecord: StudyResultRecord | null = null;
   @state() private readingAloud = false;
   @state() private readAloudUsed = false;
@@ -480,6 +484,12 @@ export class AccessibleNasaTlx extends LitElement {
           : nothing}
         ${this.renderStudyContext()}
         ${this.savedSession ? this.renderSavedSessionOffer() : nothing}
+        ${this.savedSessionProblem
+          ? html`<aside class="error-summary" role="status" aria-labelledby="saved-session-problem-heading">
+              <h3 id="saved-session-problem-heading">Saved progress could not be restored</h3>
+              <p>${this.savedSessionProblem}</p>
+            </aside>`
+          : nothing}
         ${this.recoveredCompletedRecord ? this.renderCompletedBackupOffer() : nothing}
         <p>${this.definition.introPrompt}</p>
         ${this.studyConfig
@@ -1255,6 +1265,10 @@ export class AccessibleNasaTlx extends LitElement {
                 <div class="voice-confirmation">
                   <p>I heard: <strong lang=${this.definition.language} dir="auto">${this.pendingVoiceAnswer.transcript}</strong></p>
                   <p>Proposed answer: <strong lang=${this.definition.language} dir="auto">${this.pendingVoiceAnswer.label}</strong></p>
+                  <p>
+                    <strong>Check before confirming:</strong> continue only if both lines match what you intended.
+                    Speech recognition can omit a word.
+                  </p>
                   <div class="button-row compact">
                     <button
                       class="primary-button large-answer-button"
@@ -1705,6 +1719,7 @@ export class AccessibleNasaTlx extends LitElement {
         ? 'Use 1–32 letters, numbers, hyphens or underscores, starting with a letter or number.'
         : '';
     this.savedSession = null;
+    this.savedSessionProblem = '';
     this.recoveredCompletedRecord = null;
     if (validParticipantCode(this.participantCode)) {
       this.rememberParticipantCodeForTab();
@@ -2609,7 +2624,9 @@ export class AccessibleNasaTlx extends LitElement {
             label,
           };
           this.voiceState = 'pending';
-          this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
+          this.voiceMessage =
+            `Proposed answer: ${label}. Confirm only if the heard words and proposed answer match ` +
+            'what you intended; otherwise try again.';
           this.announceAutomatic(this.voiceMessage);
           void this.updateComplete.then(() =>
             this.querySelector<HTMLButtonElement>('[data-voice-confirm]')?.focus(),
@@ -2628,7 +2645,9 @@ export class AccessibleNasaTlx extends LitElement {
             label,
           };
           this.voiceState = 'pending';
-          this.voiceMessage = `Proposed answer: ${label}. Confirm this answer or try again.`;
+          this.voiceMessage =
+            `Proposed answer: ${label}. Confirm only if the heard words and proposed answer match ` +
+            'what you intended; otherwise try again.';
           this.announceAutomatic(this.voiceMessage);
           void this.updateComplete.then(() =>
             this.querySelector<HTMLButtonElement>('[data-voice-confirm]')?.focus(),
@@ -2810,6 +2829,7 @@ export class AccessibleNasaTlx extends LitElement {
     const session: SavedSession = {
       version: 4,
       instrumentId: this.definition.id,
+      questionnaireDefinition: this.definition,
       savedAt: Date.now(),
       startedAt: this.startedAt || new Date().toISOString(),
       configId: this.studyConfig?.configId ?? 'demo-config',
@@ -2847,6 +2867,7 @@ export class AccessibleNasaTlx extends LitElement {
   private findSavedSession() {
     const storageKey = this.currentProgressStorageKey();
     if (!storageKey) return;
+    this.savedSessionProblem = '';
     let legacyStorageKey: string | null = null;
     try {
       let raw = localStorage.getItem(storageKey);
@@ -2858,7 +2879,8 @@ export class AccessibleNasaTlx extends LitElement {
         }
       }
       if (!raw) return;
-      const session = this.normaliseSavedSession(JSON.parse(raw));
+      const parsed = JSON.parse(raw) as unknown;
+      const session = this.normaliseSavedSession(parsed);
       if (this.validSavedSession(session)) {
         if (legacyStorageKey) {
           // Version 0.7 used the same strictly validated progress shape but did
@@ -2866,29 +2888,62 @@ export class AccessibleNasaTlx extends LitElement {
           // NASA-TLX, so migrate it to the current, instrument-aware key.
           localStorage.setItem(storageKey, JSON.stringify(session));
           localStorage.removeItem(legacyStorageKey);
+        } else if (
+          parsed &&
+          typeof parsed === 'object' &&
+          !('questionnaireDefinition' in parsed)
+        ) {
+          // Early Version 4 built-in sessions pre-date the immutable definition
+          // snapshot. They can be upgraded only because the built-in instrument
+          // ID resolves to the versioned definition shipped with this release.
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(session));
+          } catch {
+            // The validated in-memory copy can still be resumed. Leave the
+            // original browser record untouched if persistence is unavailable.
+          }
         }
         this.savedSession = session;
+        this.savedSessionProblem = '';
         this.applySavedRecoveryPresentation(session);
         this.announceSavedSessionOffer(session);
-      } else if (!legacyStorageKey) {
+      } else if (legacyStorageKey) {
+        this.savedSessionProblem =
+          'An older saved copy does not match this questionnaire and was not changed or deleted. Start this questionnaire again below.';
+      } else {
+        this.savedSessionProblem =
+          'The saved copy does not match this questionnaire and was not used. Start this questionnaire again below.';
         this.clearSavedProgress();
       }
     } catch {
       // Do not destroy a legacy recovery copy if migration or parsing fails.
       // A current-version invalid copy remains safe to discard as before.
-      if (!legacyStorageKey) this.clearSavedProgress();
+      if (legacyStorageKey) {
+        this.savedSessionProblem =
+          'An older saved copy could not be read and was not changed or deleted. Start this questionnaire again below.';
+      } else {
+        this.savedSessionProblem =
+          'The saved copy could not be read and was not used. Start this questionnaire again below.';
+        this.clearSavedProgress();
+      }
     }
   }
 
   private normaliseSavedSession(value: unknown): SavedSession | null {
     if (!value || typeof value !== 'object') return null;
-    const session = value as SavedSession | LegacySavedSessionV3;
-    if (session.version === 4) return session;
+    const session = value as SavedSession | SavedSessionV4WithoutDefinition | LegacySavedSessionV3;
+    if (session.version === 4) {
+      if ('questionnaireDefinition' in session) return session;
+      const builtIn = getQuestionnaireDefinition(session.instrumentId);
+      if (!builtIn || builtIn.id !== this.definition.id) return null;
+      return { ...session, questionnaireDefinition: builtIn };
+    }
     if (session.version !== 3 || this.definition.id !== DEFAULT_QUESTIONNAIRE_ID) return null;
     return {
       ...session,
       version: 4,
       instrumentId: DEFAULT_QUESTIONNAIRE_ID,
+      questionnaireDefinition: this.definition,
     };
   }
 
@@ -2906,6 +2961,7 @@ export class AccessibleNasaTlx extends LitElement {
     if (
       session?.version !== 4 ||
       session.instrumentId !== this.definition.id ||
+      JSON.stringify(session.questionnaireDefinition) !== JSON.stringify(this.definition) ||
       session.configId !== (this.studyConfig?.configId ?? 'demo-config') ||
       session.participantCode !== (this.studyConfig ? this.participantCode : 'DEMO') ||
       !Number.isFinite(session.savedAt) ||
@@ -3000,6 +3056,7 @@ export class AccessibleNasaTlx extends LitElement {
     }
     this.recoveryEnabled = true;
     this.savedSession = null;
+    this.savedSessionProblem = '';
     this.savedSessionAnnouncementKey = '';
     this.resumeSummaryVisible = true;
     this.interruptionSummaryShown = true;
@@ -3012,6 +3069,7 @@ export class AccessibleNasaTlx extends LitElement {
   private eraseSavedSession = () => {
     this.clearSavedProgress();
     this.savedSession = null;
+    this.savedSessionProblem = '';
     this.savedSessionAnnouncementKey = '';
     this.statusMessage = 'Saved answers erased.';
   };

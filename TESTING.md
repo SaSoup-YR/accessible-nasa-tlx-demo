@@ -46,6 +46,25 @@ At minimum:
 7. Verify newly dated local and Qualtrics results and exports.
 8. Treat any silent omission, approximation, order/value mismatch, wrong score
    or failed round-trip as a release blocker.
+9. Import a sanitised two-row LimeSurvey Array (Flexible Labels) question. Confirm
+   that both row statements appear in source order, each row has its own labelled
+   radio group, and both use the same complete scale from `answer_l10ns`.
+
+### Recorded real-file regression for the current candidate
+
+On 1 August 2026, two real-world audit files were tested directly without adding
+their questionnaire content to the public repository:
+
+- `limesurvey_survey_578216.lss`, SHA-256
+  `a3c954a02a0193b048e6bf4590a8ae78f27fa612bd96ebd5f9668a15a01dc7d2`;
+- `limesurvey_group_9987.lsg`, SHA-256
+  `283292f512c954fc81e423476d6968d3351492a8652433a1fcde836c3d3bee0b`.
+
+The LSS exposed all six groups. Every compatible group/rating-set selection converted
+with no unsupported findings, and the five-item Spatial Presence selection completed
+through the participant-result flow. The LSG converted SP1–SP5 on the 1–7 scale and
+also completed through that flow. Repeat the two attachment checks in the deployed
+browser before tagging; then complete one new synthetic UCL Qualtrics submission.
 
 ## 3. Participant workflows
 
@@ -96,6 +115,13 @@ At minimum:
 3. Test storage disabled/full. Confirm no crash or false local-save claim and retain
    in-memory JSON/CSV routes.
 4. Test return-to-answer and resubmission after a host failure.
+5. Load a synthetic Version 0.7 weighted NASA-TLX interrupted session. Confirm it
+   is rewritten with the Version 4 instrument and definition snapshot before Resume
+   is offered. Change the stored definition snapshot and confirm recovery is blocked,
+   a restart message is shown and no old answer is applied.
+6. Load a synthetic Version 0.7 completed backup. Confirm ratings, pair choices,
+   weights and score are recalculated and a valid Version 4 backup is created. Repeat
+   with a tampered score and confirm the old record is retained but not imported.
 
 ## 5. Voice input
 
@@ -107,12 +133,21 @@ At minimum:
 3. Test Performance with Good, Closer to Good, Middle, Closer to Poor and Poor.
 4. Confirm every accepted result is shown and announced as a proposal and requires
    explicit confirmation.
-5. Confirm `not low`, `low or high`, `anything but low`, `twenty three`, `73`,
-   conflicting recognition alternatives and two pair names are rejected.
+5. Confirm `not low`, `not four`, `note 4`, `knot four`, `naught four`,
+   `nought four`, `low or high`, `anything but low`, `twenty three`, `73`,
+   conflicting recognition alternatives and two pair names are rejected. Test
+   both alternative orders: a valid number before the unsafe phrase and after it.
 6. Confirm exact safe aliases such as `hello` for Low are accepted only as the whole
    utterance and never inside a longer phrase.
 7. Repeat on every target browser because Web Speech acoustic recognition is
    browser/OS behavior, not controlled by the parser.
+8. For an imported English questionnaire, test one exact visible answer label and
+   one displayed number. For a non-English questionnaire, confirm the single English
+   route accepts a displayed number but does not claim multilingual label recognition.
+9. Confirm arbitrary prose containing a number is not mined for that number. If the
+   browser deletes a spoken negation entirely and returns only a valid value, verify
+   that the exact transcript and proposal are shown, nothing is selected before the
+   participant confirms, and **Try again** leaves the prior answer unchanged.
 
 ## 6. Keyboard, screen reader, colour and reflow
 

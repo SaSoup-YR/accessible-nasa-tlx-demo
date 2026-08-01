@@ -20,10 +20,13 @@ describe('voice-answer parsing', () => {
   it('accepts only valid NASA-TLX rating increments', () => {
     expect(parseRatingTranscript('fifty five', dimensions[0])).toBe(55);
     expect(parseRatingTranscript('I choose 70', dimensions[0])).toBe(70);
+    expect(parseRatingTranscript('my answer is 70', dimensions[0])).toBe(70);
     expect(parseRatingTranscript('seven zero', dimensions[0])).toBe(70);
     expect(parseRatingTranscript('one zero zero', dimensions[0])).toBe(100);
     expect(parseRatingTranscript('I choose 73', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('twenty three', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('the system heard 70', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('banana 70', dimensions[0])).toBeNull();
   });
 
   it('recognises an exact whole-number value when a custom scale displays it', () => {
@@ -129,6 +132,34 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('I choose strongly agree', item, values, [])).toBe(5);
     expect(parseRatingTranscript('strongly', item, values, [])).toBeNull();
     expect(parseRatingTranscript('not agree', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('neither agree or disagree', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('either agree nor disagree', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('agree quickly', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('the answer might be 4', item, values, [])).toBeNull();
+    for (const unsafeTranscript of [
+      'note 4',
+      'knot four',
+      'naught four',
+      'nought four',
+      'negative four',
+      'minus four',
+      'nope four',
+      'nah four',
+      'skip four',
+      'avoid four',
+      'reject four',
+    ]) {
+      expect(parseRatingTranscript(unsafeTranscript, item, values, [])).toBeNull();
+    }
+    expect(parseRatingAlternatives(['agree', 'strongly agree'], item, values, [])).toBeNull();
+    expect(parseRatingAlternatives(['4', 'Note 4'], item, values, [])).toBeNull();
+    expect(parseRatingAlternatives(['Note 4', '4'], item, values, [])).toBeNull();
+    expect(parseRatingAlternatives(
+      ['neither agree or disagree', 'neither agree nor disagree'],
+      item,
+      values,
+      [],
+    )).toBeNull();
   });
 
   it('uses a consistent lower-ranked hypothesis without guessing across conflicts or negation', () => {
@@ -172,6 +203,10 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('obstructive', firstItem, values, [])).toBe(1);
     expect(parseRatingTranscript('I select supportive', firstItem, values, [])).toBe(7);
     expect(parseRatingTranscript('not interesting', interestItem, values, [])).toBe(1);
+    expect(parseRatingAlternatives(['not interesting'], interestItem, values, [])).toEqual({
+      transcript: 'not interesting',
+      value: 1,
+    });
     expect(parseRatingTranscript('interesting', interestItem, values, [])).toBe(7);
     expect(parseRatingTranscript('not interesting or interesting', interestItem, values, [])).toBeNull();
     expect(parseRatingTranscript('middle', firstItem, values, [])).toBeNull();

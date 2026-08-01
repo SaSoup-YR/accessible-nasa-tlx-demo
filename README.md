@@ -33,11 +33,12 @@ gate below is repeated; it does not change the immutable `rc.3` evidence.
 Verification on the current unreleased candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 171 passing tests;
+- 18 test files passed, containing 178 passing tests;
 - 12 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
-- the attached real six-group LimeSurvey LSS exposed all six groups and safely
-  converted the explicitly selected five-item Spatial Presence group; and
+- the attached real six-group LimeSurvey LSS exposed all six groups, produced a
+  safe conversion for every compatible group/scale selection, and completed the
+  five-item Spatial Presence group through the participant-result flow;
 - the matching real LimeSurvey LSG converted the same SP1–SP5 items and 1–7
   response scale with no unsupported content; and
 - a sanitised LimeSurvey LSQ converted one required rating question while
@@ -47,8 +48,10 @@ Verification on the current unreleased candidate:
 - an imported German questionnaire retained the same single control and accepted
   its displayed values when spoken as English numbers, without claiming German
   label recognition; and
-- partial, similar, ambiguous and negated speech remained unselected, with a
-  neutral retry message and the ordinary answer buttons retained.
+- partial, similar, ambiguous and negated speech remained unselected, including
+  common `not` homophones in either recognition-alternative order; numeric input
+  is no longer extracted from arbitrary surrounding prose, and the explicit
+  confirmation explains the remaining browser-service omission boundary;
 
 A deployed live-browser re-test of QSF, LSS, LSG and LSQ, one real microphone
 English number or label answer, and one accepted Qualtrics row are still
@@ -311,6 +314,8 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Architecture and extension rules | [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md), [`docs/INSTRUMENT-DEFINITION-GUIDE.md`](docs/INSTRUMENT-DEFINITION-GUIDE.md) |
 | No-code custom-questionnaire test | [`docs/CUSTOM-QUESTIONNAIRE-TEST.md`](docs/CUSTOM-QUESTIONNAIRE-TEST.md) |
 | Qualtrics/LimeSurvey import guide | [`docs/QUESTIONNAIRE-IMPORT.md`](docs/QUESTIONNAIRE-IMPORT.md) |
+| Current source verification | [`docs/SOURCE-VERIFICATION-A1-F4.md`](docs/SOURCE-VERIFICATION-A1-F4.md) |
+| Release-candidate verification gate | [`docs/RC4-RELEASE-GATE.md`](docs/RC4-RELEASE-GATE.md) |
 | Researcher-workflow evaluation plan | [`docs/IMPORT-WORKFLOW-EVALUATION.md`](docs/IMPORT-WORKFLOW-EVALUATION.md) |
 | Migration | [`docs/MIGRATION-V0.7-V0.8.md`](docs/MIGRATION-V0.7-V0.8.md) |
 | Colour and WCAG audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md), [`docs/WCAG-2.2-COMPONENT-AUDIT.md`](docs/WCAG-2.2-COMPONENT-AUDIT.md) |

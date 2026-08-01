@@ -97,18 +97,27 @@ attributes still block an item selected for conversion.
 
 The source question order, response order, displayed labels and accepted numeric
 values are preserved. Imported response labels remain visible in the participant
-interface and can be used as complete, exact confirmed voice answers. Matching is built
-from the labels on the current item, so it is not limited to a hard-coded English or
-German phrase list. Unicode punctuation, diacritics and speech-engine whitespace are
-normalised; partial, fuzzy or ambiguous matches are rejected. The definition's declared
-base language is also used for browser speech recognition. Qualtrics-specific codes such
-as `ZH-S` and `ZH-T` are converted to browser-compatible tags. Browser or operating-system
-speech support may still vary, so a language can be valid in the imported definition but
-unavailable to one participant's browser or device. The participant page states the requested
-language, requires a complete visible label or shown number, and presents a focused visible
-error when recognition fails. The visible buttons and system voice control remain available;
-the platform never treats unavailable speech recognition as a required route. Blank source labels
-remain visible numeric positions: the importer never invents intermediate meanings.
+interface. When the conductor enables optional voice input, the platform uses one
+bounded English (`en-GB`) recognition route: every imported questionnaire can accept
+an exact displayed number spoken in English, and an English-language questionnaire can
+also accept one complete, exact visible English answer label. Partial, fuzzy, negated or
+ambiguous phrases are rejected and the participant must confirm a proposal before it is
+recorded. Negation and exclusion terms, including common English speech-service
+homophones such as `note`, `knot`, `naught` and `nought` for `not`, reject the complete
+set of recognition alternatives when they are not an exact visible answer label. The
+platform does not claim general multilingual label recognition. For a
+non-English questionnaire, its labels remain correctly marked with the definition's
+language for visual and screen-reader presentation, while the optional built-in voice
+route accepts displayed numbers in English only. Visible native answer buttons and system
+voice control remain available independently, so browser speech recognition is never a
+required route. Exact matching can reject a correctly spoken label when the browser's
+speech service returns different words because of accent, speed, microphone or operating
+system behaviour; the platform never uses fuzzy matching to guess a response. Blank source
+labels remain visible numeric positions: the importer never invents intermediate meanings.
+If the browser removes a spoken negation completely and returns only a valid number, client
+code cannot reconstruct the missing word. The interface therefore displays the recognised
+transcript beside the proposed answer and requires an explicit confirmation; a proposal is
+never recorded automatically.
 
 ## Content that blocks conversion
 

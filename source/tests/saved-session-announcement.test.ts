@@ -11,6 +11,7 @@ const nasaTlx = getQuestionnaireDefinition('nasa-tlx-weighted')!;
 const savedSession = {
   version: 4,
   instrumentId: 'nasa-tlx-weighted',
+  questionnaireDefinition: nasaTlx,
   savedAt: 1722123456789,
   startedAt: '2026-07-27T12:00:00.000Z',
   configId: 'demo-config',
@@ -81,7 +82,11 @@ describe('saved questionnaire recovery announcement', () => {
 
   it('migrates a valid Version 0.7 weighted NASA-TLX recovery copy before offering resume', async () => {
     const legacyKey = 'accessible-nasa-tlx-v0.7-progress:demo-config:DEMO';
-    const { instrumentId: _instrumentId, ...legacySession } = savedSession;
+    const {
+      instrumentId: _instrumentId,
+      questionnaireDefinition: _questionnaireDefinition,
+      ...legacySession
+    } = savedSession;
     localStorage.setItem(
       legacyKey,
       JSON.stringify({ ...legacySession, version: 3 }),
@@ -103,9 +108,51 @@ describe('saved questionnaire recovery announcement', () => {
     });
   });
 
+  it('adds the immutable built-in definition snapshot to an early Version 4 recovery copy', async () => {
+    const currentKey = progressStorageKey('demo-config', 'DEMO');
+    const { questionnaireDefinition: _questionnaireDefinition, ...earlyVersion4 } = savedSession;
+    localStorage.setItem(currentKey, JSON.stringify(earlyVersion4));
+
+    const component = await renderComponent();
+    await component.updateComplete;
+
+    expect(component.querySelector('#saved-session-offer')).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem(currentKey)!)).toMatchObject({
+      version: 4,
+      instrumentId: 'nasa-tlx-weighted',
+      questionnaireDefinition: {
+        id: 'nasa-tlx-weighted',
+        version: '1.0.0',
+      },
+    });
+  });
+
+  it('does not mix progress with a changed questionnaire definition snapshot', async () => {
+    const currentKey = progressStorageKey('demo-config', 'DEMO');
+    localStorage.setItem(currentKey, JSON.stringify({
+      ...savedSession,
+      questionnaireDefinition: {
+        ...nasaTlx,
+        version: 'changed-after-session-start',
+      },
+    }));
+
+    const component = await renderComponent();
+    await component.updateComplete;
+
+    expect(component.querySelector('#saved-session-offer')).toBeNull();
+    expect(component.querySelector('#saved-session-problem-heading')).not.toBeNull();
+    expect(component.textContent).toContain('Start this questionnaire again below');
+    expect(localStorage.getItem(currentKey)).toBeNull();
+  });
+
   it('leaves an invalid Version 0.7 recovery copy untouched instead of guessing', async () => {
     const legacyKey = 'accessible-nasa-tlx-v0.7-progress:demo-config:DEMO';
-    const { instrumentId: _instrumentId, ...legacySession } = savedSession;
+    const {
+      instrumentId: _instrumentId,
+      questionnaireDefinition: _questionnaireDefinition,
+      ...legacySession
+    } = savedSession;
     const invalidLegacy = { ...legacySession, version: 3, pairOrder: [] };
     localStorage.setItem(legacyKey, JSON.stringify(invalidLegacy));
 
@@ -113,8 +160,30 @@ describe('saved questionnaire recovery announcement', () => {
     await component.updateComplete;
 
     expect(component.querySelector('#saved-session-offer')).toBeNull();
+    expect(component.querySelector('#saved-session-problem-heading')?.textContent).toContain(
+      'Saved progress could not be restored',
+    );
+    expect(component.textContent).toContain(
+      'An older saved copy does not match this questionnaire and was not changed or deleted',
+    );
+    expect(component.textContent).toContain('Start this questionnaire again below');
     expect(localStorage.getItem(legacyKey)).toBe(JSON.stringify(invalidLegacy));
     expect(localStorage.getItem(progressStorageKey('demo-config', 'DEMO'))).toBeNull();
+  });
+
+  it('shows a clear restart path and removes a corrupt current-version progress copy', async () => {
+    const currentKey = progressStorageKey('demo-config', 'DEMO');
+    localStorage.setItem(currentKey, JSON.stringify({ ...savedSession, ratings: { mental: 23 } }));
+
+    const component = await renderComponent();
+    await component.updateComplete;
+
+    expect(component.querySelector('#saved-session-offer')).toBeNull();
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+      'The saved copy does not match this questionnaire and was not used',
+    );
+    expect(component.textContent).toContain('Start this questionnaire again below');
+    expect(localStorage.getItem(currentKey)).toBeNull();
   });
 
   it('focuses the saved-session region and exposes the exact saved count and choices', async () => {
