@@ -14,11 +14,12 @@ project's existing approved protocol and data-management plan.
 
 ## Release status
 
-The immutable evaluation baseline is **`v0.8.0-rc.3`**, paired with
-Qualtrics bridge **`0.8.7-q7`**. It is intended for technical review and a
-bounded formative evaluation. The tag is an immutable evidence point: any later
-functional change requires a new tag and proportionate re-verification. The
-earlier **`v0.8.0-rc.2`** tag remains unchanged as the pre-import baseline.
+The reviewed release-record commit is prepared for the immutable
+**`v0.8.0-rc.4`** tag, paired with Qualtrics bridge **`0.8.7-q7`**. It is a
+technical release candidate for review and bounded formative evaluation. The
+tag is an immutable evidence point: any later functional change requires a new
+tag and proportionate re-verification. The earlier **`v0.8.0-rc.3`** and
+**`v0.8.0-rc.2`** tags remain unchanged evidence baselines.
 
 The current source is the prepared **`v0.8.0-rc.4` candidate**. It adds `.lsg`
 question-group and `.lsq` single-question imports, explicit selection when an
@@ -26,9 +27,7 @@ question-group and `.lsq` single-question imports, explicit selection when an
 page semantics. Voice input has one deliberately bounded English route: every
 supported questionnaire accepts a displayed number spoken in English, while an
 English questionnaire also accepts one complete visible English answer label,
-with a small allowlist of meaning-preserving speech-service variants. It remains unreleased
-until the synchronized files are deployed and the short live-browser release
-gate below is repeated; it does not change the immutable `rc.3` evidence.
+with a small allowlist of meaning-preserving speech-service variants.
 
 Verification on the current unreleased candidate:
 
@@ -57,9 +56,15 @@ Verification on the current unreleased candidate:
   is never extracted from arbitrary surrounding prose, and the explicit confirmation
   explains the remaining browser-service omission boundary;
 
-A deployed live-browser re-test of QSF, LSS, LSG and LSQ, one real microphone
-English number or label answer, and one accepted Qualtrics row are still
-required before assigning the next immutable release-candidate tag.
+Bounded live-browser verification on 1 August 2026 also confirmed the public
+conductor and participant flow, same-device recovery, a supervisor-supplied
+German LSG import, disconnected submission warning plus reconnect/retry, and the
+post-fix microphone route. `Not 4`, `Agree quickly` and `Strongly` did not select
+an answer; intentional `4` produced a visible answer proposal and still required
+explicit confirmation. The existing `0.8.7-q7` Qualtrics normal-submission
+evidence remains applicable because the bridge and result schema did not change.
+These checks establish the documented technical workflow, not multilingual
+spoken-label support, universal browser reliability or permission to recruit.
 
 ### Verification recorded for `v0.8.0-rc.3`
 
@@ -188,6 +193,13 @@ On the conductor page, **Add your own questionnaire** provides:
   previously validated and downloaded; and
 - **Build manually:** enter a bounded questionnaire through the no-code form.
 
+The researcher reviews the detected wording, order, labels, numeric values,
+unsupported content and scoring before generating the prepared participant
+link. Participants answer that link; they do not configure the questionnaire.
+For technical testing, **This browser only** keeps the result on the same device
+and provides JSON/CSV export. For approved remote collection, **UCL Qualtrics**
+uses the exact configured survey and shows success only after a matching receipt.
+
 The two file imports are not duplicates. QSF/LSS/LSG/LSQ files are source-platform
 exports that require review and conversion. AQP JSON is the platform's already
 normalised, portable definition and is validated again without repeating source
@@ -232,6 +244,10 @@ selected set blocks conversion. Theme, navigation,
 publication and notification settings remain in the source platform. The
 platform validates structure and calculation; the conductor remains responsible
 for permission, provenance, psychometric validity and study suitability.
+
+LimeSurvey `.lsa` archives are deliberately not accepted because they may include
+responses, tokens and participant data rather than questionnaire structure only.
+Export `.lss` for a survey, `.lsg` for one group or `.lsq` for one question.
 
 See
 [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md)

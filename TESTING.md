@@ -63,8 +63,23 @@ their questionnaire content to the public repository:
 The LSS exposed all six groups. Every compatible group/rating-set selection converted
 with no unsupported findings, and the five-item Spatial Presence selection completed
 through the participant-result flow. The LSG converted SP1–SP5 on the 1–7 scale and
-also completed through that flow. Repeat the two attachment checks in the deployed
-browser before tagging; then complete one new synthetic UCL Qualtrics submission.
+also completed through that flow. The primary tester subsequently imported and ran the
+supervisor-supplied German LSG on the synchronized public candidate without an import
+or participant-flow error. This verifies the structured-import path, not German
+spoken-label recognition. The unchanged `0.8.7-q7` bridge retains the recorded normal
+UCL Qualtrics accepted-row evidence; the current candidate repeated the changed-risk
+offline warning, reconnect/retry and refresh-recovery paths.
+
+### Recorded rc.4 voice and recovery smoke check
+
+On 1 August 2026, the primary tester reported the current English voice route working
+and supplied visible-state evidence for the safety boundary. `Not 4`, `Agree quickly`
+and `Strongly` produced no selected answer. Intentional `4` produced the correct visible
+proposal for value 4 and required **Confirm** before recording it. The same candidate
+showed a connection/retry message when submission was attempted offline; after the
+connection returned, retry and page-refresh recovery worked normally. These are bounded
+manual smoke results alongside the automated parser, fallback, stale-event and
+single-retry regression tests; they are not a universal speech-recognition claim.
 
 ## 3. Participant workflows
 
