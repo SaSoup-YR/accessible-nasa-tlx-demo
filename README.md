@@ -33,7 +33,7 @@ gate below is repeated; it does not change the immutable `rc.3` evidence.
 Verification on the current unreleased candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 180 passing tests;
+- 18 test files passed, containing 181 passing tests;
 - 12 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups, produced a
@@ -46,7 +46,8 @@ Verification on the current unreleased candidate:
 - an imported English questionnaire accepted a displayed number, common standalone
   number homophones and a complete visible English label through one `en-GB` voice
   control; supported browsers also receive the current visible answers as contextual
-  recognition hints;
+  recognition hints, with an automatic one-time plain-recognition retry when a speech
+  service exposes but rejects the experimental hints;
 - an imported German questionnaire retained the same single control and accepted
   its displayed values when spoken as English numbers, without claiming German
   label recognition; and

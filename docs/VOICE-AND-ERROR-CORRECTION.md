@@ -126,7 +126,10 @@ Where the browser exposes `SpeechRecognition.phrases` and `SpeechRecognitionPhra
 the current visible numbers, short number commands and English labels are supplied as
 contextual hints with a moderate boost. This API remains experimental, so the code
 feature-detects it and falls back to ordinary recognition if construction or assignment
-fails. The required safety boundary therefore remains the bounded parser, visible
+fails. Some services expose the API but return `phrases-not-supported` only when
+recognition starts; that condition triggers one automatic retry without phrases, rather
+than exposing the experimental API error or requiring another button press. The retry is
+bounded to one attempt. The required safety boundary therefore remains the bounded parser, visible
 transcript, mandatory confirmation and permanently available answer buttons.
 
 Built-in automatic audio now covers:

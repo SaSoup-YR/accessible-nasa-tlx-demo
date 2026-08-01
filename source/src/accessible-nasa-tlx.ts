@@ -2596,6 +2596,7 @@ export class AccessibleNasaTlx extends LitElement {
     context: 'rating' | 'pair',
     first: TlxDimension,
     second?: TlxDimension,
+    allowContextualHints = true,
   ) {
     this.stopReading();
     const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -2609,7 +2610,9 @@ export class AccessibleNasaTlx extends LitElement {
     recognition.lang = 'en-GB';
     recognition.continuous = false;
     recognition.interimResults = false;
-    this.configureVoiceHints(recognition, context, first, second);
+    const contextualHintsApplied = allowContextualHints
+      ? this.configureVoiceHints(recognition, context, first, second)
+      : false;
     // Ask for ranked alternatives so a valid answer can be recovered when the
     // service's first transcript is unusable. Unsafe negation in any returned
     // alternative vetoes the complete result. Otherwise the first ranked safe
@@ -2691,6 +2694,14 @@ export class AccessibleNasaTlx extends LitElement {
     recognition.onerror = (event) => {
       if (this.recognition !== recognition) return;
       this.releaseRecognition(recognition);
+      // Some browsers expose SpeechRecognitionPhrase and the `phrases`
+      // property but reject contextual biasing only when recognition starts.
+      // Retry once without the experimental hints so their failure cannot
+      // remove the established plain Web Speech route.
+      if (event.error === 'phrases-not-supported' && contextualHintsApplied) {
+        this.startVoiceInput(context, first, second, false);
+        return;
+      }
       this.showVoiceNotice(this.voiceRecognitionErrorMessage(event.error));
     };
     recognition.onend = () => {
@@ -2713,9 +2724,9 @@ export class AccessibleNasaTlx extends LitElement {
     context: 'rating' | 'pair',
     first: TlxDimension,
     second?: TlxDimension,
-  ) {
+  ): boolean {
     const Phrase = window.SpeechRecognitionPhrase;
-    if (!Phrase || !('phrases' in recognition)) return;
+    if (!Phrase || !('phrases' in recognition)) return false;
     const hints = context === 'rating'
       ? buildRatingSpeechHints(
           first,
@@ -2729,9 +2740,11 @@ export class AccessibleNasaTlx extends LitElement {
       // speech into an answer. This API is experimental, so failure must leave
       // the standard recognition route fully usable.
       recognition.phrases = hints.slice(0, 120).map((hint) => new Phrase(hint, 4));
+      return true;
     } catch {
       // Unsupported or partially implemented contextual biasing: continue with
       // ordinary Web Speech recognition.
+      return false;
     }
   }
 

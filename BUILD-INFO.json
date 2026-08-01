@@ -9,7 +9,7 @@
   "qualtricsBridgeBuild": "0.8.7-q7",
   "verification": {
     "testFilesPassed": 18,
-    "testsPassed": 180,
+    "testsPassed": 181,
     "axeStructuralScansPassed": 12,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
@@ -34,6 +34,7 @@
     "conservativeVoiceParsingTests": "passed",
     "negationHomophoneAndAlternativeOrderTests": "passed",
     "contextualVoiceHintsRankedFallbackAndNumberHomophoneTests": "passed",
+    "contextualVoiceHintsRuntimeRejectionFallbackTest": "passed",
     "authoredContrastTokenTests": "passed",
     "longImportedLabelResponsiveWrapTests": "passed"
   },
@@ -67,7 +68,7 @@
     "realWorldSpatialPresenceLsgDirectConversion": "passed locally",
     "importedLssDefinitionUclQualtricsRemoteSubmission": "passed",
     "realWorldImportedLssNormalUclQualtricsSubmission20260801": "passed manually on the deployed pre-fix build; repeat a short smoke test after candidate deployment",
-    "englishVoiceNumberAndLabelMicrophone20260801": "failed the usability threshold on the draft candidate because recognition required excessive repetition; contextual hints, ranked-safe fallback, number homophones and rejected-transcript feedback are implemented in current source and require one post-change microphone retest",
+    "englishVoiceNumberAndLabelMicrophone20260801": "failed the usability threshold on the first draft candidate because recognition required excessive repetition; a later browser then rejected the experimental hints at start time; current source automatically retries once without hints and requires one post-fix microphone retest",
     "twoQualtricsExportRowsAcceptedSchemaInstrumentAnswersAndScore": "passed"
   }
 }

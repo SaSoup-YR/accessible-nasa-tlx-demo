@@ -21,7 +21,8 @@ verified release build.
 - `platform-component.test.ts` — complete researcher-supplied, SUS, Raw TLX and UEQ-S
   participant flows, imported-QSF completion/export and conductor link generation
   through the shared components, one English voice control, spoken English numbers
-  for every questionnaire, and exact visible labels for English questionnaires.
+  for every questionnaire, exact visible labels for English questionnaires, and the
+  one-time plain-recognition fallback when a service rejects contextual hints at start.
 - `content.test.ts` and `scoring.test.ts` — NASA content, pair invariants and
   weighted scoring compatibility.
 - `voice-input.test.ts` — displayed values/labels, conservative ranked alternatives,

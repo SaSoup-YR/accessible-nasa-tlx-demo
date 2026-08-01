@@ -102,6 +102,8 @@ bounded English (`en-GB`) recognition route: every imported questionnaire can ac
 an exact displayed number spoken in English, and an English-language questionnaire can
 also accept one complete visible English answer label. Where supported, the current
 visible numbers and labels are supplied to the browser as contextual recognition hints.
+If the browser advertises but rejects that experimental hint API when listening starts,
+the platform automatically retries once using ordinary English recognition.
 Common standalone number homophones and a small set of meaning-preserving fixed-label
 variants are handled; general fuzzy matching is not used. Negated or ambiguous phrases
 are rejected and the participant must confirm a proposal before it is recorded.

@@ -63,6 +63,8 @@ For each tester:
 7. Record the browser/version, recognition transcript, proposal, confirmation behaviour
    and fallback. If contextual speech hints are supported by that browser, the code supplies
    the current visible numbers and labels automatically; no separate tester action is needed.
+   If the service rejects those hints, verify that listening restarts automatically without
+   displaying `phrases-not-supported`, then completes the normal proposal/confirmation route.
 
 Recognition quality still depends partly on the browser service, but repeated failure of
 the stated two-of-three success threshold in the supported test browser is a release blocker.
