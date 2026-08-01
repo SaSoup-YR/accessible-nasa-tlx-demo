@@ -161,6 +161,51 @@ describe('structured questionnaire export import', () => {
     );
   });
 
+  it('expands every row of a LimeSurvey Flexible Labels array with its shared ordered scale', () => {
+    const lss = fixture('limesurvey-current-rating.lss')
+      .replace(
+        '<type><![CDATA[L]]></type><title><![CDATA[CLARITY]]></title>',
+        '<type><![CDATA[F]]></type><title><![CDATA[CLARITY]]></title>',
+      )
+      .replace(
+        ' </questions>\n <question_l10ns>',
+        ` </questions>
+ <subquestions>
+  <rows>
+   <row><qid><![CDATA[211]]></qid><parent_qid><![CDATA[201]]></parent_qid><sid><![CDATA[100001]]></sid><gid><![CDATA[10]]></gid><type><![CDATA[F]]></type><title><![CDATA[ROW_A]]></title><other><![CDATA[N]]></other><question_order><![CDATA[0]]></question_order><scale_id><![CDATA[0]]></scale_id><relevance><![CDATA[1]]></relevance></row>
+   <row><qid><![CDATA[212]]></qid><parent_qid><![CDATA[201]]></parent_qid><sid><![CDATA[100001]]></sid><gid><![CDATA[10]]></gid><type><![CDATA[F]]></type><title><![CDATA[ROW_B]]></title><other><![CDATA[N]]></other><question_order><![CDATA[1]]></question_order><scale_id><![CDATA[0]]></scale_id><relevance><![CDATA[1]]></relevance></row>
+  </rows>
+ </subquestions>
+ <question_l10ns>`,
+      )
+      .replace(
+        '<question><![CDATA[<p>The task instructions were clear.</p>]]></question>',
+        '<question><![CDATA[<p>Rate each statement</p>]]></question>',
+      )
+      .replace(
+        '  </rows>\n </question_l10ns>',
+        `   <row><qid><![CDATA[211]]></qid><question><![CDATA[<p>The first statement is clear.</p>]]></question><help/><script/><language><![CDATA[en]]></language></row>
+   <row><qid><![CDATA[212]]></qid><question><![CDATA[<p>The second statement is controllable.</p>]]></question><help/><script/><language><![CDATA[en]]></language></row>
+  </rows>
+ </question_l10ns>`,
+      );
+
+    const review = reviewQuestionnaireExport(lss, 'two-row-array.lss');
+
+    expect(review.canConvert).toBe(true);
+    expect(review.unsupported).toEqual([]);
+    expect(review.draft?.items.map(({ name, prompt }) => ({ name, prompt }))).toEqual([
+      { name: 'ROW_A', prompt: 'Rate each statement: The first statement is clear.' },
+      { name: 'ROW_B', prompt: 'Rate each statement: The second statement is controllable.' },
+      { name: 'CONTROL', prompt: 'I felt in control while completing the task.' },
+    ]);
+    expect(review.draft?.items.slice(0, 2).map(({ responseLabels }) => responseLabels)).toEqual([
+      { 1: 'Strongly disagree', 2: 'Disagree', 3: 'Neither agree nor disagree', 4: 'Agree', 5: 'Strongly agree' },
+      { 1: 'Strongly disagree', 2: 'Disagree', 3: 'Neither agree nor disagree', 4: 'Agree', 5: 'Strongly agree' },
+    ]);
+    expect(review.confirmations.map(({ code }) => code)).toContain('limesurvey-array-expanded');
+  });
+
   it('imports a LimeSurvey LSG single-row array group without discarding its condition silently', () => {
     const review = reviewQuestionnaireExport(
       fixture('limesurvey-group-rating.lsg'),

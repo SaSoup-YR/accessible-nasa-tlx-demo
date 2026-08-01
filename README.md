@@ -25,30 +25,37 @@ question-group and `.lsq` single-question imports, explicit selection when an
 `.lss` survey contains several groups and source-language metadata for correct
 page semantics. Voice input has one deliberately bounded English route: every
 supported questionnaire accepts a displayed number spoken in English, while an
-English questionnaire also accepts one complete exact visible English answer
-label. It remains unreleased
+English questionnaire also accepts one complete visible English answer label,
+with a small allowlist of meaning-preserving speech-service variants. It remains unreleased
 until the synchronized files are deployed and the short live-browser release
 gate below is repeated; it does not change the immutable `rc.3` evidence.
 
 Verification on the current unreleased candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 171 passing tests;
+- 18 test files passed, containing 181 passing tests;
 - 12 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
-- the attached real six-group LimeSurvey LSS exposed all six groups and safely
-  converted the explicitly selected five-item Spatial Presence group; and
+- the attached real six-group LimeSurvey LSS exposed all six groups, produced a
+  safe conversion for every compatible group/scale selection, and completed the
+  five-item Spatial Presence group through the participant-result flow;
 - the matching real LimeSurvey LSG converted the same SP1–SP5 items and 1–7
   response scale with no unsupported content; and
 - a sanitised LimeSurvey LSQ converted one required rating question while
   explicitly warning that its former survey and group context is unavailable;
-- an imported English questionnaire accepted both a displayed number and an exact
-  visible English label through one `en-GB` voice control;
+- an imported English questionnaire accepted a displayed number, common standalone
+  number homophones and a complete visible English label through one `en-GB` voice
+  control; supported browsers also receive the current visible answers as contextual
+  recognition hints, with an automatic one-time plain-recognition retry when a speech
+  service exposes but rejects the experimental hints;
 - an imported German questionnaire retained the same single control and accepted
   its displayed values when spoken as English numbers, without claiming German
   label recognition; and
-- partial, similar, ambiguous and negated speech remained unselected, with a
-  neutral retry message and the ordinary answer buttons retained.
+- ambiguous and negated speech remained unselected, including common `not`
+  homophones in either recognition-alternative order; a small allowlist covers
+  harmless standalone number homophones and fixed-label inflections, numeric input
+  is never extracted from arbitrary surrounding prose, and the explicit confirmation
+  explains the remaining browser-service omission boundary;
 
 A deployed live-browser re-test of QSF, LSS, LSG and LSQ, one real microphone
 English number or label answer, and one accepted Qualtrics row are still
@@ -131,8 +138,11 @@ accessible or that it improves a questionnaire's psychometric properties.
 - Voice recognition depends on the browser, operating system and any network-backed
   speech service. The single control requests `en-GB`. It accepts an allowed displayed
   number spoken in English for every questionnaire and, only for English questionnaires,
-  one complete exact visible English answer label. It does not translate, fuzzily match
-  or claim non-English label recognition. Permission, microphone, no-speech, network
+  one complete visible English answer label. Supported browsers are given the current
+  visible answers as contextual hints; common standalone number homophones and a small
+  set of meaning-preserving label variants are handled, but general fuzzy matching is
+  deliberately not used. It does not translate or claim non-English label recognition.
+  Permission, microphone, no-speech, network
   and abort failures leave the ordinary answer buttons available. Webcam
   gaze input remains experimental and requires conventional keyboard/pointer
   fallbacks.
@@ -259,7 +269,8 @@ endpoint labels without inventing meanings such as `Neutral` or `Agree` for
 intermediate values. Imported blank intermediate labels likewise remain numbered rather
 than being given invented meanings. Confirmed voice input is deliberately English-only:
 all supported rating questionnaires accept their displayed values as English numbers,
-and English questionnaires additionally accept one complete exact visible English label.
+and English questionnaires additionally accept one complete visible English label,
+including a small set of documented recognition variants.
 Non-English label recognition is not claimed. Recognition availability and transcription
 accuracy still depend on the participant's browser and operating system; buttons always
 remain available and every proposal requires confirmation. NASA-TLX smileys and simpler explanations
@@ -311,6 +322,8 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Architecture and extension rules | [`docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md`](docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md), [`docs/INSTRUMENT-DEFINITION-GUIDE.md`](docs/INSTRUMENT-DEFINITION-GUIDE.md) |
 | No-code custom-questionnaire test | [`docs/CUSTOM-QUESTIONNAIRE-TEST.md`](docs/CUSTOM-QUESTIONNAIRE-TEST.md) |
 | Qualtrics/LimeSurvey import guide | [`docs/QUESTIONNAIRE-IMPORT.md`](docs/QUESTIONNAIRE-IMPORT.md) |
+| Current source verification | [`docs/SOURCE-VERIFICATION-A1-F4.md`](docs/SOURCE-VERIFICATION-A1-F4.md) |
+| Release-candidate verification gate | [`docs/RC4-RELEASE-GATE.md`](docs/RC4-RELEASE-GATE.md) |
 | Researcher-workflow evaluation plan | [`docs/IMPORT-WORKFLOW-EVALUATION.md`](docs/IMPORT-WORKFLOW-EVALUATION.md) |
 | Migration | [`docs/MIGRATION-V0.7-V0.8.md`](docs/MIGRATION-V0.7-V0.8.md) |
 | Colour and WCAG audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md), [`docs/WCAG-2.2-COMPONENT-AUDIT.md`](docs/WCAG-2.2-COMPONENT-AUDIT.md) |
