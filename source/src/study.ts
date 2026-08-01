@@ -14,6 +14,7 @@ import {
 
 export const PROTOTYPE_VERSION = '0.8.0';
 export const COMPLETED_RESULTS_KEY = 'accessible-questionnaire-v0.8-completed-results';
+export const LEGACY_COMPLETED_RESULTS_KEY = 'accessible-nasa-tlx-v0.7-completed-results';
 export const MAX_PARTICIPANT_URL_LENGTH = 24000;
 
 export type AnswerMode = 'standard' | 'smiley';
@@ -137,6 +138,32 @@ export interface StudyResultInput {
   result: QuestionnaireScore;
   supportMetadata: SupportMetadata;
   submissionId?: string;
+}
+
+interface LegacyStudyResultRecordV3 {
+  schemaVersion: 3;
+  submissionId: string;
+  study: StudyResultRecord['study'];
+  participantCode: string;
+  timing: StudyResultRecord['timing'];
+  prototype: {
+    name: 'Accessible NASA-TLX';
+    version: '0.7.0';
+  };
+  instrument: {
+    name: 'NASA Task Load Index';
+    version: 'full weighted';
+  };
+  collection: StudyCollectionConfig;
+  configuration: StudySupportConfig;
+  responses: StudyResultRecord['responses'];
+  result: {
+    ratings: Record<string, number>;
+    weights: Record<string, number>;
+    adjustedRatings: Record<string, number>;
+    weightedScore: number;
+  };
+  supportMetadata: SupportMetadata;
 }
 
 interface StorageLike {
@@ -571,16 +598,126 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
   }
 }
 
+function normaliseLegacyStudyResultRecord(value: unknown): StudyResultRecord | null {
+  if (!value || typeof value !== 'object') return null;
+  const legacy = value as LegacyStudyResultRecordV3;
+  if (
+    legacy.schemaVersion !== 3 ||
+    legacy.prototype?.name !== 'Accessible NASA-TLX' ||
+    legacy.prototype?.version !== '0.7.0' ||
+    legacy.instrument?.name !== 'NASA Task Load Index' ||
+    legacy.instrument?.version !== 'full weighted' ||
+    !legacy.responses?.ratings ||
+    !legacy.responses?.pairwiseChoices ||
+    !Array.isArray(legacy.responses?.pairPresentationOrder) ||
+    !legacy.result?.ratings ||
+    !legacy.result?.weights ||
+    !legacy.result?.adjustedRatings ||
+    !legacy.supportMetadata
+  ) {
+    return null;
+  }
+
+  const definition = getQuestionnaireDefinition(DEFAULT_QUESTIONNAIRE_ID);
+  if (!definition) return null;
+
+  try {
+    const expected = scoreQuestionnaire(
+      definition,
+      legacy.responses.ratings,
+      legacy.responses.pairwiseChoices,
+    );
+    if (expected.details.kind !== 'weighted-pairwise') {
+      return null;
+    }
+    const expectedDetails = expected.details;
+    if (
+      !sameNumber(legacy.result.weightedScore, expected.primaryScore) ||
+      !definition.items.every(({ id }) =>
+        sameNumber(legacy.result.ratings[id], expected.ratings[id]) &&
+        sameNumber(legacy.result.weights[id], expectedDetails.weights[id]) &&
+        sameNumber(legacy.result.adjustedRatings[id], expectedDetails.adjustedRatings[id]))
+    ) {
+      return null;
+    }
+
+    const migrated: StudyResultRecord = {
+      schemaVersion: 4,
+      submissionId: legacy.submissionId,
+      study: { ...legacy.study },
+      participantCode: legacy.participantCode,
+      timing: { ...legacy.timing },
+      prototype: {
+        name: 'Accessible Questionnaire Platform',
+        version: PROTOTYPE_VERSION,
+      },
+      instrument: {
+        id: definition.id,
+        name: definition.name,
+        version: definition.version,
+        definitionSchemaVersion: definition.schemaVersion,
+        scoringStrategy: definition.scoring.strategy,
+      },
+      collection: { ...legacy.collection },
+      configuration: { ...legacy.configuration },
+      responses: {
+        ratings: { ...legacy.responses.ratings },
+        pairwiseChoices: { ...legacy.responses.pairwiseChoices },
+        pairPresentationOrder: [...legacy.responses.pairPresentationOrder],
+      },
+      result: expected,
+      supportMetadata: legacy.supportMetadata,
+    };
+    return isStudyResultRecord(migrated) ? migrated : null;
+  } catch {
+    return null;
+  }
+}
+
 export function loadCompletedResults(storage: StorageLike = localStorage): StudyResultRecord[] {
+  let current: StudyResultRecord[] = [];
   try {
     const raw = storage.getItem(COMPLETED_RESULTS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isStudyResultRecord);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) current = parsed.filter(isStudyResultRecord);
+    }
   } catch {
-    return [];
+    current = [];
   }
+
+  let legacyValues: unknown[] | null = null;
+  try {
+    const raw = storage.getItem(LEGACY_COMPLETED_RESULTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) legacyValues = parsed;
+    }
+  } catch {
+    legacyValues = null;
+  }
+  if (!legacyValues?.length) return current;
+
+  const migrated = legacyValues
+    .map(normaliseLegacyStudyResultRecord)
+    .filter((record): record is StudyResultRecord => record !== null);
+  if (!migrated.length) return current;
+
+  const merged = new Map(current.map((record) => [record.submissionId, record]));
+  migrated.forEach((record) => {
+    if (!merged.has(record.submissionId)) merged.set(record.submissionId, record);
+  });
+  const records = [...merged.values()];
+  try {
+    storage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify(records));
+    if (migrated.length === legacyValues.length) {
+      storage.removeItem(LEGACY_COMPLETED_RESULTS_KEY);
+    }
+  } catch {
+    // Return the validated records for recovery, but retain the legacy copy if
+    // the browser cannot persist the current schema safely.
+  }
+  return records;
 }
 
 export function saveCompletedResult(record: StudyResultRecord, storage: StorageLike = localStorage) {
@@ -609,6 +746,7 @@ export function removeCompletedResult(submissionId: string, storage: StorageLike
 
 export function clearCompletedResults(storage: StorageLike = localStorage) {
   storage.removeItem(COMPLETED_RESULTS_KEY);
+  storage.removeItem(LEGACY_COMPLETED_RESULTS_KEY);
 }
 
 function csvCell(value: unknown) {

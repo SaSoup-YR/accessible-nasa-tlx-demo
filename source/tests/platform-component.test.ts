@@ -34,6 +34,7 @@ afterEach(() => {
   sessionStorage.clear();
   delete window.webkitSpeechRecognition;
   delete window.SpeechRecognition;
+  delete window.SpeechRecognitionPhrase;
   window.history.replaceState({}, '', '/');
 });
 
@@ -123,7 +124,7 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(component.textContent).toContain('5.00');
   });
 
-  it('uses one English voice control and accepts an exact visible English answer label', async () => {
+  it('uses one English voice control and accepts a complete visible English answer label', async () => {
     const draft = createCustomQuestionnaireDraft();
     draft.language = 'en-GB';
     draft.name = 'Task Support Check';
@@ -166,19 +167,32 @@ describe('instrument-independent questionnaire workflow', () => {
     const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
     window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
 
+    let alternatives = ['Strongly agree'];
+    class FakePhrase {
+      constructor(public phrase: string, public boost = 1) {}
+    }
+    window.SpeechRecognitionPhrase = FakePhrase as any;
     class FakeRecognition {
       lang = '';
       continuous = false;
       interimResults = false;
       maxAlternatives = 1;
+      phrases: FakePhrase[] = [];
       onresult: ((event: any) => void) | null = null;
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
         expect(this.lang).toBe('en-GB');
+        expect(this.phrases.some(({ phrase, boost }) =>
+          phrase === 'Strongly agree' && boost === 4)).toBe(true);
+        expect(this.phrases.some(({ phrase }) => phrase === 'number four')).toBe(true);
+        const result = Object.assign(
+          alternatives.map((transcript) => ({ transcript })),
+          { length: alternatives.length },
+        );
         this.onresult?.({
           results: {
-            0: { 0: { transcript: 'Strongly agree' }, length: 1 },
+            0: result,
             length: 1,
           },
         });
@@ -207,6 +221,145 @@ describe('instrument-independent questionnaire workflow', () => {
     component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
     await component.updateComplete;
     expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
+
+    alternatives = ['4', 'Note 4'];
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.textContent).toContain('No answer was selected');
+    expect(component.querySelector('[role="status"]')?.textContent).toContain('I heard “Note 4”');
+    expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
+    expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(false);
+
+    alternatives = ['strong degree'];
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+      'I heard “strong degree”',
+    );
+  });
+
+  it('retries once without contextual hints when the browser rejects the experimental phrase API', async () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'en-GB';
+    draft.name = 'Task Support Check';
+    draft.shortName = 'TSC';
+    draft.items = [createCustomItemDraft({
+      name: 'clarity',
+      prompt: 'The task instructions were clear.',
+      lowAnchor: 'Strongly disagree',
+      highAnchor: 'Strongly agree',
+      responseLabels: {
+        1: 'Strongly disagree',
+        2: 'Disagree',
+        3: 'Neither agree nor disagree',
+        4: 'Agree',
+        5: 'Strongly agree',
+      },
+    })];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'VOICE-HINT-FALLBACK-01',
+      studyTitle: 'Voice hint fallback',
+      taskLabel: 'using the prototype',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: false,
+        participantAdjustmentPolicy: 'participant-choice',
+        voiceInputAvailable: true,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+
+    class FakePhrase {
+      constructor(public phrase: string, public boost = 1) {}
+    }
+    window.SpeechRecognitionPhrase = FakePhrase as any;
+    const recognitions: FakeRecognition[] = [];
+    class FakeRecognition {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      phrases: FakePhrase[] = [];
+      onresult: ((event: any) => void) | null = null;
+      onerror: ((event: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      constructor() {
+        recognitions.push(this);
+      }
+      start() {
+        // The test dispatches browser events after start() to preserve their
+        // asynchronous ordering and exercise stale callbacks explicitly.
+      }
+      stop() {}
+    }
+    window.webkitSpeechRecognition = FakeRecognition as any;
+
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-HINT-FALLBACK-01';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 1 item'))!
+      .click();
+    await component.updateComplete;
+
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    expect(recognitions).toHaveLength(1);
+    const phraseAttempt = recognitions[0];
+    const staleEnd = phraseAttempt.onend!;
+    await Promise.resolve();
+    phraseAttempt.onerror?.({ error: 'phrases-not-supported' });
+    await component.updateComplete;
+    expect(recognitions).toHaveLength(2);
+    const ordinaryAttempt = recognitions[1];
+    expect(ordinaryAttempt.phrases).toHaveLength(0);
+
+    // A browser may deliver an already-queued end callback from the rejected
+    // recogniser after the ordinary fallback has started. It must not replace
+    // the second attempt's listening state or result handler.
+    staleEnd();
+    ordinaryAttempt.onresult?.({
+      results: {
+        0: Object.assign([{ transcript: 'number four' }], { length: 1 }),
+        length: 1,
+      },
+    });
+    await component.updateComplete;
+    expect(component.textContent).not.toContain('phrases-not-supported');
+    expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
+      'Agree, value 4, for clarity',
+    );
+    component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(true);
+
+    // A new user attempt may try contextual hints again. If its ordinary
+    // fallback also reports the same browser error, stop after two instances,
+    // keep the existing answer and never expose the internal error code.
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    expect(recognitions).toHaveLength(3);
+    recognitions[2].onerror?.({ error: 'phrases-not-supported' });
+    expect(recognitions).toHaveLength(4);
+    recognitions[3].onerror?.({ error: 'phrases-not-supported' });
+    await component.updateComplete;
+    expect(recognitions).toHaveLength(4);
+    expect(component.textContent).not.toContain('phrases-not-supported');
+    expect(component.textContent).toContain('Voice input is unavailable in this browser');
+    expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(true);
   });
 
   it('rejects non-English labels but keeps one English numeric route for an imported questionnaire', async () => {

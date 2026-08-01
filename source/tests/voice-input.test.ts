@@ -10,6 +10,7 @@ import {
   createCustomQuestionnaireDraft,
 } from '../src/custom-questionnaire';
 import {
+  buildRatingSpeechHints,
   parsePairAlternatives,
   parsePairTranscript,
   parseRatingAlternatives,
@@ -20,10 +21,13 @@ describe('voice-answer parsing', () => {
   it('accepts only valid NASA-TLX rating increments', () => {
     expect(parseRatingTranscript('fifty five', dimensions[0])).toBe(55);
     expect(parseRatingTranscript('I choose 70', dimensions[0])).toBe(70);
+    expect(parseRatingTranscript('my answer is 70', dimensions[0])).toBe(70);
     expect(parseRatingTranscript('seven zero', dimensions[0])).toBe(70);
     expect(parseRatingTranscript('one zero zero', dimensions[0])).toBe(100);
     expect(parseRatingTranscript('I choose 73', dimensions[0])).toBeNull();
     expect(parseRatingTranscript('twenty three', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('the system heard 70', dimensions[0])).toBeNull();
+    expect(parseRatingTranscript('banana 70', dimensions[0])).toBeNull();
   });
 
   it('recognises an exact whole-number value when a custom scale displays it', () => {
@@ -47,6 +51,20 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('twenty three', definition.items[0], values, [])).toBe(23);
     expect(parseRatingTranscript('two three', definition.items[0], values, [])).toBe(23);
     expect(parseRatingTranscript('thirty one', definition.items[0], values, [])).toBeNull();
+  });
+
+  it('recovers common standalone number homophones without mining prose', () => {
+    const definition = getQuestionnaireDefinition('system-usability-scale')!;
+    const item = definition.items[0];
+    const values = buildRatingValues(definition);
+
+    expect(parseRatingTranscript('won', item, values, [])).toBe(1);
+    expect(parseRatingTranscript('option too', item, values, [])).toBe(2);
+    expect(parseRatingTranscript('tree', item, values, [])).toBe(3);
+    expect(parseRatingTranscript('number for', item, values, [])).toBe(4);
+    expect(parseRatingTranscript('fife', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('I was looking for option four', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('note for', item, values, [])).toBeNull();
   });
 
   it('rejects negated or ambiguous anchors instead of guessing', () => {
@@ -125,13 +143,48 @@ describe('voice-answer parsing', () => {
     const item = definition.items[0];
 
     expect(parseRatingTranscript('agree', item, values, [])).toBe(4);
+    expect(parseRatingTranscript('response strongly agreed', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('strong lee a grey', item, values, [])).toBe(5);
+    expect(parseRatingTranscript('dis a grey', item, values, [])).toBe(2);
+    expect(parseRatingTranscript('strongly disagreed', item, values, [])).toBe(1);
     expect(parseRatingTranscript('neither agree nor disagree', item, values, [])).toBe(3);
     expect(parseRatingTranscript('I choose strongly agree', item, values, [])).toBe(5);
     expect(parseRatingTranscript('strongly', item, values, [])).toBeNull();
     expect(parseRatingTranscript('not agree', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('neither agree or disagree', item, values, [])).toBe(3);
+    expect(parseRatingTranscript('either agree nor disagree', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('agree quickly', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('the answer might be 4', item, values, [])).toBeNull();
+    for (const unsafeTranscript of [
+      'note 4',
+      'knot four',
+      'naught four',
+      'nought four',
+      'negative four',
+      'minus four',
+      'nope four',
+      'nah four',
+      'skip four',
+      'avoid four',
+      'reject four',
+    ]) {
+      expect(parseRatingTranscript(unsafeTranscript, item, values, [])).toBeNull();
+    }
+    expect(parseRatingAlternatives(['agree', 'strongly agree'], item, values, [])).toEqual({
+      transcript: 'agree',
+      value: 4,
+    });
+    expect(parseRatingAlternatives(['4', 'Note 4'], item, values, [])).toBeNull();
+    expect(parseRatingAlternatives(['Note 4', '4'], item, values, [])).toBeNull();
+    expect(parseRatingAlternatives(
+      ['neither agree or disagree', 'neither agree nor disagree'],
+      item,
+      values,
+      [],
+    )).toEqual({ transcript: 'neither agree or disagree', value: 3 });
   });
 
-  it('uses a consistent lower-ranked hypothesis without guessing across conflicts or negation', () => {
+  it('uses the first safe ranked hypothesis while retaining the negation veto', () => {
     expect(parseRatingAlternatives(['hello', 'low'], dimensions[0])).toEqual({
       transcript: 'hello',
       value: 0,
@@ -140,14 +193,44 @@ describe('voice-answer parsing', () => {
       transcript: 'high',
       value: 100,
     });
-    expect(parseRatingAlternatives(['low', 'high'], dimensions[0])).toBeNull();
+    expect(parseRatingAlternatives(['low', 'high'], dimensions[0])).toEqual({
+      transcript: 'low',
+      value: 0,
+    });
     expect(parseRatingAlternatives(['not low', 'low'], dimensions[0])).toBeNull();
     expect(parseRatingAlternatives(['hello', 'not high', 'high'], dimensions[0])).toBeNull();
     expect(parsePairAlternatives(['fiscal demand', 'physical demand'], ['mental', 'physical'])).toEqual({
       transcript: 'physical demand',
       value: 'physical',
     });
-    expect(parsePairAlternatives(['mental demand', 'physical demand'], ['mental', 'physical'])).toBeNull();
+    expect(parsePairAlternatives(['mental demand', 'physical demand'], ['mental', 'physical'])).toEqual({
+      transcript: 'mental demand',
+      value: 'mental',
+    });
+  });
+
+  it('builds contextual hints from the answers visible on the current question', () => {
+    const definition = getQuestionnaireDefinition('system-usability-scale')!;
+    const values = buildRatingValues(definition);
+    const item = {
+      ...definition.items[0],
+      responseLabels: {
+        1: 'Strongly disagree',
+        2: 'Disagree',
+        3: 'Neither agree nor disagree',
+        4: 'Agree',
+        5: 'Strongly agree',
+      },
+    };
+    const hints = buildRatingSpeechHints(item, values, [], true);
+
+    expect(hints).toContain('Strongly disagree');
+    expect(hints).toContain('Neither agree nor disagree');
+    expect(hints).toContain('number four');
+    expect(hints).toContain('option five');
+    expect(hints).toContain('answer Strongly agree');
+    expect(hints).toContain('choose Neither agree nor disagree');
+    expect(new Set(hints).size).toBe(hints.length);
   });
 
   it('accepts only exact official SUS endpoint labels and numeric response positions', () => {
@@ -172,6 +255,10 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('obstructive', firstItem, values, [])).toBe(1);
     expect(parseRatingTranscript('I select supportive', firstItem, values, [])).toBe(7);
     expect(parseRatingTranscript('not interesting', interestItem, values, [])).toBe(1);
+    expect(parseRatingAlternatives(['not interesting'], interestItem, values, [])).toEqual({
+      transcript: 'not interesting',
+      value: 1,
+    });
     expect(parseRatingTranscript('interesting', interestItem, values, [])).toBe(7);
     expect(parseRatingTranscript('not interesting or interesting', interestItem, values, [])).toBeNull();
     expect(parseRatingTranscript('middle', firstItem, values, [])).toBeNull();
@@ -180,6 +267,6 @@ describe('voice-answer parsing', () => {
       interestItem,
       values,
       [],
-    )).toBeNull();
+    )).toEqual({ transcript: 'not interesting', value: 1 });
   });
 });
