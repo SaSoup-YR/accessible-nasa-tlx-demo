@@ -23,6 +23,39 @@ the immutable release tag. Use synthetic participant codes only.
 6. Create the immutable release-candidate tag only after every manual and automated
    gate passes.
 
+## Recorded rc.4 result — 1 August 2026
+
+The implementation candidate was public commit
+`31ba69d918c2f8b7d21a0dde5c697fb93ef99f7a`, synchronized to `gh-pages` before
+the release-record commit. Verification was deliberately bounded to the changed
+and safety-critical paths:
+
+- 18 test files and 181 tests passed, including 12 representative axe structural
+  scans, voice negation/alternative-order tests, contextual-hint runtime fallback,
+  stale recognition events and the single-retry boundary;
+- TypeScript, production, standalone and synchronized release builds passed, and
+  the production dependency audit reported zero vulnerabilities;
+- the public conductor, participant, missing-answer and same-device recovery smoke
+  paths passed with synthetic data;
+- the primary tester reported the post-fix voice route working. Supplied screen
+  evidence shows `Not 4`, `Agree quickly` and `Strongly` leaving the answer
+  unselected, while intentional `4` produced the correct visible proposal and
+  still required explicit confirmation;
+- disconnected submission showed the connection/retry state rather than a false
+  receipt; reconnect/retry and refresh recovery then operated normally;
+- the supervisor-supplied German LSG imported and ran without an import or
+  participant-flow error. German spoken labels are not claimed: the route remains
+  `en-GB`, with English displayed numbers for every questionnaire and English
+  labels only for English questionnaires; and
+- the `0.8.7-q7` Qualtrics bridge and result schema are unchanged from the recorded
+  accepted-row baseline. The current candidate repeated the changed-risk adverse
+  path rather than treating external speech-service accuracy as deterministic.
+
+Decision: the reviewed release-record commit may receive the immutable
+`v0.8.0-rc.4` tag. This records a technical release candidate only; it is not a
+claim of full WCAG conformance, psychometric equivalence, multilingual spoken-label
+recognition or authorization to recruit.
+
 ## Real-file preview check
 
 1. Open the candidate `study.html` preview.
