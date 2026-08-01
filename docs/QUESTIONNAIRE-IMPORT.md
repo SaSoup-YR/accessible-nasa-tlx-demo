@@ -100,19 +100,23 @@ values are preserved. Imported response labels remain visible in the participant
 interface. When the conductor enables optional voice input, the platform uses one
 bounded English (`en-GB`) recognition route: every imported questionnaire can accept
 an exact displayed number spoken in English, and an English-language questionnaire can
-also accept one complete, exact visible English answer label. Partial, fuzzy, negated or
-ambiguous phrases are rejected and the participant must confirm a proposal before it is
-recorded. Negation and exclusion terms, including common English speech-service
+also accept one complete visible English answer label. Where supported, the current
+visible numbers and labels are supplied to the browser as contextual recognition hints.
+Common standalone number homophones and a small set of meaning-preserving fixed-label
+variants are handled; general fuzzy matching is not used. Negated or ambiguous phrases
+are rejected and the participant must confirm a proposal before it is recorded.
+Negation and exclusion terms, including common English speech-service
 homophones such as `note`, `knot`, `naught` and `nought` for `not`, reject the complete
-set of recognition alternatives when they are not an exact visible answer label. The
+set of recognition alternatives when they are not a complete visible answer label. The
 platform does not claim general multilingual label recognition. For a
 non-English questionnaire, its labels remain correctly marked with the definition's
 language for visual and screen-reader presentation, while the optional built-in voice
 route accepts displayed numbers in English only. Visible native answer buttons and system
 voice control remain available independently, so browser speech recognition is never a
-required route. Exact matching can reject a correctly spoken label when the browser's
-speech service returns different words because of accent, speed, microphone or operating
-system behaviour; the platform never uses fuzzy matching to guess a response. Blank source
+required route. The interface displays the returned transcript after both successful and
+rejected recognition so the participant does not need to retry blindly. Contextual hints
+and bounded variants cannot guarantee recognition across accents, microphones, browsers or
+operating systems; the platform never uses unrestricted fuzzy matching to guess a response. Blank source
 labels remain visible numeric positions: the importer never invents intermediate meanings.
 If the browser removes a spoken negation completely and returns only a valid number, client
 code cannot reconstruct the missing word. The interface therefore displays the recognised

@@ -44,7 +44,13 @@ import {
   type SupportChangeSetting,
   type SupportMetadata,
 } from './study';
-import { parsePairAlternatives, parseRatingAlternatives } from './voice-input';
+import {
+  buildPairSpeechHints,
+  buildRatingSpeechHints,
+  hasUnsafeSpeechMeaning,
+  parsePairAlternatives,
+  parseRatingAlternatives,
+} from './voice-input';
 import {
   DwellTracker,
   WEBGAZER_FACE_MESH_URL,
@@ -103,6 +109,11 @@ interface SpeechRecognitionAlternativeLike {
   transcript: string;
 }
 
+interface SpeechRecognitionPhraseLike {
+  readonly phrase: string;
+  readonly boost: number;
+}
+
 interface SpeechRecognitionResultLike {
   readonly length: number;
   [index: number]: SpeechRecognitionAlternativeLike;
@@ -120,6 +131,7 @@ interface SpeechRecognitionLike {
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
+  phrases?: SpeechRecognitionPhraseLike[];
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onerror: ((event: Event & { error?: string }) => void) | null;
   onend: (() => void) | null;
@@ -128,6 +140,10 @@ interface SpeechRecognitionLike {
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+type SpeechRecognitionPhraseConstructor = new (
+  phrase: string,
+  boost?: number,
+) => SpeechRecognitionPhraseLike;
 
 function isEnglishLanguage(language: string) {
   return language.trim().toLocaleLowerCase().split('-')[0] === 'en';
@@ -137,6 +153,7 @@ declare global {
   interface Window {
     SpeechRecognition?: SpeechRecognitionConstructor;
     webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    SpeechRecognitionPhrase?: SpeechRecognitionPhraseConstructor;
   }
 }
 
@@ -1238,8 +1255,9 @@ export class AccessibleNasaTlx extends LitElement {
           <p>${prompt}</p>
           <p class="support-boundary">
             Voice input uses English recognition. Say one shown number in English. For an English questionnaire,
-            you may instead say one complete exact visible answer label. Non-English answer labels are not
-            recognised. Voice is optional, this prototype does not store audio, and the visible answer buttons
+            you may instead say one complete visible answer label. When the browser supports contextual speech
+            hints, the current visible answers are supplied to improve recognition. Non-English answer labels are
+            not recognised. Voice is optional, this prototype does not store audio, and the visible answer buttons
             remain available.
           </p>
           <button
@@ -1811,15 +1829,17 @@ export class AccessibleNasaTlx extends LitElement {
 
   private ratingVoicePrompt(dimension: TlxDimension) {
     if (this.answerMode !== 'smiley') {
+      const exampleValue = this.ratingValues[Math.min(3, this.ratingValues.length - 1)];
       const numericPrompt =
-        `Say one shown value from ${this.definition.scale.minimum} to ${this.definition.scale.maximum} ` +
-        `in steps of ${this.definition.scale.step}. Other numbers are not rounded or guessed.`;
+        `For the clearest recognition, say “number ${exampleValue}”, using any value shown from ` +
+        `${this.definition.scale.minimum} to ${this.definition.scale.maximum} in steps of ` +
+        `${this.definition.scale.step}. Other numbers are not rounded or guessed.`;
       const labelledValues = this.ratingValues.flatMap((value) => {
         const label = dimension.responseLabels?.[String(value)];
         return label ? [`${value}, ${label}`] : [];
       });
       if (labelledValues.length > 0 && isEnglishLanguage(this.definition.language)) {
-        return `${numericPrompt} You may instead say one exact visible answer label.`;
+        return `${numericPrompt} You may instead say one complete visible answer label.`;
       }
       return this.definition.scale.type === 'magnitude'
         ? numericPrompt
@@ -2589,10 +2609,11 @@ export class AccessibleNasaTlx extends LitElement {
     recognition.lang = 'en-GB';
     recognition.continuous = false;
     recognition.interimResults = false;
-    // Ask for ranked alternatives so a harmless primary transcription such as
-    // "hello" can be recovered from a lower-ranked "low". The parser rejects a
-    // negated primary result and any set of alternatives that maps to conflicting
-    // answers. Every accepted proposal still requires explicit confirmation.
+    this.configureVoiceHints(recognition, context, first, second);
+    // Ask for ranked alternatives so a valid answer can be recovered when the
+    // service's first transcript is unusable. Unsafe negation in any returned
+    // alternative vetoes the complete result. Otherwise the first ranked safe
+    // visible answer is proposed and still requires explicit confirmation.
     recognition.maxAlternatives = 5;
     recognition.onresult = (event) => {
       if (this.recognition !== recognition) return;
@@ -2656,10 +2677,15 @@ export class AccessibleNasaTlx extends LitElement {
         }
       }
       this.releaseRecognition(recognition);
+      const informativeTranscript =
+        transcripts.find((transcript) => hasUnsafeSpeechMeaning(transcript)) ?? transcripts[0];
+      const heard = informativeTranscript
+        ? ` I heard “${informativeTranscript}”.`
+        : '';
       this.showVoiceNotice(
         context === 'rating'
-          ? 'No answer was selected. Say one shown number in English, or use a visible answer button.'
-          : `No answer was selected. Say ${first.name} or ${second!.name}, or use a visible answer button.`,
+          ? `No answer was selected.${heard} Try a short command such as “number four”, or use a visible answer button.`
+          : `No answer was selected.${heard} Say ${first.name} or ${second!.name}, or use a visible answer button.`,
       );
     };
     recognition.onerror = (event) => {
@@ -2679,6 +2705,33 @@ export class AccessibleNasaTlx extends LitElement {
     } catch {
       this.releaseRecognition(recognition);
       this.showVoiceNotice('Voice input is unavailable in this browser context. Use a visible answer button.');
+    }
+  }
+
+  private configureVoiceHints(
+    recognition: SpeechRecognitionLike,
+    context: 'rating' | 'pair',
+    first: TlxDimension,
+    second?: TlxDimension,
+  ) {
+    const Phrase = window.SpeechRecognitionPhrase;
+    if (!Phrase || !('phrases' in recognition)) return;
+    const hints = context === 'rating'
+      ? buildRatingSpeechHints(
+          first,
+          this.ratingValues,
+          this.smileyLandmarks,
+          isEnglishLanguage(this.definition.language),
+        )
+      : buildPairSpeechHints([first, second!]);
+    try {
+      // A moderate boost improves the vocabulary without forcing unrelated
+      // speech into an answer. This API is experimental, so failure must leave
+      // the standard recognition route fully usable.
+      recognition.phrases = hints.slice(0, 120).map((hint) => new Phrase(hint, 4));
+    } catch {
+      // Unsupported or partially implemented contextual biasing: continue with
+      // ordinary Web Speech recognition.
     }
   }
 

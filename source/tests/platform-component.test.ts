@@ -34,6 +34,7 @@ afterEach(() => {
   sessionStorage.clear();
   delete window.webkitSpeechRecognition;
   delete window.SpeechRecognition;
+  delete window.SpeechRecognitionPhrase;
   window.history.replaceState({}, '', '/');
 });
 
@@ -123,7 +124,7 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(component.textContent).toContain('5.00');
   });
 
-  it('uses one English voice control and accepts an exact visible English answer label', async () => {
+  it('uses one English voice control and accepts a complete visible English answer label', async () => {
     const draft = createCustomQuestionnaireDraft();
     draft.language = 'en-GB';
     draft.name = 'Task Support Check';
@@ -167,16 +168,24 @@ describe('instrument-independent questionnaire workflow', () => {
     window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
 
     let alternatives = ['Strongly agree'];
+    class FakePhrase {
+      constructor(public phrase: string, public boost = 1) {}
+    }
+    window.SpeechRecognitionPhrase = FakePhrase as any;
     class FakeRecognition {
       lang = '';
       continuous = false;
       interimResults = false;
       maxAlternatives = 1;
+      phrases: FakePhrase[] = [];
       onresult: ((event: any) => void) | null = null;
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
         expect(this.lang).toBe('en-GB');
+        expect(this.phrases.some(({ phrase, boost }) =>
+          phrase === 'Strongly agree' && boost === 4)).toBe(true);
+        expect(this.phrases.some(({ phrase }) => phrase === 'number four')).toBe(true);
         const result = Object.assign(
           alternatives.map((transcript) => ({ transcript })),
           { length: alternatives.length },
@@ -218,8 +227,17 @@ describe('instrument-independent questionnaire workflow', () => {
     await component.updateComplete;
     expect(component.querySelector('.voice-confirmation')).toBeNull();
     expect(component.textContent).toContain('No answer was selected');
+    expect(component.querySelector('[role="status"]')?.textContent).toContain('I heard “Note 4”');
     expect(component.querySelector<HTMLInputElement>('input[value="5"]')?.checked).toBe(true);
     expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(false);
+
+    alternatives = ['strong degree'];
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('.voice-confirmation')).toBeNull();
+    expect(component.querySelector('[role="status"]')?.textContent).toContain(
+      'I heard “strong degree”',
+    );
   });
 
   it('rejects non-English labels but keeps one English numeric route for an imported questionnaire', async () => {

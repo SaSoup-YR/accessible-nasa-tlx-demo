@@ -21,16 +21,17 @@ responses, tokens and participant data as well as structure.
 
 | Item | Status | Source evidence |
 |---|---|---|
-| B. Imported-questionnaire voice | **ALREADY HANDLED under the documented product scope** | The recorded decision retains one English route for spoken displayed numbers and exact visible English labels. `renderVoiceInput`, `startVoiceInput` and `isEnglishLanguage` in `source/src/accessible-nasa-tlx.ts` implement that boundary with `en-GB`. Non-English label recognition is not claimed; buttons remain available. Conservative parsers and tests remain in `source/src/voice-input.ts` and `source/tests/voice-input.test.ts`. |
+| B. Imported-questionnaire voice | **CONFIRMED FIXED; MANUAL QUALITY RETEST REQUIRED** | The recorded decision retains one English route for spoken displayed numbers and visible English labels. `renderVoiceInput`, `startVoiceInput`, `configureVoiceHints` and `isEnglishLanguage` in `source/src/accessible-nasa-tlx.ts` implement that boundary with `en-GB`. Feature-detected contextual hints improve recognition in supporting browsers; ranked safe alternatives, standalone number homophones and bounded label variants reduce false rejection. Rejected transcripts are shown. Non-English label recognition is not claimed; buttons remain available. Parser and component tests remain in `source/src/voice-input.ts`, `source/tests/voice-input.test.ts` and `source/tests/platform-component.test.ts`. |
 
 A definition-level `supports.voiceInput = false` flag was not added because it
 would remove the confirmed numeric fallback from imported instruments. The UI
 states the actual language and matching boundary before recognition starts.
 
-Exact matching deliberately favours false rejection over wrong selection. A near
-transcription such as `neither agree or disagree`, a partial label, a negated answer,
-or conflicting alternatives remains unselected. Every accepted proposal still needs
-confirmation. Automated parser tests cannot establish recognition quality for every
+The parser uses bounded, meaning-preserving variants rather than unrestricted fuzzy
+matching: for example, `neither agree or disagree` can identify the single visible
+neutral option, while a partial label or negated answer remains unselected. The first
+safe browser-ranked match may be proposed, but never recorded without confirmation.
+Automated parser tests cannot establish recognition quality for every
 accent, microphone, speaking rate, browser or operating system; one real-microphone
 English-label and English-number check remains a release gate.
 
@@ -90,7 +91,7 @@ HTML table on small or magnified screens.
 | Item | Status | Source evidence |
 |---|---|---|
 | F1. Qualtrics hand-off | **ALREADY HANDLED** | `createQualtricsParentResultSink` and `submitToApprovedResultSink` in `source/src/result-sink.ts` require exact origin, build and submission-ID receipts. The parent bridge stages data, returns that receipt, then attempts native Qualtrics navigation after 800 ms. It does not announce durable server acceptance before navigation succeeds. |
-| F2. Ambiguous NASA voice | **CONFIRMED FIXED AND STRENGTHENED** | `source/src/voice-input.ts` rejects explicit negation, common `not` homophones (`note`, `knot`, `naught`, `nought`), exclusion/correction language, off-scale values and conflicting alternatives. Unsafe unresolved meaning in any ranked alternative rejects the entire recognition result, regardless of order. Numeric input is accepted only as a complete bounded answer or an explicit supported landmark expression; arbitrary prose is not mined for a number. Tests cover both `4`/`Note 4` rank orders. |
+| F2. Ambiguous NASA voice | **CONFIRMED FIXED AND STRENGTHENED** | `source/src/voice-input.ts` rejects explicit negation, common `not` homophones (`note`, `knot`, `naught`, `nought`), exclusion/correction language and off-scale values. Unsafe unresolved meaning in any ranked alternative rejects the entire recognition result, regardless of order. Otherwise the first browser-ranked safe visible-answer match may be proposed and must be confirmed. Numeric input is accepted only as a complete bounded answer or an explicit supported landmark expression; arbitrary prose is not mined for a number. Tests cover both `4`/`Note 4` rank orders. |
 | F3. Voice confirmation | **CONFIRMED FIXED AND STRENGTHENED** | A recognised proposal is written to a polite live status, optionally spoken only when prior automatic-audio consent is active, then focus moves to the confirmation button. The visible confirmation now says to compare the recognised transcript and proposal because a speech service can omit a word. Selection occurs only after explicit confirmation. |
 | F4. Non-text contrast | **ALREADY HANDLED** | `source/src/styles.css` uses `#0b0c0c` for the 3 px inner focus outline and `#ffdd00` for the outer halo. `source/tests/focus-style.test.ts` and `docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md` record ratios above 3:1 on all tested answer surfaces. |
 
@@ -103,6 +104,6 @@ npm test
 npm run build:release
 ```
 
-Current local result: 18 test files and 178 tests passed, including 12 axe
+Current local result: 18 test files and 180 tests passed, including 12 axe
 structural scans; TypeScript, production, standalone and release synchronisation
 builds passed.

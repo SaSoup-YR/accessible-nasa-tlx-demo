@@ -41,8 +41,10 @@ measure: do not record identity, demographics or audio.
 
 For each tester:
 
-1. Say a displayed number three times. At least two attempts must propose the correct
-   value; no proposal may become an answer before confirmation.
+1. Say the short command `number four` three times, then say the bare word `four`
+   three times. At least two attempts in each set must propose the correct value;
+   harmless standalone transcriptions such as `for` or `fore` may propose 4, but no
+   proposal may become an answer before confirmation.
 2. Say `Agree` three times and `Strongly agree` three times. At least two attempts for
    each must propose the matching visible label, and the two labels must never be
    conflated by the platform parser.
@@ -56,11 +58,16 @@ For each tester:
    explicit confirmation can record it. Select **Try again** rather than confirming.
 5. Say `4` intentionally and verify that the same confirmation step succeeds. Confirm that
    visible answer buttons still work before and after rejected speech.
-6. Record the recognition transcript, proposal, confirmation behaviour and fallback.
+6. On one deliberately unrecognised phrase, verify that the interface displays what
+   the browser heard and offers another try without changing the selected answer.
+7. Record the browser/version, recognition transcript, proposal, confirmation behaviour
+   and fallback. If contextual speech hints are supported by that browser, the code supplies
+   the current visible numbers and labels automatically; no separate tester action is needed.
 
-A failure to recognise speech is a documented browser-service limitation. Automatic
-selection, hidden proposals, missing confirmation or degraded button input is a release
-blocker.
+Recognition quality still depends partly on the browser service, but repeated failure of
+the stated two-of-three success threshold in the supported test browser is a release blocker.
+Automatic selection, hidden accepted/rejected transcripts, missing confirmation or degraded
+button input is also a release blocker.
 
 ## UCL Qualtrics protocol
 

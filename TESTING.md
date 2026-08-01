@@ -134,15 +134,19 @@ browser before tagging; then complete one new synthetic UCL Qualtrics submission
 4. Confirm every accepted result is shown and announced as a proposal and requires
    explicit confirmation.
 5. Confirm `not low`, `not four`, `note 4`, `knot four`, `naught four`,
-   `nought four`, `low or high`, `anything but low`, `twenty three`, `73`,
-   conflicting recognition alternatives and two pair names are rejected. Test
-   both alternative orders: a valid number before the unsafe phrase and after it.
+   `nought four`, `low or high`, `anything but low`, `twenty three`, `73` and two
+   pair names are rejected. Test both alternative orders for an unsafe result: a
+   valid number before the unsafe phrase and after it. When several safe alternatives
+   map to different visible answers, confirm that only the browser's first-ranked safe
+   answer is proposed, its transcript is displayed and no value is recorded automatically.
 6. Confirm exact safe aliases such as `hello` for Low are accepted only as the whole
    utterance and never inside a longer phrase.
 7. Repeat on every target browser because Web Speech acoustic recognition is
    browser/OS behavior, not controlled by the parser.
-8. For an imported English questionnaire, test one exact visible answer label and
-   one displayed number. For a non-English questionnaire, confirm the single English
+8. For an imported English questionnaire, test one complete visible answer label and
+   one displayed number. Use the release-gate repetitions in
+   `docs/RC4-RELEASE-GATE.md`; a single success is not sufficient evidence. For a
+   non-English questionnaire, confirm the single English
    route accepts a displayed number but does not claim multilingual label recognition.
 9. Confirm arbitrary prose containing a number is not mined for that number. If the
    browser deletes a spoken negation entirely and returns only a valid value, verify

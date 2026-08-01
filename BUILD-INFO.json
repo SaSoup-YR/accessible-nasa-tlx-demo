@@ -5,11 +5,11 @@
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
-  "builtAt": "2026-08-01T11:04:11Z",
+  "builtAt": "2026-08-01T12:18:56Z",
   "qualtricsBridgeBuild": "0.8.7-q7",
   "verification": {
     "testFilesPassed": 18,
-    "testsPassed": 178,
+    "testsPassed": 180,
     "axeStructuralScansPassed": 12,
     "typescriptBuild": "passed",
     "productionBuild": "passed",
@@ -33,6 +33,7 @@
     "legacyCompletedBackupValidationAndMigrationTests": "passed",
     "conservativeVoiceParsingTests": "passed",
     "negationHomophoneAndAlternativeOrderTests": "passed",
+    "contextualVoiceHintsRankedFallbackAndNumberHomophoneTests": "passed",
     "authoredContrastTokenTests": "passed",
     "longImportedLabelResponsiveWrapTests": "passed"
   },
@@ -66,7 +67,7 @@
     "realWorldSpatialPresenceLsgDirectConversion": "passed locally",
     "importedLssDefinitionUclQualtricsRemoteSubmission": "passed",
     "realWorldImportedLssNormalUclQualtricsSubmission20260801": "passed manually on the deployed pre-fix build; repeat a short smoke test after candidate deployment",
-    "englishVoiceNumberAndLabelMicrophone20260801": "passed manually on the deployed pre-fix build; the discovered negation-homophone case is fixed in current source and needs one post-fix retest",
+    "englishVoiceNumberAndLabelMicrophone20260801": "failed the usability threshold on the draft candidate because recognition required excessive repetition; contextual hints, ranked-safe fallback, number homophones and rejected-transcript feedback are implemented in current source and require one post-change microphone retest",
     "twoQualtricsExportRowsAcceptedSchemaInstrumentAnswersAndScore": "passed"
   }
 }

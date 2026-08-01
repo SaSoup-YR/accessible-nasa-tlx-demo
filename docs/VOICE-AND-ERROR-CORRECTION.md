@@ -83,12 +83,12 @@ Low/High error changes a rating between 0 and 100.
 
 The recogniser now requests up to five ranked alternatives. The application:
 
-1. rejects the entire result if the primary transcript contains a negation or
-   uncertainty;
-2. accepts a lower-ranked valid hypothesis only when all valid hypotheses resolve to
-   the same answer;
-3. rejects conflicting valid hypotheses;
-4. presents the chosen transcript, label, numeric value and factor as a proposal;
+1. rejects the entire result if any unresolved alternative contains negation,
+   exclusion or uncertainty;
+2. otherwise uses the first browser-ranked alternative that resolves to one complete
+   visible answer;
+3. never mines an answer number from arbitrary prose;
+4. presents the chosen transcript, label, numeric value and factor as a proposal; and
 5. requires explicit confirmation before changing an answer.
 
 The Smiley prompt also tells the participant to say `zero` or `one hundred` if the
@@ -99,17 +99,18 @@ underlying recognition implementation remains browser or platform dependent:
 [Web Speech API specification](https://webaudio.github.io/web-speech-api/).
 
 The final prompt puts the five numeric values first because they are less ambiguous
-than the short words `Low`, `High` and `Poor`. The bounded parser also accepts the
-recogniser's exact homophones `lo`, `hi` and `pour`. It does not use edit-distance
-fuzzy matching. `pool`, arbitrary similar words, illegal values and conflicting
-hypotheses remain rejected. The explicit proposal and confirmation step is therefore
+than the short words `Low`, `High` and `Poor`. The bounded parser also accepts a small
+allowlist of complete-answer number and endpoint homophones and fixed English-label
+transcription variants. It does not use edit-distance fuzzy matching. `pool`, arbitrary
+similar words and illegal values remain rejected. The explicit proposal and confirmation step is therefore
 the semantic boundary: recognition can help propose an answer but cannot silently
 change the measurement.
 
 The participant interface exposes one English voice control. It requests `en-GB`
 and accepts a displayed value spoken as an English number for every supported
 questionnaire. When the questionnaire itself is English, it also accepts one complete
-exact visible English answer label. Non-English label recognition, translation and
+complete visible English answer label, including a small set of meaning-preserving
+transcription variants such as `agreed` for `agree`. Non-English label recognition, translation and
 fuzzy matching are outside the tested boundary. A transcript that does not meet this
 boundary leaves the response unchanged and produces a neutral retry message rather
 than a form error. Permission, microphone, no-speech, network and abort failures are
@@ -118,15 +119,15 @@ available.
 
 The parser rejects `not low`, `anything but low`, `other than high`, uncertainty,
 multiple anchors and non-scale numbers such as `twenty three`. `Twenty three` is not
-rounded to 20. Test cases cover number words, digit-by-digit speech, true homophones,
-negation, illegal increments and conflicting ranked alternatives.
+rounded to 20. Test cases cover number words, digit-by-digit speech, bounded homophones,
+negation, illegal increments and ranked alternatives.
 
-Contextual phrase biasing was considered but is not required in this release.
-`SpeechRecognition.phrases` and `SpeechRecognitionPhrase` remain experimental, and a
-recognition model may return `phrases-not-supported`. Introducing that route into the
-required participant path would add a new browser-dependent failure. The current
-release instead uses visible numeric fallback, ranked alternatives, a small explicit
-alias set and mandatory confirmation.
+Where the browser exposes `SpeechRecognition.phrases` and `SpeechRecognitionPhrase`,
+the current visible numbers, short number commands and English labels are supplied as
+contextual hints with a moderate boost. This API remains experimental, so the code
+feature-detects it and falls back to ordinary recognition if construction or assignment
+fails. The required safety boundary therefore remains the bounded parser, visible
+transcript, mandatory confirmation and permanently available answer buttons.
 
 Built-in automatic audio now covers:
 

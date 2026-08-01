@@ -47,6 +47,22 @@ const digitWords = new Map<string, string>([
   ['nine', '9'],
 ]);
 
+// Browser speech services often return these harmless homophones when one
+// number is spoken in isolation. They are accepted only as the complete answer
+// (for example, "for" or "option for"), never by mining arbitrary prose for a
+// digit. The participant must still confirm every proposal.
+const standaloneNumberHomophones = new Map<string, number>([
+  ['won', 1],
+  ['to', 2],
+  ['too', 2],
+  ['tree', 3],
+  ['free', 3],
+  ['for', 4],
+  ['fore', 4],
+  ['fife', 5],
+  ['ate', 8],
+]);
+
 const smallNumberWords = [
   'zero',
   'one',
@@ -144,11 +160,62 @@ export interface RankedSpeechAnswer<T> {
   value: T;
 }
 
+export function buildRatingSpeechHints(
+  dimension: TlxDimension,
+  allowedValues: readonly number[],
+  landmarks: readonly RatingLandmark[],
+  includeVisibleLabels = true,
+) {
+  const hints: string[] = [];
+  for (const value of allowedValues) {
+    const spoken = Number.isInteger(value) && value >= 0 && value <= 100
+      ? integerWords(value)
+      : String(value);
+    hints.push(
+      String(value),
+      spoken,
+      `number ${spoken}`,
+      `option ${spoken}`,
+      `rating ${spoken}`,
+      `value ${spoken}`,
+      `answer ${spoken}`,
+      `choice ${spoken}`,
+    );
+    if (includeVisibleLabels) {
+      const label = dimension.responseLabels?.[String(value)];
+      if (label?.trim()) {
+        hints.push(label.trim(), `answer ${label.trim()}`, `choose ${label.trim()}`);
+      }
+    }
+  }
+  if (includeVisibleLabels) {
+    hints.push(
+      dimension.lowAnchor,
+      dimension.highAnchor,
+      ...(dimension.voiceLowAliases ?? []),
+      ...(dimension.voiceHighAliases ?? []),
+    );
+    if (landmarks.length === 5) {
+      hints.push('middle', 'midpoint', `closer to ${dimension.lowAnchor}`, `closer to ${dimension.highAnchor}`);
+    }
+  }
+  return [...new Set(hints.map((hint) => hint.trim()).filter(Boolean))];
+}
+
+export function buildPairSpeechHints(
+  dimensions: readonly (DimensionId | TlxDimension)[],
+) {
+  return [...new Set(dimensions.flatMap((dimension) => {
+    if (typeof dimension !== 'string') return [dimension.name, dimension.id.replace(/[-_]/g, ' ')];
+    return dimensionAliases[dimension] ?? [dimension.replace(/[-_]/g, ' ')];
+  }).map((hint) => hint.trim()).filter(Boolean))];
+}
+
 export function hasUnsafeSpeechMeaning(transcript: string) {
   return unsafeMeaning.test(normalise(transcript));
 }
 
-function chooseConsistentAlternative<T>(
+function chooseRankedSafeAlternative<T>(
   transcripts: readonly string[],
   parser: (transcript: string) => T | null,
 ): RankedSpeechAnswer<T> | null {
@@ -175,10 +242,10 @@ function chooseConsistentAlternative<T>(
     );
   if (parsed.length === 0) return null;
 
-  // A lower-ranked hypothesis may rescue a harmless primary transcription such
-  // as "hello" for "low". Conflicting valid hypotheses are never guessed
-  // because an endpoint error could change a rating from 0 to 100.
-  if (new Set(parsed.map(({ value }) => value)).size !== 1) return null;
+  // Browser alternatives are ranked. Use the first safe alternative that maps
+  // to a visible answer rather than requiring speculative lower-ranked
+  // hypotheses to agree. The transcript and proposal remain visible and must be
+  // confirmed. Unsafe negation in any alternative is still rejected above.
   return { transcript: parsed[0].transcript, value: parsed[0].value };
 }
 
@@ -190,17 +257,37 @@ function endpointAliases(anchor: string, aliases: readonly string[] | undefined)
   );
 }
 
+function withoutAnswerWrapper(text: string) {
+  return text
+    .replace(
+      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?|(?:the\s+)?(?:number|option|rating|value|response|choice)(?:\s+is)?)\s+/,
+      '',
+    )
+    .trim();
+}
+
+function normaliseSpokenLabel(text: string) {
+  const inflections = text
+    // Bounded recognition variants observed for the English word "agree".
+    // These substitutions operate only on the complete visible-label route;
+    // they are not general fuzzy matching and cannot match a partial label.
+    .replace(/\bdis\s+a\s+gr(?:ay|ey)\b/g, 'disagree')
+    .replace(/\ba\s+gr(?:ay|ey)\b/g, 'agree')
+    .replace(/\bstrong\s+lee\b/g, 'strongly')
+    .replace(/\bdisagreed\b/g, 'disagree')
+    .replace(/\bagreed\b/g, 'agree');
+  // "Neither A or B" is a frequent transcription of the spoken fixed phrase
+  // "Neither A nor B". It still identifies one unique visible option and does
+  // not change its polarity.
+  return inflections.replace(/^neither\s+(.+)\s+or\s+(.+)$/, 'neither $1 nor $2');
+}
+
 function exactEndpointCandidate(
   text: string,
   dimension: TlxDimension,
   allowedValues: readonly number[],
 ): number | null | undefined {
-  const answer = text
-    .replace(
-      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?)\s+/,
-      '',
-    )
-    .trim();
+  const answer = withoutAnswerWrapper(text);
   const low = endpointAliases(dimension.lowAnchor, dimension.voiceLowAliases).has(answer);
   const high = endpointAliases(dimension.highAnchor, dimension.voiceHighAliases).has(answer);
 
@@ -215,37 +302,33 @@ function exactDeclaredLabelCandidate(
   allowedValues: readonly number[],
 ): number | null | undefined {
   if (!dimension.responseLabels) return undefined;
-  const answer = text
-    .replace(
-      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?)\s+/,
-      '',
-    )
-    .trim();
+  const answer = normaliseSpokenLabel(withoutAnswerWrapper(text));
   const matches = allowedValues.filter(
-    (value) => normalise(dimension.responseLabels?.[String(value)] ?? '') === answer,
+    (value) => normaliseSpokenLabel(normalise(dimension.responseLabels?.[String(value)] ?? '')) === answer,
   );
   if (matches.length === 0) return undefined;
   return matches.length === 1 ? matches[0] : null;
 }
 
 function exactNumericAnswerCandidate(text: string, allowedValues: readonly number[]) {
-  const answer = text
-    .replace(
-      /^(?:(?:i\s+)?(?:choose|select|pick)|(?:my\s+)?answer(?:\s+is)?)\s+/,
-      '',
-    )
-    .trim();
+  const answer = withoutAnswerWrapper(text);
   const tokens = answer.split(' ').filter(Boolean);
   if (tokens.length === 0) return undefined;
   const containsOnlyNumberTokens = tokens.every((token) =>
-    /^(?:100|[0-9]{1,2})$/.test(token) || numberWords.has(token));
+    /^(?:100|[0-9]{1,2})$/.test(token) ||
+    numberWords.has(token) ||
+    standaloneNumberHomophones.has(token));
   if (!containsOnlyNumberTokens) return undefined;
-  const candidates = numericCandidates(answer, allowedValues);
+  const candidates = numericCandidates(answer, allowedValues, true);
   if (candidates.length !== 1 || candidates[0] === null) return null;
   return candidates[0];
 }
 
-function numericCandidates(text: string, allowedValues: readonly number[]) {
+function numericCandidates(
+  text: string,
+  allowedValues: readonly number[],
+  allowStandaloneHomophones = false,
+) {
   const tokens = text.split(' ').filter(Boolean);
   const candidates: Array<number | null> = [];
 
@@ -257,18 +340,23 @@ function numericCandidates(text: string, allowedValues: readonly number[]) {
   }
 
   for (let index = 0; index < tokens.length;) {
-    if (!numberWords.has(tokens[index])) {
+    if (!numberWords.has(tokens[index]) &&
+        !(allowStandaloneHomophones && standaloneNumberHomophones.has(tokens[index]))) {
       index += 1;
       continue;
     }
     const sequence: string[] = [];
-    while (index < tokens.length && numberWords.has(tokens[index])) {
+    while (index < tokens.length &&
+      (numberWords.has(tokens[index]) ||
+       (allowStandaloneHomophones && standaloneNumberHomophones.has(tokens[index])))) {
       sequence.push(tokens[index]);
       index += 1;
     }
     const value =
       sequence.length === 1 && digitWords.has(sequence[0])
         ? Number(digitWords.get(sequence[0]))
+        : sequence.length === 1 && standaloneNumberHomophones.has(sequence[0])
+          ? standaloneNumberHomophones.get(sequence[0])
         : spokenNumbers.get(sequence.join(' '));
     candidates.push(value !== undefined && allowedValues.includes(value) ? value : null);
   }
@@ -401,7 +489,7 @@ export function parseRatingAlternatives(
   allowedValues: readonly number[] = nasaRatingValues,
   landmarks: readonly RatingLandmark[] = nasaSmileyLandmarks,
 ) {
-  return chooseConsistentAlternative(transcripts, (transcript) =>
+  return chooseRankedSafeAlternative(transcripts, (transcript) =>
     parseRatingTranscript(transcript, dimension, allowedValues, landmarks));
 }
 
@@ -409,6 +497,6 @@ export function parsePairAlternatives(
   transcripts: readonly string[],
   availableDimensions: readonly (DimensionId | TlxDimension)[],
 ) {
-  return chooseConsistentAlternative(transcripts, (transcript) =>
+  return chooseRankedSafeAlternative(transcripts, (transcript) =>
     parsePairTranscript(transcript, availableDimensions));
 }
