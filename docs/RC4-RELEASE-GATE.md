@@ -7,15 +7,21 @@ the immutable release tag. Use synthetic participant codes only.
 
 1. Push the candidate to a non-default branch and open a **Draft** pull request.
    Pull-request verification runs, but the public GitHub Pages site is unchanged.
-2. Run the candidate from a temporary HTTPS preview. Keep the preview private for
-   local import checks; expose it only for the short synthetic Qualtrics iframe test.
-3. Complete the real-file, microphone and Qualtrics checks below. Record browser,
-   operating system, candidate commit, expected result and observed result.
-4. Merge only after the preview checks pass. A verified push to `main` synchronises
-   `gh-pages`, so this step changes the public prototype.
-5. Wait for the Pages workflow and compare the live `BUILD-INFO.json` with the merged
-   commit. Repeat one short public-page smoke test.
-6. Create the immutable release-candidate tag only after every gate passes.
+2. Run a temporary HTTPS preview when one is available. Keep it private for local
+   import checks; expose it only for a short synthetic Qualtrics iframe test.
+3. Complete the real-file, microphone and Qualtrics checks below before merge when
+   the preview supports them. Record browser, operating system, candidate commit,
+   expected result and observed result.
+4. If a browser-service failure can only be re-tested on the stable Pages origin, a
+   green automated build plus focused branch review may approve merge solely to deploy
+   an **untagged candidate**. Record every outstanding manual check explicitly; merge
+   must not be described as a passed release gate.
+5. A verified push to `main` synchronises `gh-pages`. Compare the live
+   `BUILD-INFO.json` with the merged commit, then complete the outstanding public-page,
+   microphone, real-file and Qualtrics smoke checks. A failure requires a follow-up fix
+   before any release tag.
+6. Create the immutable release-candidate tag only after every manual and automated
+   gate passes.
 
 ## Real-file preview check
 

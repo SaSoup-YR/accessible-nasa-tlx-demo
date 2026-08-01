@@ -22,7 +22,9 @@ verified release build.
   participant flows, imported-QSF completion/export and conductor link generation
   through the shared components, one English voice control, spoken English numbers
   for every questionnaire, exact visible labels for English questionnaires, and the
-  one-time plain-recognition fallback when a service rejects contextual hints at start.
+  one-time plain-recognition fallback when a service rejects contextual hints at start,
+  including a stale first-attempt `onend`, a failing ordinary retry and the two-instance
+  retry ceiling.
 - `content.test.ts` and `scoring.test.ts` — NASA content, pair invariants and
   weighted scoring compatibility.
 - `voice-input.test.ts` — displayed values/labels, conservative ranked alternatives,

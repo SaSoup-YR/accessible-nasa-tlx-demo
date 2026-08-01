@@ -1,11 +1,11 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "unreleased post-v0.8.0-rc.3 candidate; automated verification and release build complete; post-fix microphone plus candidate deployment smoke checks remain before the next immutable tag",
+  "releaseStatus": "unreleased post-v0.8.0-rc.3 candidate; automated verification and focused fallback review complete; merge may deploy an untagged Pages candidate for the outstanding post-fix microphone and Qualtrics smoke checks, but no immutable tag may be created until they pass",
   "releaseRepository": "SaSoup-YR/accessible-nasa-tlx-demo",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
-  "builtAt": "2026-08-01T12:18:56Z",
+  "builtAt": "2026-08-01T13:24:27Z",
   "qualtricsBridgeBuild": "0.8.7-q7",
   "verification": {
     "testFilesPassed": 18,
@@ -35,6 +35,7 @@
     "negationHomophoneAndAlternativeOrderTests": "passed",
     "contextualVoiceHintsRankedFallbackAndNumberHomophoneTests": "passed",
     "contextualVoiceHintsRuntimeRejectionFallbackTest": "passed",
+    "staleRecognitionEndEventAndSingleRetryBoundaryTest": "passed",
     "authoredContrastTokenTests": "passed",
     "longImportedLabelResponsiveWrapTests": "passed"
   },
@@ -54,7 +55,7 @@
   "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
   "releaseCandidate": "unreleased successor to v0.8.0-rc.3",
   "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "Post-fix microphone and candidate deployment smoke tests are required before the next candidate tag; v0.8.0-rc.3 remains the immutable evaluation baseline.",
+  "evaluationStatus": "The merge target is an untagged deployment candidate. Post-fix Pages microphone, real-file and Qualtrics smoke tests are still required before the next immutable candidate tag; v0.8.0-rc.3 remains the evaluation baseline.",
   "manualVerification": {
     "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
     "researcherSuppliedDefinitionLocalJsonRoundTripAndQualtricsResult": "passed at v0.8.0-rc.2 baseline",

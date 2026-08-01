@@ -2764,6 +2764,8 @@ export class AccessibleNasaTlx extends LitElement {
         return 'The browser speech service could not connect. Check the network, try again, or use the visible answer buttons.';
       case 'aborted':
         return 'Voice input stopped before a result was returned. Try again, or use the visible answer buttons.';
+      case 'phrases-not-supported':
+        return 'Voice input is unavailable in this browser. Try again, or use a visible answer button.';
       default:
         return `Voice input is unavailable${error ? ` (${error})` : ''}. Try again, or use a visible answer button.`;
     }

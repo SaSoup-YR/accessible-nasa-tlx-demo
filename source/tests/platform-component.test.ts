@@ -285,7 +285,7 @@ describe('instrument-independent questionnaire workflow', () => {
       constructor(public phrase: string, public boost = 1) {}
     }
     window.SpeechRecognitionPhrase = FakePhrase as any;
-    let attempts = 0;
+    const recognitions: FakeRecognition[] = [];
     class FakeRecognition {
       lang = '';
       continuous = false;
@@ -295,18 +295,12 @@ describe('instrument-independent questionnaire workflow', () => {
       onresult: ((event: any) => void) | null = null;
       onerror: ((event: any) => void) | null = null;
       onend: (() => void) | null = null;
+      constructor() {
+        recognitions.push(this);
+      }
       start() {
-        attempts += 1;
-        if (this.phrases.length > 0) {
-          this.onerror?.({ error: 'phrases-not-supported' });
-          return;
-        }
-        this.onresult?.({
-          results: {
-            0: Object.assign([{ transcript: 'number four' }], { length: 1 }),
-            length: 1,
-          },
-        });
+        // The test dispatches browser events after start() to preserve their
+        // asynchronous ordering and exercise stale callbacks explicitly.
       }
       stop() {}
     }
@@ -324,14 +318,47 @@ describe('instrument-independent questionnaire workflow', () => {
     await component.updateComplete;
 
     component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    expect(recognitions).toHaveLength(1);
+    const phraseAttempt = recognitions[0];
+    const staleEnd = phraseAttempt.onend!;
+    await Promise.resolve();
+    phraseAttempt.onerror?.({ error: 'phrases-not-supported' });
     await component.updateComplete;
-    expect(attempts).toBe(2);
+    expect(recognitions).toHaveLength(2);
+    const ordinaryAttempt = recognitions[1];
+    expect(ordinaryAttempt.phrases).toHaveLength(0);
+
+    // A browser may deliver an already-queued end callback from the rejected
+    // recogniser after the ordinary fallback has started. It must not replace
+    // the second attempt's listening state or result handler.
+    staleEnd();
+    ordinaryAttempt.onresult?.({
+      results: {
+        0: Object.assign([{ transcript: 'number four' }], { length: 1 }),
+        length: 1,
+      },
+    });
+    await component.updateComplete;
     expect(component.textContent).not.toContain('phrases-not-supported');
     expect(component.querySelector('.voice-confirmation')?.textContent).toContain(
       'Agree, value 4, for clarity',
     );
     component.querySelector<HTMLButtonElement>('[data-voice-confirm]')!.click();
     await component.updateComplete;
+    expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(true);
+
+    // A new user attempt may try contextual hints again. If its ordinary
+    // fallback also reports the same browser error, stop after two instances,
+    // keep the existing answer and never expose the internal error code.
+    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
+    expect(recognitions).toHaveLength(3);
+    recognitions[2].onerror?.({ error: 'phrases-not-supported' });
+    expect(recognitions).toHaveLength(4);
+    recognitions[3].onerror?.({ error: 'phrases-not-supported' });
+    await component.updateComplete;
+    expect(recognitions).toHaveLength(4);
+    expect(component.textContent).not.toContain('phrases-not-supported');
+    expect(component.textContent).toContain('Voice input is unavailable in this browser');
     expect(component.querySelector<HTMLInputElement>('input[value="4"]')?.checked).toBe(true);
   });
 
