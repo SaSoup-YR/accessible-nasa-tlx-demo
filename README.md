@@ -32,7 +32,7 @@ Verification recorded for **`v0.8.0-rc.4`**:
 
 - a clean lock-file installation completed;
 - 18 test files passed, containing 181 passing tests;
-- 12 representative axe structural accessibility scans passed;
+- 12 automated axe structural scans passed across 12 explicitly named UI states;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups, produced a
   safe conversion for every compatible group/scale selection, and completed the

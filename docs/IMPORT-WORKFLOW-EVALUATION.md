@@ -75,9 +75,20 @@ independent check of the original QSF/LSS/LSG/LSQ conversion.
 Do not compare repeated answers to the same short questionnaire as evidence of
 score equivalence. Memory can increase agreement, and counterbalancing does not
 remove recall. The feasible study is formative usability with researchers and
-users of the relevant access methods. If eligible target users are not confirmed
-under the approved study procedure by 12 August 2026, limit the evidence to expert
-evaluation and technical validation and reduce the dissertation claim.
+users of the relevant access methods.
+
+Participant-side sessions use the immutable rc.4 participant flow. The
+researcher-side walkthrough uses the new wizard only after implementation and
+technical validation. If the wizard is not ready, report that workflow as design
+rationale rather than an evaluated outcome.
+
+Before recruitment or data collection, confirm in writing whether the current
+UCL ethics approval covers target-user recruitment, access needs, compensation,
+think-aloud or observation, any recording and the selected data route. If no
+approval exists or an amendment is required, recruitment must not begin. If
+approval and eligible target users are not confirmed by 12 August 2026, limit the
+evidence to expert evaluation and technical validation and reduce the dissertation
+claim.
 
 The full design rationale, wizard state risks and repository migration sequence
 are recorded in

@@ -4,9 +4,10 @@ Status: proposal for supervisor review. It does not change the released
 `v0.8.0-rc.4` participant or researcher implementation.
 
 Evidence baseline: the published immutable tag `v0.8.0-rc.4` points to
-`5a79e39`. Its release record documents 181 passing tests, 12 axe structural
-scans, the release build and manual browser checks. The number 181 describes
-that tagged release; later candidates must report their own full-suite result.
+`5a79e39`. Its release record documents 181 passing tests, 12 automated axe
+structural scans across 12 explicitly named UI states, the release build and
+manual browser checks. The number 181 describes that tagged release; later
+candidates must report their own full-suite result.
 
 ## 1. Contribution and design rule
 
@@ -28,6 +29,12 @@ On 2 August 2026, the deployed rc.4 page was measured in Chrome at 1363 × 936 C
 pixels. The blank setup state was 4,532 pixels high (4.8 viewports) and exposed
 21 interactive controls. Opening **Add your own questionnaire**, before any
 import review, increased this to 9,263 pixels (9.9 viewports) and 55 controls.
+After importing the supervisor-supplied `limesurvey_survey_578216.lss` and
+selecting the five-item **Spatial Presence (VR)** group, the rendered import
+review contained five imported items, eight confirmation findings and no
+unsupported blocks. The same page measured 14,612 pixels (15.6 viewports) and
+86 controls. This third state directly matches the reported problem: items,
+labels, values, scoring and findings are visible in one document.
 The measurements use `document.documentElement.scrollHeight` and
 `document.querySelectorAll('input, select, textarea, button')`.
 
@@ -56,7 +63,7 @@ The longest route, for a QSF/LSS/LSG/LSQ import, has eleven stages:
 | 6 | Confirm scoring | Scoring rule, reverse-scored items and expected range are confirmed. |
 | 7 | Enter study details | Study ID, title and task label pass validation. |
 | 8 | Set participant support | Text size, spoken guidance and interruption-recovery defaults are selected. |
-| 9 | Set input policy | Confirmed voice and participant-choice policy is selected; gaze is off unless the approved protocol requires it. |
+| 9 | Set input policy | Confirmed voice and participant-choice policy is selected. Experimental gaze remains default-off and outside the core evaluation. |
 | 10 | Choose collection | One route is selected; a Qualtrics URL must pass exact-origin validation. |
 | 11 | Review and generate | The summary is approved, generation succeeds and one synthetic response completes. |
 
@@ -128,6 +135,10 @@ The technical evidence supports only the declared single-choice integer profile.
 It does not establish copyright permission, psychometric validity, complete WCAG
 conformance or support for all questionnaire types.
 
+The default-off experimental gaze feature is outside the core validation claim.
+It must not be presented as evidence of accessibility or user benefit unless it
+receives a separate approved evaluation.
+
 ## 5. Empirical validation
 
 The feasible dissertation study should be a formative usability study, not a
@@ -155,13 +166,25 @@ instrument because it has the strongest existing technical baseline, while the
 QSF/LSS/LSG/LSQ matrix supplies technical evidence that the architecture is not
 limited to NASA-TLX.
 
-Decision point: if eligible target-user participants are not confirmed under the
-approved study procedure by **12 August 2026**, remove target-user empirical claims
-from the current dissertation plan and use the remaining time for expert evaluation,
-technical validation and reporting. Non-disabled participants simulating assistive
-technology may find basic defects but must not be presented as evidence of
-disabled-user usability or benefit. Formal score equivalence can be future work
-with a separate approved design.
+Evaluation build: participant-side sessions use the immutable rc.4 participant
+flow, which the researcher redesign does not change. The researcher-side
+walkthrough uses the new wizard only after implementation and technical
+validation. If the wizard is not ready for the evaluation window, report the
+researcher workflow as a design rationale rather than an evaluated outcome.
+
+Before recruitment or data collection, confirm in writing whether the current
+UCL ethics approval covers target-user recruitment, access needs, compensation,
+think-aloud or observation, any recording and the selected data route. If no
+approval exists or an amendment is required, recruitment must not begin; the
+review time may itself trigger the decision point below.
+
+Decision point: if approval and eligible target-user participants are not
+confirmed by **12 August 2026**, remove target-user empirical claims from the
+current dissertation plan and use the remaining time for expert evaluation,
+technical validation and reporting. Non-disabled participants simulating
+assistive technology may find basic defects but must not be presented as evidence
+of disabled-user usability or benefit. Formal score equivalence can be future
+work with a separate approved design.
 
 ## 6. Repository name and safe migration
 
@@ -207,9 +230,12 @@ Supervisor confirmation is requested for:
    evidence; and
 4. the proposed name and link-safe migration sequence.
 
-Planning checkpoints, subject to supervisor and ethics approval: request the design
+Planning checkpoints: check the ethics scope immediately and request the design
 decision by 6 August; complete wireframes and internal cognitive walkthroughs by
-10 August; implement the wizard and state tests by 16 August; repeat the technical
-matrix by 20 August; complete the approved evaluation and analysis by 24 August;
-reserve 25–27 August for final quality checks and submission. Internal walkthroughs
+10 August; apply the approval and recruitment decision point on 12 August;
+implement the wizard and state tests by 16 August; repeat the technical matrix by
+20 August; run a researcher walkthrough on 21–22 August only if the wizard has
+passed those gates; complete the approved evaluation and analysis by 24 August;
+reserve 25–27 August for final quality checks and submission. Approved participant
+sessions may use rc.4 independently of wizard development. Internal walkthroughs
 use synthetic data and do not replace target-user evidence.
