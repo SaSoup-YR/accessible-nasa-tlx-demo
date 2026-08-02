@@ -14,14 +14,13 @@ project's existing approved protocol and data-management plan.
 
 ## Release status
 
-The reviewed release-record commit is prepared for the immutable
-**`v0.8.0-rc.4`** tag, paired with Qualtrics bridge **`0.8.7-q7`**. It is a
-technical release candidate for review and bounded formative evaluation. The
-tag is an immutable evidence point: any later functional change requires a new
-tag and proportionate re-verification. The earlier **`v0.8.0-rc.3`** and
+The immutable technical-review baseline is **`v0.8.0-rc.4`**, published from
+merge commit **`5a79e396335c9b845ac5a826dc78baf58b13c038`** and paired with
+Qualtrics bridge **`0.8.7-q7`**. Any later functional change requires a new tag
+and proportionate re-verification. The earlier **`v0.8.0-rc.3`** and
 **`v0.8.0-rc.2`** tags remain unchanged evidence baselines.
 
-The current source is the prepared **`v0.8.0-rc.4` candidate**. It adds `.lsg`
+Version **`v0.8.0-rc.4`** adds `.lsg`
 question-group and `.lsq` single-question imports, explicit selection when an
 `.lss` survey contains several groups and source-language metadata for correct
 page semantics. Voice input has one deliberately bounded English route: every
@@ -29,11 +28,11 @@ supported questionnaire accepts a displayed number spoken in English, while an
 English questionnaire also accepts one complete visible English answer label,
 with a small allowlist of meaning-preserving speech-service variants.
 
-Verification on the current unreleased candidate:
+Verification recorded for **`v0.8.0-rc.4`**:
 
 - a clean lock-file installation completed;
 - 18 test files passed, containing 181 passing tests;
-- 12 representative axe structural accessibility scans passed;
+- 12 automated axe structural scans passed across 12 explicitly named UI states;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups, produced a
   safe conversion for every compatible group/scale selection, and completed the
@@ -65,6 +64,15 @@ explicit confirmation. The existing `0.8.7-q7` Qualtrics normal-submission
 evidence remains applicable because the bridge and result schema did not change.
 These checks establish the documented technical workflow, not multilingual
 spoken-label support, universal browser reliability or permission to recruit.
+
+### Next design review
+
+The proposed researcher-workflow redesign and validation plan are documented in
+[`docs/RESEARCHER-WORKFLOW-AND-VALIDATION-PROPOSAL.md`](docs/RESEARCHER-WORKFLOW-AND-VALIDATION-PROPOSAL.md).
+This proposal does not change the immutable `v0.8.0-rc.4` implementation. It
+separates technical fidelity, JSON round-trip consistency and target-user
+usability evidence, and it records the migration gate that must be met before
+renaming the repository or changing the GitHub Pages path.
 
 ### Verification recorded for `v0.8.0-rc.3`
 
