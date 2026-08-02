@@ -52,11 +52,13 @@ screenshot or report and the untouched export. Record file hash, language, scope
 item IDs and order, exact wording, response labels and order, numeric values,
 scoring and reverse-scored items.
 
-Enter this source information twice at least 24 hours apart, compare both entries
-and resolve every difference against the source. If feasible, have a second person
-check a sample. The importer output must then match this resolved record field by
-field. A synthetic response must also match an independently recalculated score
-and exported record.
+For one canonical case per supported format, enter this source information twice
+at least 24 hours apart, compare both entries and resolve every difference against
+the source. Report the discrepancy count and number of fields compared as a
+descriptive same-person transcription-consistency check; do not call it inter-rater
+reliability. Record additional files once and perform targeted source checks. The
+importer output must then match the resolved expected record field by field. A
+synthetic response must also match an independently recalculated score and export.
 
 Silent omission, changed order or wording, wrong values, wrong scoring or an
 unblocked unsupported item is a failure.
@@ -73,8 +75,9 @@ independent check of the original QSF/LSS/LSG/LSQ conversion.
 Do not compare repeated answers to the same short questionnaire as evidence of
 score equivalence. Memory can increase agreement, and counterbalancing does not
 remove recall. The feasible study is formative usability with researchers and
-users of the relevant access methods. If target users cannot be recruited, limit
-the evidence to an expert and technical pilot and reduce the dissertation claim.
+users of the relevant access methods. If eligible target users are not confirmed
+under the approved study procedure by 12 August 2026, limit the evidence to expert
+evaluation and technical validation and reduce the dissertation claim.
 
 The full design rationale, wizard state risks and repository migration sequence
 are recorded in

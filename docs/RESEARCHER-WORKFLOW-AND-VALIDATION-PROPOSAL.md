@@ -3,6 +3,11 @@
 Status: proposal for supervisor review. It does not change the released
 `v0.8.0-rc.4` participant or researcher implementation.
 
+Evidence baseline: the published immutable tag `v0.8.0-rc.4` points to
+`5a79e39`. Its release record documents 181 passing tests, 12 axe structural
+scans, the release build and manual browser checks. The number 181 describes
+that tagged release; later candidates must report their own full-suite result.
+
 ## 1. Contribution and design rule
 
 The contribution is an accessible questionnaire platform rather than one
@@ -15,6 +20,16 @@ The current researcher page places import, review, study setup, accessibility
 defaults, collection, generation and saved results on one long page. The proposed
 workflow separates decisions that can fail independently and shows one main task
 at a time.
+
+The participant answering flow is retained. The main redesign target is the
+researcher setup page.
+
+On 2 August 2026, the deployed rc.4 page was measured in Chrome at 1363 × 936 CSS
+pixels. The blank setup state was 4,532 pixels high (4.8 viewports) and exposed
+21 interactive controls. Opening **Add your own questionnaire**, before any
+import review, increased this to 9,263 pixels (9.9 viewports) and 55 controls.
+The measurements use `document.documentElement.scrollHeight` and
+`document.querySelectorAll('input, select, textarea, button')`.
 
 Screen boundaries follow two rules:
 
@@ -31,25 +46,25 @@ validated AQP definitions skip import-only stages.
 
 The longest route, for a QSF/LSS/LSG/LSQ import, has eleven stages:
 
-1. Choose the source: built-in, source-platform export, AQP definition or manual
-   builder.
-2. Upload the file and choose the relevant group or rating set when the source
-   contains several compatible scopes.
-3. Review item count, order, IDs and exact participant-visible wording.
-4. Review response-label order and numeric values.
-5. Resolve warnings and unsupported content. Any active unsupported content blocks
-   conversion.
-6. Confirm the scoring strategy, reverse-scored items and expected range.
-7. Enter the study ID, title and task label.
-8. Set participant support defaults: text size, spoken guidance and interruption
-   recovery.
-9. Set input and participant-choice policy: confirmed voice input and which
-   prepared settings participants may change. Experimental gaze input remains
-   outside the normal study path unless the protocol explicitly requires it.
-10. Choose result collection: **This browser only** for technical work, or the
-    approved exact-origin UCL Qualtrics route.
-11. Review the complete configuration, generate the participant link/package and
-    run one synthetic response.
+| Stage | Task | Continue when |
+| ---: | --- | --- |
+| 1 | Choose source | Exactly one source route is selected. |
+| 2 | Upload and select scope | File type and size pass validation, parsing succeeds, and any required group or rating set is selected. |
+| 3 | Review items | Item IDs, count, order and exact wording are confirmed against the source. |
+| 4 | Review answers | Response-label order and numeric values are confirmed. |
+| 5 | Resolve findings | No blocking finding remains and every non-blocking warning is acknowledged. |
+| 6 | Confirm scoring | Scoring rule, reverse-scored items and expected range are confirmed. |
+| 7 | Enter study details | Study ID, title and task label pass validation. |
+| 8 | Set participant support | Text size, spoken guidance and interruption-recovery defaults are selected. |
+| 9 | Set input policy | Confirmed voice and participant-choice policy is selected; gaze is off unless the approved protocol requires it. |
+| 10 | Choose collection | One route is selected; a Qualtrics URL must pass exact-origin validation. |
+| 11 | Review and generate | The summary is approved, generation succeeds and one synthetic response completes. |
+
+Built-in instruments and validated AQP definitions skip stages 2–5, giving a
+seven-stage route. Imported source files use all eleven. The displayed total must
+match the active route. Eleven is retained as the longest route because collection
+security and final acceptance are separate decisions; merging them only to reduce
+the number would hide a release gate.
 
 Every stage shows the current step, completed steps, one next action and a Back
 action. A failed check keeps the researcher on the relevant stage and explains
@@ -87,15 +102,17 @@ Technical validation asks whether a supported imported questionnaire retains its
 meaning and calculation. It does not ask whether an AQP file can reproduce only
 itself.
 
-For each QSF, LSS, LSG and LSQ test file:
+For the supported QSF, LSS, LSG and LSQ test set:
 
 1. Record the source-platform screenshot or report, file hash, language, scope,
    item IDs, item order, exact wording, response labels, numeric values and scoring
    rule.
-2. Create the expected record independently from the importer. Enter the same
-   source information twice, at least 24 hours apart, compare both entries and
-   resolve every difference against the source. If feasible, ask a second person
-   to check a sample.
+2. Create the expected record independently from the importer. For one canonical
+   case per format, enter the source information twice at least 24 hours apart,
+   compare both entries and resolve every difference against the source. Report
+   the discrepancy count and the number of fields compared. This is a descriptive
+   same-person transcription-consistency check, not inter-rater reliability.
+   Record other files once and perform targeted checks against their source.
 3. Import the untouched source file and compare the normalised result with the
    resolved expected record field by field.
 4. Render and complete a synthetic participant response. Recalculate the expected
@@ -138,11 +155,13 @@ instrument because it has the strongest existing technical baseline, while the
 QSF/LSS/LSG/LSQ matrix supplies technical evidence that the architecture is not
 limited to NASA-TLX.
 
-If target users cannot be recruited in time, run only an expert and technical
-pilot. Non-disabled participants simulating assistive technology may find basic
-defects but must not be presented as evidence of disabled-user usability or
-benefit. The dissertation claim must be reduced accordingly. Formal score
-equivalence can be future work with a separate approved design.
+Decision point: if eligible target-user participants are not confirmed under the
+approved study procedure by **12 August 2026**, remove target-user empirical claims
+from the current dissertation plan and use the remaining time for expert evaluation,
+technical validation and reporting. Non-disabled participants simulating assistive
+technology may find basic defects but must not be presented as evidence of
+disabled-user usability or benefit. Formal score equivalence can be future work
+with a separate approved design.
 
 ## 6. Repository name and safe migration
 
@@ -188,6 +207,9 @@ Supervisor confirmation is requested for:
    evidence; and
 4. the proposed name and link-safe migration sequence.
 
-After approval: produce low-fidelity wireframes, test the stage sequence with two
-researchers, implement the wizard with state regression tests, repeat the technical
-validation matrix, then run the approved formative pilot.
+Planning checkpoints, subject to supervisor and ethics approval: request the design
+decision by 6 August; complete wireframes and internal cognitive walkthroughs by
+10 August; implement the wizard and state tests by 16 August; repeat the technical
+matrix by 20 August; complete the approved evaluation and analysis by 24 August;
+reserve 25–27 August for final quality checks and submission. Internal walkthroughs
+use synthetic data and do not replace target-user evidence.
