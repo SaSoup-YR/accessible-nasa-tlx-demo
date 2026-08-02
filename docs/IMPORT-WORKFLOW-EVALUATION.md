@@ -2,59 +2,80 @@
 
 ## Evaluation claim
 
-A researcher can import an existing questionnaire within the supported
-Qualtrics QSF or LimeSurvey LSS/LSG/LSQ profile, review the conversion, configure
-accessibility support and prepare a study without rebuilding the questionnaire
-or editing source code.
+A researcher can import a questionnaire within the supported Qualtrics QSF or
+LimeSurvey LSS/LSG/LSQ profile, identify unsupported content, verify the
+conversion and prepare a testable study without editing source code.
 
-This is a researcher-workflow claim. It is separate from any claim that disabled
-participants find a questionnaire more accessible.
+This is a researcher-workflow and technical-integrity claim. It is separate from
+disabled-participant usability, psychometric equivalence and complete
+accessibility claims.
 
-## Fixed tasks
+## Task design
+
+Use a route-aware staged workflow rather than one long page or an arbitrary fixed
+number of screens. Import review stages map to fidelity properties that can fail
+independently: items, response options and values, unsupported findings, and
+scoring. Internal settings are grouped by one decision purpose; participant
+support and input policy remain separate to avoid another crowded settings page.
 
 Each researcher receives:
 
-- the same release tag and clean browser;
-- the same supported QSF, LSS, LSG or LSQ file;
-- the public import guide;
-- a study ID, study title and task label; and
-- a request to import, review, configure, generate, test and download the
-  resulting definition.
+- the same frozen candidate, clean browser and public guide;
+- one supported QSF, LSS, LSG or LSQ source file;
+- a study ID, title and task label; and
+- a request to import, review, prepare, generate and run one synthetic response.
 
-At least one separate fault task uses an export containing a clearly unsupported
-question. The expected result is a correct blocked conversion, not a partial
-study.
+Use a separate fault task containing one clearly unsupported active question.
+The correct outcome is a blocked conversion with a useful explanation, not a
+partial questionnaire.
 
 ## Measures defined before testing
 
 | Measure | Definition |
 | --- | --- |
-| Task completion | All required outputs are produced and match the source; pass/fail |
-| Setup time | Time from opening the conductor page to a generated testable study |
-| Manual corrections | Count of changes made during import review before conversion |
-| Errors | Count of incorrect actions, invalid outputs or source/converted mismatches |
-| Help requests | Count and reason; distinguish guide use from facilitator help |
-| Warning understanding | Researcher explains what was unsupported and what action is safe |
-| Successful study generation | Generated participant page opens and accepts a complete synthetic response |
-| Reproduction | Downloaded definition JSON re-imports with the same items, values and scoring |
-| Confidence | Single post-task rating plus a short explanation |
-| Qualitative feedback | Confusing wording, missing guidance, trusted checks and improvement suggestions |
+| Task completion | Required outputs produced and verified against the source; pass/fail |
+| Setup time | Opening the conductor to a generated testable study |
+| Errors | Incorrect actions, unsafe continuation attempts or source/output mismatches |
+| Help requests | Count and reason; guide use is separate from facilitator help |
+| Warning understanding | Researcher explains what is unsupported and the safe next action |
+| Recovery | Correct draft after Back, reload or tab closure |
+| Confidence | One post-task rating with a short explanation |
+| Qualitative feedback | Confusing wording, missing guidance, trusted checks and suggested changes |
 
-## Evidence captured
+Report raw counts and denominators. For a small formative sample, use descriptive
+summaries and qualitative themes rather than inferential claims.
 
-Record timestamps, screen-observed actions, errors, help requests and final
-artifacts. Compare the source export with the converted definition using a fixed
-checklist:
+## Independent source-to-output check
 
-- questionnaire name and version;
-- item count and order;
-- exact participant-visible wording;
-- response label order;
-- numeric response values;
-- score calculation and reverse-scored items;
-- generated study configuration; and
-- completed synthetic result and export.
+Before running the importer, build an expected record from the source-platform
+screenshot or report and the untouched export. Record file hash, language, scope,
+item IDs and order, exact wording, response labels and order, numeric values,
+scoring and reverse-scored items.
 
-Report every denominator and raw count. For a small formative sample, use
-descriptive summaries and qualitative themes. Do not use the results to claim
-universal usability, universal accessibility or psychometric equivalence.
+Enter this source information twice at least 24 hours apart, compare both entries
+and resolve every difference against the source. If feasible, have a second person
+check a sample. The importer output must then match this resolved record field by
+field. A synthetic response must also match an independently recalculated score
+and exported record.
+
+Silent omission, changed order or wording, wrong values, wrong scoring or an
+unblocked unsupported item is a failure.
+
+## Separate round-trip property
+
+Download the reviewed AQP definition, re-import it through **Reuse an AQP
+questionnaire definition**, and compare the normalised AQP definition field by
+field. This tests AQP JSON portability only. It must not be described as an
+independent check of the original QSF/LSS/LSG/LSQ conversion.
+
+## Research boundary
+
+Do not compare repeated answers to the same short questionnaire as evidence of
+score equivalence. Memory can increase agreement, and counterbalancing does not
+remove recall. The feasible study is formative usability with researchers and
+users of the relevant access methods. If target users cannot be recruited, limit
+the evidence to an expert and technical pilot and reduce the dissertation claim.
+
+The full design rationale, wizard state risks and repository migration sequence
+are recorded in
+[`RESEARCHER-WORKFLOW-AND-VALIDATION-PROPOSAL.md`](RESEARCHER-WORKFLOW-AND-VALIDATION-PROPOSAL.md).
