@@ -1141,6 +1141,63 @@ button:disabled {
   width: min(1120px, calc(100% - 2rem));
 }
 
+[hidden] {
+  display: none !important;
+}
+
+.conductor-progress {
+  margin-bottom: 1.5rem;
+  border: 2px solid #294c70;
+}
+
+.conductor-progress h2 {
+  margin: 0.8rem 0 0.35rem;
+}
+
+.conductor-progress h2:focus {
+  outline: 3px solid var(--focus-outline);
+  outline-offset: 3px;
+}
+
+.source-route-control {
+  margin-bottom: 1.25rem;
+}
+
+.wizard-review-list {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.wizard-review-list li {
+  padding: 0.85rem 1rem;
+  border-left: 5px solid #294c70;
+  background: #f6f8fa;
+}
+
+.wizard-review-list li > span,
+.wizard-review-list li > small {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.compact-review-list li > span {
+  font-weight: 600;
+}
+
+.configuration-review-summary {
+  margin: 1rem 0 1.25rem;
+}
+
+.wizard-navigation {
+  align-items: center;
+  margin: 1.5rem 0 0;
+  padding: 1rem;
+  border: 2px solid #294c70;
+  border-radius: 12px;
+  background: #f2f8fc;
+}
+
 .conductor-panel + .conductor-panel {
   margin-top: 1.5rem;
 }

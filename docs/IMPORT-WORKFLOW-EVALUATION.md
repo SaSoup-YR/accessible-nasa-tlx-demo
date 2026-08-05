@@ -42,9 +42,10 @@ study.
 
 ## Evidence captured
 
-Record timestamps, screen-observed actions, errors, help requests and final
-artifacts. Compare the source export with the converted definition using a fixed
-checklist:
+For a written asynchronous task, testers record start/end times, errors, help
+requests and final artifacts in the supplied form; there is no live observation
+or recording. Compare the source export with the converted definition using a
+fixed checklist:
 
 - questionnaire name and version;
 - item count and order;
