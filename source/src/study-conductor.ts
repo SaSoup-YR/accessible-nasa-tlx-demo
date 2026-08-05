@@ -53,6 +53,48 @@ const qualtricsBridgeBuild =
   qualtricsQuestionJavaScript.match(/var bridgeBuild = '([^']+)'/)?.[1] ??
   'unidentified';
 
+type ConductorSetupRoute = 'ready-made' | 'imported';
+type ConductorStepKey =
+  | 'source'
+  | 'upload'
+  | 'questions'
+  | 'answers'
+  | 'warnings'
+  | 'scoring'
+  | 'study'
+  | 'support'
+  | 'collection'
+  | 'review';
+
+interface ConductorStep {
+  key: ConductorStepKey;
+  title: string;
+}
+
+const readyMadeConductorSteps: readonly ConductorStep[] = [
+  { key: 'source', title: 'Choose the questionnaire source' },
+  { key: 'scoring', title: 'Confirm the questionnaire and scoring' },
+  { key: 'study', title: 'Enter study details' },
+  { key: 'support', title: 'Set participant support' },
+  { key: 'collection', title: 'Choose result collection' },
+  { key: 'review', title: 'Review and generate' },
+];
+
+const importedConductorSteps: readonly ConductorStep[] = [
+  { key: 'source', title: 'Choose the questionnaire source' },
+  { key: 'upload', title: 'Upload the file and choose the relevant part' },
+  { key: 'questions', title: 'Review the questions' },
+  { key: 'answers', title: 'Review answer choices and stored values' },
+  { key: 'warnings', title: 'Resolve import warnings' },
+  { key: 'scoring', title: 'Confirm the scoring rule' },
+  { key: 'study', title: 'Enter study details' },
+  { key: 'support', title: 'Set participant support' },
+  { key: 'collection', title: 'Choose result collection' },
+  { key: 'review', title: 'Review and generate' },
+];
+
+const CONDUCTOR_DRAFT_KEY = 'accessible-questionnaire-v0.8-conductor-draft';
+
 function looksLikeCompletedResult(value: unknown) {
   const records = Array.isArray(value) ? value : [value];
   return records.length > 0 && records.some((candidate) => {
@@ -89,6 +131,10 @@ export function buildQualtricsEndOfSurveyMessage(showScore: boolean) {
 
 @customElement('study-conductor-app')
 export class StudyConductorApp extends LitElement {
+  @state() private setupRoute: ConductorSetupRoute = 'ready-made';
+  @state() private wizardStepIndex = 0;
+  @state() private scoringConfirmed = false;
+  @state() private importWarningsAcknowledged = false;
   @state() private instrumentId = DEFAULT_QUESTIONNAIRE_ID;
   @state() private customDefinition: QuestionnaireDefinition | null = null;
   @state() private customDraft: CustomQuestionnaireDraft =
@@ -122,16 +168,29 @@ export class StudyConductorApp extends LitElement {
   @state() private configurationConfirmation = '';
   @state() private errorMessage = '';
   @state() private completedResults: StudyResultRecord[] = [];
+  private draftRestored = false;
 
   connectedCallback() {
     super.connectedCallback();
+    this.restoreConductorDraft();
     this.refreshResults();
     window.addEventListener('storage', this.refreshResults);
+    window.addEventListener('popstate', this.handleWizardPopState);
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), aqpConductorStep: this.wizardStepIndex },
+      '',
+      window.location.href,
+    );
   }
 
   disconnectedCallback() {
     window.removeEventListener('storage', this.refreshResults);
+    window.removeEventListener('popstate', this.handleWizardPopState);
     super.disconnectedCallback();
+  }
+
+  protected updated() {
+    if (this.draftRestored) this.persistConductorDraft();
   }
 
   protected createRenderRoot(): HTMLElement | DocumentFragment {
@@ -151,6 +210,244 @@ export class StudyConductorApp extends LitElement {
       : builtInQuestionnaires;
   }
 
+  private get wizardSteps() {
+    return this.setupRoute === 'imported'
+      ? importedConductorSteps
+      : readyMadeConductorSteps;
+  }
+
+  private get wizardStep() {
+    return this.wizardSteps[Math.min(this.wizardStepIndex, this.wizardSteps.length - 1)];
+  }
+
+  private selectSetupRoute(route: ConductorSetupRoute) {
+    if (this.setupRoute === route) return;
+    this.setupRoute = route;
+    this.wizardStepIndex = 0;
+    this.errorMessage = '';
+    this.scoringConfirmed = false;
+    this.importWarningsAcknowledged = false;
+    this.generatedConfig = null;
+    this.participantUrl = '';
+    this.replaceWizardHistory();
+  }
+
+  private replaceWizardHistory() {
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), aqpConductorStep: this.wizardStepIndex },
+      '',
+      window.location.href,
+    );
+  }
+
+  private handleWizardPopState = (event: PopStateEvent) => {
+    const candidate = Number((event.state as { aqpConductorStep?: unknown } | null)?.aqpConductorStep);
+    if (!Number.isInteger(candidate) || candidate < 0 || candidate >= this.wizardSteps.length) return;
+    this.wizardStepIndex = candidate;
+    this.errorMessage = '';
+    this.focusWizardHeading();
+  };
+
+  private focusWizardHeading() {
+    void this.updateComplete.then(() => {
+      const heading = this.querySelector<HTMLElement>('#conductor-step-heading');
+      if (heading) focusAndReveal(heading, { block: 'start' });
+    });
+  }
+
+  private persistConductorDraft() {
+    try {
+      window.sessionStorage.setItem(CONDUCTOR_DRAFT_KEY, JSON.stringify({
+        setupRoute: this.setupRoute,
+        wizardStepIndex: this.wizardStepIndex,
+        scoringConfirmed: this.scoringConfirmed,
+        importWarningsAcknowledged: this.importWarningsAcknowledged,
+        instrumentId: this.instrumentId,
+        customDefinition: this.customDefinition,
+        customDraft: this.customDraft,
+        platformImportSource: this.platformImportSource,
+        platformImportReview: this.platformImportReview,
+        platformImportConfirmed: this.platformImportConfirmed,
+        platformImportSelectedGroupId: this.platformImportSelectedGroupId,
+        platformImportSelectedRatingSetId: this.platformImportSelectedRatingSetId,
+        studyId: this.studyId,
+        studyTitle: this.studyTitle,
+        taskLabel: this.taskLabel,
+        showScoreToParticipant: this.showScoreToParticipant,
+        showSimpleLanguage: this.showSimpleLanguage,
+        answerMode: this.answerMode,
+        largeText: this.largeText,
+        audioGuidance: this.audioGuidance,
+        recoveryEnabled: this.recoveryEnabled,
+        participantAdjustmentPolicy: this.participantAdjustmentPolicy,
+        voiceInputAvailable: this.voiceInputAvailable,
+        gazeInputAvailable: this.gazeInputAvailable,
+        collectionMode: this.collectionMode,
+        qualtricsSurveyUrl: this.qualtricsSurveyUrl,
+        generatedConfig: this.generatedConfig,
+      }));
+    } catch {
+      // The setup remains usable when private browsing or a storage quota blocks draft recovery.
+    }
+  }
+
+  private restoreConductorDraft() {
+    try {
+      const raw = window.sessionStorage.getItem(CONDUCTOR_DRAFT_KEY);
+      if (!raw) {
+        this.draftRestored = true;
+        return;
+      }
+      const saved = JSON.parse(raw) as Record<string, unknown>;
+      const route = saved.setupRoute === 'imported' ? 'imported' : 'ready-made';
+      this.setupRoute = route;
+      const steps = route === 'imported' ? importedConductorSteps : readyMadeConductorSteps;
+      const savedStep = Number(saved.wizardStepIndex);
+      this.wizardStepIndex = Number.isInteger(savedStep) && savedStep >= 0 && savedStep < steps.length
+        ? savedStep
+        : 0;
+      this.scoringConfirmed = saved.scoringConfirmed === true;
+      this.importWarningsAcknowledged = saved.importWarningsAcknowledged === true;
+      if (typeof saved.instrumentId === 'string') this.instrumentId = saved.instrumentId;
+      if (saved.customDefinition && typeof saved.customDefinition === 'object') {
+        this.customDefinition = saved.customDefinition as QuestionnaireDefinition;
+      }
+      if (saved.customDraft && typeof saved.customDraft === 'object') {
+        this.customDraft = saved.customDraft as CustomQuestionnaireDraft;
+      }
+      if (typeof saved.platformImportSource === 'string') {
+        this.platformImportSource = saved.platformImportSource as QuestionnaireImportSourceSelection;
+      }
+      if (saved.platformImportReview && typeof saved.platformImportReview === 'object') {
+        this.platformImportReview = saved.platformImportReview as QuestionnaireImportReview;
+      }
+      this.platformImportConfirmed = saved.platformImportConfirmed === true;
+      if (typeof saved.platformImportSelectedGroupId === 'string') {
+        this.platformImportSelectedGroupId = saved.platformImportSelectedGroupId;
+      }
+      if (typeof saved.platformImportSelectedRatingSetId === 'string') {
+        this.platformImportSelectedRatingSetId = saved.platformImportSelectedRatingSetId;
+      }
+      if (typeof saved.studyId === 'string') this.studyId = saved.studyId;
+      if (typeof saved.studyTitle === 'string') this.studyTitle = saved.studyTitle;
+      if (typeof saved.taskLabel === 'string') this.taskLabel = saved.taskLabel;
+      this.showScoreToParticipant = saved.showScoreToParticipant === true;
+      this.showSimpleLanguage = saved.showSimpleLanguage === true;
+      this.answerMode = saved.answerMode === 'smiley' ? 'smiley' : 'standard';
+      this.largeText = saved.largeText === true;
+      this.audioGuidance = saved.audioGuidance === true;
+      this.recoveryEnabled = saved.recoveryEnabled !== false;
+      if (
+        saved.participantAdjustmentPolicy === 'locked' ||
+        saved.participantAdjustmentPolicy === 'presentation-only' ||
+        saved.participantAdjustmentPolicy === 'participant-choice'
+      ) {
+        this.participantAdjustmentPolicy = saved.participantAdjustmentPolicy;
+      }
+      this.voiceInputAvailable = saved.voiceInputAvailable !== false;
+      this.gazeInputAvailable = saved.gazeInputAvailable === true;
+      this.collectionMode = saved.collectionMode === 'qualtrics' ? 'qualtrics' : 'local';
+      if (typeof saved.qualtricsSurveyUrl === 'string') this.qualtricsSurveyUrl = saved.qualtricsSurveyUrl;
+      const restoredConfig = saved.generatedConfig
+        ? normaliseStudyConfig(saved.generatedConfig)
+        : null;
+      if (restoredConfig) this.useConfiguration(restoredConfig);
+      if (
+        route === 'imported' &&
+        (
+          this.platformImportReview?.requiresGroupSelection ||
+          this.platformImportReview?.requiresRatingSetSelection
+        ) &&
+        !this.platformImportContents
+      ) {
+        this.wizardStepIndex = 1;
+        this.platformImportReview = null;
+        this.platformImportSelectedGroupId = '';
+        this.platformImportSelectedRatingSetId = '';
+        this.message = 'Select the source file again to continue choosing its LimeSurvey group or rating set.';
+      }
+    } catch {
+      window.sessionStorage.removeItem(CONDUCTOR_DRAFT_KEY);
+    } finally {
+      this.draftRestored = true;
+    }
+  }
+
+  private validateStudyDetails() {
+    createStudyConfig({
+      instrumentId: this.instrumentId,
+      ...(this.customDefinition?.id === this.instrumentId
+        ? { questionnaireDefinition: this.customDefinition }
+        : {}),
+      studyId: this.studyId,
+      studyTitle: this.studyTitle,
+      taskLabel: this.taskLabel,
+      showScoreToParticipant: this.showScoreToParticipant,
+      support: this.currentSupportConfig(),
+      collection: { mode: 'local' },
+    });
+  }
+
+  private continueWizard = () => {
+    this.errorMessage = '';
+    const key = this.wizardStep.key;
+    try {
+      if (key === 'upload') {
+        const review = this.platformImportReview;
+        if (!review) throw new Error('Choose and review a questionnaire export before continuing.');
+        if (review.requiresGroupSelection) throw new Error('Choose the LimeSurvey questionnaire group before continuing.');
+        if (review.requiresRatingSetSelection) throw new Error('Choose the compatible LimeSurvey rating set before continuing.');
+        if (!review.canConvert || !review.draft) {
+          throw new Error('This export contains unsupported content. Correct the source and review a new export before continuing.');
+        }
+      }
+      if (key === 'warnings' && !this.importWarningsAcknowledged) {
+        throw new Error('Acknowledge the listed import findings before continuing.');
+      }
+      if (key === 'scoring') {
+        if (this.setupRoute === 'imported') {
+          if (!this.platformImportConfirmed) {
+            throw new Error('Confirm the scoring rule and imported values against the source before continuing.');
+          }
+          this.usePlatformImport();
+          if (this.customDefinition?.id !== this.instrumentId) {
+            throw new Error('The reviewed questionnaire could not be activated. Check the scoring fields and try again.');
+          }
+        } else if (!this.scoringConfirmed) {
+          throw new Error('Confirm that the selected questionnaire and scoring rule match the study protocol.');
+        }
+      }
+      if (key === 'study') this.validateStudyDetails();
+      if (key === 'collection') this.currentCollectionConfig();
+      const next = Math.min(this.wizardStepIndex + 1, this.wizardSteps.length - 1);
+      if (next === this.wizardStepIndex) return;
+      this.wizardStepIndex = next;
+      window.history.pushState(
+        { ...(window.history.state ?? {}), aqpConductorStep: next },
+        '',
+        window.location.href,
+      );
+      this.message = `Step ${next + 1} of ${this.wizardSteps.length}: ${this.wizardSteps[next].title}.`;
+      this.focusWizardHeading();
+    } catch (error) {
+      this.showError(error instanceof Error ? error.message : 'This step is incomplete.');
+    }
+  };
+
+  private previousWizard = () => {
+    if (this.wizardStepIndex === 0) return;
+    const previous = this.wizardStepIndex - 1;
+    this.wizardStepIndex = previous;
+    window.history.pushState(
+      { ...(window.history.state ?? {}), aqpConductorStep: previous },
+      '',
+      window.location.href,
+    );
+    this.errorMessage = '';
+    this.message = `Step ${previous + 1} of ${this.wizardSteps.length}: ${this.wizardSteps[previous].title}.`;
+    this.focusWizardHeading();
+  };
+
   private selectInstrument = (event: Event) => {
     const instrumentId = (event.currentTarget as HTMLSelectElement).value;
     const definition =
@@ -160,6 +457,7 @@ export class StudyConductorApp extends LitElement {
     this.instrumentId = instrumentId;
     if (!definition.supports.simplerExplanations) this.showSimpleLanguage = false;
     if (!definition.supports.smileyLandmarks) this.answerMode = 'standard';
+    this.scoringConfirmed = false;
     this.generatedConfig = null;
     this.participantUrl = '';
     this.definitionConfirmation =
@@ -213,13 +511,69 @@ export class StudyConductorApp extends LitElement {
           : nothing}
         <p class="sr-only" aria-live="polite">${this.message}</p>
 
-        <section class="panel conductor-panel" aria-labelledby="study-details-heading">
-          <h2 id="study-details-heading">1. Questionnaire and study details</h2>
-          <p class="support-boundary">
-            These fields identify the questionnaire configuration, not the participant. Give each participant a separate
-            pseudonymous code such as P-001; they enter that code on the participant page.
-          </p>
-          <div class="form-grid">
+        <div class="progress-card conductor-progress">
+          <p class="step-label">Step ${this.wizardStepIndex + 1} of ${this.wizardSteps.length}</p>
+          <progress max=${this.wizardSteps.length} value=${this.wizardStepIndex + 1}>
+            ${this.wizardStepIndex + 1} of ${this.wizardSteps.length}
+          </progress>
+          <h2 id="conductor-step-heading" tabindex="-1">${this.wizardStep.title}</h2>
+          <p>Complete this task, then use Continue. Your draft is kept in this browser tab if the page reloads.</p>
+        </div>
+
+        <section
+          class="panel conductor-panel"
+          aria-labelledby="study-details-heading"
+          ?hidden=${this.wizardStep.key !== 'source' && this.wizardStep.key !== 'study'}
+        >
+          <h2 id="study-details-heading">
+            ${this.wizardStep.key === 'source' ? 'Choose the questionnaire source' : 'Enter study details'}
+          </h2>
+          ${this.wizardStep.key === 'source'
+            ? html`
+                <fieldset class="answer-mode-control conductor-answer-mode source-route-control">
+                  <legend>How will you provide the questionnaire?</legend>
+                  <label>
+                    <input
+                      type="radio"
+                      name="questionnaire-source-route"
+                      value="ready-made"
+                      .checked=${this.setupRoute === 'ready-made'}
+                      @change=${() => this.selectSetupRoute('ready-made')}
+                    />
+                    <span>
+                      <strong>Use a ready-made or saved AQP questionnaire</strong>
+                      <small>Six short steps. You can select a built-in questionnaire or add a reviewed AQP definition.</small>
+                    </span>
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="questionnaire-source-route"
+                      value="imported"
+                      .checked=${this.setupRoute === 'imported'}
+                      @change=${() => this.selectSetupRoute('imported')}
+                    />
+                    <span>
+                      <strong>Import a Qualtrics or LimeSurvey export</strong>
+                      <small>Ten short steps separate file selection, questions, values, warnings and scoring.</small>
+                    </span>
+                  </label>
+                </fieldset>
+                ${this.setupRoute === 'imported'
+                  ? html`<p class="support-boundary">
+                      Continue to choose a QSF, LSS, LSG or LSQ file. The original file is read only in this browser.
+                    </p>`
+                  : nothing}
+                <p class="support-boundary">
+                  Participant identity is kept separate from study setup. Give each participant a
+                  pseudonymous code such as <strong>P-001</strong>; they enter that code on the participant page.
+                </p>
+              `
+            : html`<p class="support-boundary">
+                These fields identify the questionnaire configuration, not the participant. Give each participant a separate
+                pseudonymous code such as P-001; they enter that code on the participant page.
+              </p>`}
+          <div class="form-grid" ?hidden=${this.wizardStep.key !== 'source' || this.setupRoute !== 'ready-made'}>
             <label class="full-width">
               <strong>Questionnaire definition</strong>
               <span>
@@ -301,7 +655,9 @@ export class StudyConductorApp extends LitElement {
                   `
                 : nothing}
             </div>
-            ${this.customBuilderOpen ? this.renderCustomQuestionnaireBuilder() : nothing}
+            ${this.customBuilderOpen ? this.renderCustomQuestionnaireBuilder(false) : nothing}
+          </div>
+          <div class="form-grid" ?hidden=${this.wizardStep.key !== 'study'}>
             <label>
               <strong>Study ID</strong>
               <span>Internal label shared by records from one study or condition. Example: ACCESS-TECH-01. Do not use a participant name.</span>
@@ -320,8 +676,14 @@ export class StudyConductorApp extends LitElement {
           </div>
         </section>
 
-        <section class="panel conductor-panel" aria-labelledby="support-config-heading">
-          <h2 id="support-config-heading">2. Prepare the participant questionnaire</h2>
+        ${this.renderQuestionnaireReviewStep()}
+
+        <section
+          class="panel conductor-panel"
+          aria-labelledby="support-config-heading"
+          ?hidden=${this.wizardStep.key !== 'support'}
+        >
+          <h2 id="support-config-heading">Set participant support</h2>
           <p>
             These are starting settings. The selected definition keeps its declared items, values,
             workflow and allowlisted scoring rule unchanged.
@@ -414,8 +776,12 @@ export class StudyConductorApp extends LitElement {
               </p>`}
         </section>
 
-        <section class="panel conductor-panel" aria-labelledby="collection-heading">
-          <h2 id="collection-heading">3. Choose where completed results are collected</h2>
+        <section
+          class="panel conductor-panel"
+          aria-labelledby="collection-heading"
+          ?hidden=${this.wizardStep.key !== 'collection'}
+        >
+          <h2 id="collection-heading">Choose where completed results are collected</h2>
           <fieldset class="answer-mode-control conductor-answer-mode">
             <legend>Result collection route</legend>
             <label>
@@ -467,8 +833,13 @@ export class StudyConductorApp extends LitElement {
             : nothing}
         </section>
 
-        <section class="panel conductor-panel" aria-labelledby="link-heading">
-          <h2 id="link-heading">4. Generate the participant configuration</h2>
+        <section
+          class="panel conductor-panel"
+          aria-labelledby="link-heading"
+          ?hidden=${this.wizardStep.key !== 'review'}
+        >
+          <h2 id="link-heading">Review and generate the participant configuration</h2>
+          ${this.renderConfigurationSummary()}
           <div class="button-row compact">
             <button class="primary-button large-answer-button" type="button" @click=${this.generateParticipantLink}>Generate link</button>
             <label class="file-button secondary-button">
@@ -540,8 +911,12 @@ export class StudyConductorApp extends LitElement {
             : nothing}
         </section>
 
-        <section class="panel conductor-panel" aria-labelledby="results-heading">
-          <h2 id="results-heading">5. Results saved on this device</h2>
+        <section
+          class="panel conductor-panel"
+          aria-labelledby="results-heading"
+          ?hidden=${this.wizardStep.key !== 'review'}
+        >
+          <h2 id="results-heading">Results saved on this device</h2>
           <p><strong>${this.completedResults.length}</strong> completed record${this.completedResults.length === 1 ? '' : 's'} found in this browser.</p>
           ${this.completedResults.length
             ? html`
@@ -571,7 +946,11 @@ export class StudyConductorApp extends LitElement {
             : html`<p>After a configured questionnaire is completed in this same browser, its pseudonymous record will appear here.</p>`}
         </section>
 
-        <section class="panel conductor-panel" aria-labelledby="remote-heading">
+        <section
+          class="panel conductor-panel"
+          aria-labelledby="remote-heading"
+          ?hidden=${this.wizardStep.key !== 'collection'}
+        >
           <h2 id="remote-heading">Remote-study boundary</h2>
           <p>
             <strong>Central collection is not configured on this GitHub Pages deployment.</strong> A participant using another
@@ -585,11 +964,284 @@ export class StudyConductorApp extends LitElement {
             consent, retention and access must still match the project's existing approved protocol and data-management documents.
           </p>
         </section>
+
+        ${this.renderWizardNavigation()}
       </main>
     `;
   }
 
-  private renderCustomQuestionnaireBuilder() {
+  private renderQuestionnaireReviewStep() {
+    const key = this.wizardStep.key;
+    if (!['upload', 'questions', 'answers', 'warnings', 'scoring'].includes(key)) {
+      return nothing;
+    }
+    if (key === 'scoring' && this.setupRoute === 'ready-made') {
+      return html`
+        <section class="panel conductor-panel" aria-labelledby="questionnaire-scoring-heading">
+          <h2 id="questionnaire-scoring-heading">Confirm the questionnaire and scoring</h2>
+          <dl class="study-details">
+            <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
+            <div><dt>Items</dt><dd>${this.definition.items.length}</dd></div>
+            <div><dt>Response values</dt><dd>${buildRatingValues(this.definition).join(', ')}</dd></div>
+            <div><dt>Scoring rule</dt><dd>${this.definition.scoring.strategy}</dd></div>
+            <div><dt>Reported result</dt><dd>${this.definition.scoring.scoreName}</dd></div>
+            <div><dt>Source</dt><dd>${this.definition.source.label}</dd></div>
+          </dl>
+          <label class="platform-import-final-confirmation">
+            <input
+              type="checkbox"
+              .checked=${this.scoringConfirmed}
+              @change=${(event: Event) => {
+                this.scoringConfirmed = (event.currentTarget as HTMLInputElement).checked;
+              }}
+            />
+            <span>
+              I checked that this questionnaire version, response scale and scoring rule match the study protocol.
+            </span>
+          </label>
+        </section>
+      `;
+    }
+
+    const review = this.platformImportReview;
+    if (key === 'upload') {
+      return html`
+        <section class="panel conductor-panel" aria-labelledby="questionnaire-upload-heading">
+          <h2 id="questionnaire-upload-heading">Upload the file and choose the relevant part</h2>
+          ${this.renderPlatformQuestionnaireImport(false)}
+          ${review && !review.requiresGroupSelection && !review.requiresRatingSetSelection
+            ? html`<aside class=${`definition-summary${review.canConvert ? ' success-confirmation' : ''}`}>
+                <strong>${review.canConvert ? 'File review ready' : 'This file cannot be converted'}</strong>
+                <span>${review.title} · ${review.sourceName} · ${review.fileName}</span>
+                <span>
+                  ${review.draft?.items.length ?? 0} compatible item${review.draft?.items.length === 1 ? '' : 's'};
+                  ${review.unsupported.length} blocking finding${review.unsupported.length === 1 ? '' : 's'}.
+                </span>
+              </aside>`
+            : nothing}
+        </section>
+      `;
+    }
+
+    if (!review?.draft) {
+      return html`<section class="panel conductor-panel">
+        <h2>${this.wizardStep.title}</h2>
+        <p>Return to the upload step and review a supported questionnaire export.</p>
+      </section>`;
+    }
+
+    if (key === 'questions') {
+      return html`
+        <section class="panel conductor-panel" aria-labelledby="import-question-review-heading">
+          <h2 id="import-question-review-heading">Review the questions</h2>
+          <p>Compare every item, its order and its wording with the untouched source preview.</p>
+          <ol class="wizard-review-list">
+            ${this.customDraft.items.map((item) => html`<li>
+              <strong>${item.name || 'Unnamed item'}</strong>
+              <span>${item.prompt || 'No question text was found.'}</span>
+              <small>Source key: ${item.key} · required single answer</small>
+            </li>`)}
+          </ol>
+        </section>
+      `;
+    }
+
+    if (key === 'answers') {
+      const values: number[] = [];
+      for (let value = this.customDraft.minimum; value <= this.customDraft.maximum; value += this.customDraft.step) {
+        values.push(value);
+      }
+      return html`
+        <section class="panel conductor-panel" aria-labelledby="import-answer-review-heading">
+          <h2 id="import-answer-review-heading">Review answer choices and stored values</h2>
+          <dl class="study-details">
+            <div><dt>Scale type</dt><dd>${this.customDraft.scaleType.replace('-', ' ')}</dd></div>
+            <div><dt>Stored values</dt><dd>${values.join(', ')}</dd></div>
+            <div><dt>Direction</dt><dd>${this.customDraft.minimum} to ${this.customDraft.maximum}</dd></div>
+          </dl>
+          <ol class="wizard-review-list compact-review-list">
+            ${this.customDraft.items.map((item) => html`<li>
+              <strong>${item.name}</strong>
+              <span>${item.lowAnchor} (${this.customDraft.minimum}) → ${item.highAnchor} (${this.customDraft.maximum})</span>
+              ${item.responseLabels
+                ? html`<small>Visible labels: ${Object.entries(item.responseLabels).map(([value, label]) => `${value} = ${label}`).join('; ')}</small>`
+                : html`<small>Intermediate positions use their stored number.</small>`}
+            </li>`)}
+          </ol>
+        </section>
+      `;
+    }
+
+    if (key === 'warnings') {
+      return html`
+        <section class="panel conductor-panel" aria-labelledby="import-warning-heading">
+          <h2 id="import-warning-heading">Resolve import warnings</h2>
+          <p>Blocking content must be corrected in the source. Other transformations must be understood before scoring is confirmed.</p>
+          <div class="platform-import-findings">
+            ${this.renderImportFindingList('Imported safely', 'import-safe', review.imported, 'No safe import findings were recorded.')}
+            ${this.renderImportFindingList('Requires confirmation', 'import-confirm', review.confirmations, 'No extra confirmation finding was recorded.')}
+            ${this.renderImportFindingList('Unsupported content', 'import-unsupported', review.unsupported, 'No unsupported content was found.')}
+          </div>
+          <label class="platform-import-final-confirmation">
+            <input
+              data-platform-import-warnings-confirm
+              type="checkbox"
+              .checked=${this.importWarningsAcknowledged}
+              @change=${(event: Event) => {
+                this.importWarningsAcknowledged = (event.currentTarget as HTMLInputElement).checked;
+              }}
+            />
+            <span>I read the findings and understand what the platform keeps, changes and does not support.</span>
+          </label>
+        </section>
+      `;
+    }
+
+    return html`
+      <section class="panel conductor-panel" aria-labelledby="import-scoring-heading">
+        <h2 id="import-scoring-heading">Confirm the scoring rule</h2>
+        <p>The export may not encode the intended scoring rule. Check these fields against the instrument source or study protocol.</p>
+        <div class="form-grid">
+          <label>
+            <strong>Questionnaire language</strong>
+            <span>BCP 47 language tag for the questionnaire text.</span>
+            <input
+              data-platform-import-language
+              maxlength="35"
+              spellcheck="false"
+              .value=${this.customDraft.language}
+              @input=${(event: Event) => this.updateCustomDraft('language', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label>
+            <strong>Scale description</strong>
+            <select
+              data-platform-import-scale-type
+              .value=${this.customDraft.scaleType}
+              @change=${(event: Event) => this.updateCustomDraft(
+                'scaleType',
+                (event.currentTarget as HTMLSelectElement).value as CustomQuestionnaireDraft['scaleType'],
+              )}
+            >
+              <option value="agreement">Agreement</option>
+              <option value="magnitude">Magnitude</option>
+              <option value="semantic-differential">Semantic differential</option>
+            </select>
+          </label>
+          <label>
+            <strong>Score calculation</strong>
+            <select
+              data-platform-import-aggregation
+              .value=${this.customDraft.aggregation}
+              @change=${(event: Event) => this.updateCustomDraft(
+                'aggregation',
+                (event.currentTarget as HTMLSelectElement).value as CustomQuestionnaireDraft['aggregation'],
+              )}
+            >
+              <option value="mean">Mean of reviewed item values</option>
+              <option value="sum">Sum of reviewed item values</option>
+            </select>
+          </label>
+          <label>
+            <strong>Score name</strong>
+            <input
+              data-platform-import-score-name
+              maxlength="120"
+              .value=${this.customDraft.scoreName}
+              @input=${(event: Event) => this.updateCustomDraft('scoreName', (event.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+        </div>
+        <fieldset class="platform-import-reverse-items">
+          <legend>Reverse-scored items</legend>
+          <p>Select an item only when the reviewed scoring instructions require it.</p>
+          ${this.customDraft.items.map((item, index) => html`<label>
+            <input
+              data-platform-import-reverse=${index}
+              type="checkbox"
+              .checked=${item.reverseScored}
+              @change=${(event: Event) => this.updateCustomItem(
+                index,
+                'reverseScored',
+                (event.currentTarget as HTMLInputElement).checked,
+              )}
+            />
+            <span>${index + 1}. ${item.name}: ${item.prompt}</span>
+          </label>`)}
+        </fieldset>
+        <label class="platform-import-final-confirmation">
+          <input
+            data-platform-import-confirm
+            type="checkbox"
+            .checked=${this.platformImportConfirmed}
+            @change=${(event: Event) => {
+              this.platformImportConfirmed = (event.currentTarget as HTMLInputElement).checked;
+            }}
+          />
+          <span>
+            I checked the wording, order, labels, stored values, score calculation and reverse-scored items against the source.
+          </span>
+        </label>
+      </section>
+    `;
+  }
+
+  private renderImportFindingList(
+    title: string,
+    className: string,
+    findings: QuestionnaireImportReview['imported'],
+    emptyMessage: string,
+  ) {
+    return html`<section class=${`platform-import-finding ${className}`}>
+      <h3>${title} (${findings.length})</h3>
+      ${findings.length
+        ? html`<ul>${findings.map((finding) => html`<li>
+            <strong>${finding.title}</strong><span>${finding.detail}</span>
+          </li>`)}</ul>`
+        : html`<p>${emptyMessage}</p>`}
+    </section>`;
+  }
+
+  private renderConfigurationSummary() {
+    return html`
+      <dl class="study-details configuration-review-summary">
+        <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
+        <div><dt>Study</dt><dd>${this.studyId} · ${this.studyTitle}</dd></div>
+        <div><dt>Task</dt><dd>${this.taskLabel}</dd></div>
+        <div><dt>Participant settings</dt><dd>${this.participantAdjustmentPolicy}; voice ${this.voiceInputAvailable ? 'available' : 'off'}; recovery ${this.recoveryEnabled ? 'on' : 'off'}</dd></div>
+        <div><dt>Collection</dt><dd>${this.collectionMode === 'qualtrics' ? `Qualtrics: ${normaliseHttpsOrigin(this.qualtricsSurveyUrl) ?? 'invalid URL'}` : 'This browser only'}</dd></div>
+      </dl>
+      <p class="support-boundary">Check this summary before generating. The questionnaire definition and scoring rule cannot be edited by participants.</p>
+    `;
+  }
+
+  private renderWizardNavigation() {
+    const onFinalStep = this.wizardStep.key === 'review';
+    const continueLabel = this.wizardStep.key === 'scoring' && this.setupRoute === 'imported'
+      ? 'Convert and continue'
+      : this.wizardStepIndex === this.wizardSteps.length - 2
+        ? 'Continue to review'
+        : 'Continue';
+    return html`
+      <nav class="wizard-navigation button-row" aria-label="Researcher setup steps">
+        <button
+          class="secondary-button large-answer-button"
+          type="button"
+          ?disabled=${this.wizardStepIndex === 0}
+          @click=${this.previousWizard}
+        >Back</button>
+        ${onFinalStep
+          ? html`<span class="support-boundary">This is the final setup step. Generate only after checking the summary.</span>`
+          : html`<button
+              class="primary-button large-answer-button"
+              type="button"
+              @click=${this.continueWizard}
+            >${continueLabel}</button>`}
+      </nav>
+    `;
+  }
+
+  private renderCustomQuestionnaireBuilder(includePlatformImport = true) {
     return html`
       <section
         class="custom-questionnaire-builder full-width"
@@ -598,7 +1250,7 @@ export class StudyConductorApp extends LitElement {
       >
         <h3 id="custom-questionnaire-heading">Add a researcher-supplied questionnaire</h3>
         <p>
-          Choose one of three routes. Import a source-platform export, reuse a definition
+          ${includePlatformImport ? 'Choose one of three routes. Import a source-platform export, reuse a definition' : 'Reuse a definition'}
           previously downloaded from this platform, or build a small questionnaire manually.
           These routes accept different file types and are not interchangeable.
         </p>
@@ -612,14 +1264,14 @@ export class StudyConductorApp extends LitElement {
           </p>
         </aside>
 
-        ${this.renderPlatformQuestionnaireImport()}
+        ${includePlatformImport ? this.renderPlatformQuestionnaireImport() : nothing}
 
         <section
           class="questionnaire-add-route"
           aria-labelledby="aqp-definition-import-heading"
         >
           <h4 id="aqp-definition-import-heading">
-            2. Reuse an AQP questionnaire definition
+            ${includePlatformImport ? '2.' : '1.'} Reuse an AQP questionnaire definition
           </h4>
           <p>
             Choose a <code>.json</code> definition previously downloaded from this
@@ -646,7 +1298,7 @@ export class StudyConductorApp extends LitElement {
           aria-labelledby="manual-questionnaire-builder-heading"
         >
           <h4 id="manual-questionnaire-builder-heading">
-            3. Build a questionnaire manually
+            ${includePlatformImport ? '3.' : '2.'} Build a questionnaire manually
           </h4>
           <p>
             No code is required. The manual builder supports
@@ -898,16 +1550,16 @@ export class StudyConductorApp extends LitElement {
     `;
   }
 
-  private renderPlatformQuestionnaireImport() {
+  private renderPlatformQuestionnaireImport(showCompleteReview = true) {
     const review = this.platformImportReview;
     return html`
       <section
         class="platform-questionnaire-import"
         aria-labelledby="platform-questionnaire-import-heading"
       >
-        <h4 id="platform-questionnaire-import-heading">
+        <h3 id="platform-questionnaire-import-heading">
           1. Import a Qualtrics or LimeSurvey export
-        </h4>
+        </h3>
         <p class="platform-import-introduction">
           Choose a Qualtrics <code>.qsf</code> survey export or a LimeSurvey
           <code>.lss</code> survey export, <code>.lsg</code> question-group export,
@@ -953,6 +1605,7 @@ export class StudyConductorApp extends LitElement {
                   .value as QuestionnaireImportSourceSelection;
                 this.platformImportReview = null;
                 this.platformImportConfirmed = false;
+                this.importWarningsAcknowledged = false;
                 this.platformImportSelectedGroupId = '';
                 this.platformImportSelectedRatingSetId = '';
                 this.platformImportContents = '';
@@ -980,7 +1633,12 @@ export class StudyConductorApp extends LitElement {
             />
           </label>
         </div>
-        ${review ? this.renderPlatformQuestionnaireReview(review) : nothing}
+        ${review && (
+          showCompleteReview ||
+          !review.canConvert ||
+          review.requiresGroupSelection ||
+          review.requiresRatingSetSelection
+        ) ? this.renderPlatformQuestionnaireReview(review) : nothing}
       </section>
     `;
   }
@@ -993,7 +1651,7 @@ export class StudyConductorApp extends LitElement {
       emptyMessage: string,
     ) => html`
       <section class=${`platform-import-finding ${className}`}>
-        <h5>${title} (${findings.length})</h5>
+        <h4>${title} (${findings.length})</h4>
         ${findings.length
           ? html`<ul>
               ${findings.map((finding) => html`
@@ -1018,7 +1676,7 @@ export class StudyConductorApp extends LitElement {
           <div class="platform-import-review-heading">
             <span class="selection-icon" aria-hidden="true">→</span>
             <div>
-              <h5 id="platform-import-review-heading">Choose one LimeSurvey questionnaire group</h5>
+              <h4 id="platform-import-review-heading">Choose one LimeSurvey questionnaire group</h4>
               <p><strong>${review.title}</strong> · ${review.sourceName} · ${review.fileName}</p>
             </div>
           </div>
@@ -1071,7 +1729,7 @@ export class StudyConductorApp extends LitElement {
           <div class="platform-import-review-heading">
             <span class="selection-icon" aria-hidden="true">→</span>
             <div>
-              <h5 id="platform-import-review-heading">Choose one compatible rating set</h5>
+              <h4 id="platform-import-review-heading">Choose one compatible rating set</h4>
               <p><strong>${review.title}</strong> · ${review.sourceName} · ${review.fileName}</p>
             </div>
           </div>
@@ -1127,9 +1785,9 @@ export class StudyConductorApp extends LitElement {
             ${review.canConvert ? '✓' : '!'}
           </span>
           <div>
-            <h5 id="platform-import-review-heading">
+            <h4 id="platform-import-review-heading">
               ${review.canConvert ? 'Import review ready' : 'Conversion blocked'}
-            </h5>
+            </h4>
             <p>
               <strong>${review.title}</strong> · ${review.sourceName} ·
               ${review.fileName}
@@ -1405,6 +2063,7 @@ export class StudyConductorApp extends LitElement {
     this.definitionConfirmation = '';
     this.platformImportReview = null;
     this.platformImportConfirmed = false;
+    this.importWarningsAcknowledged = false;
     try {
       const contents = await file.text();
       this.platformImportContents = contents;
@@ -1447,6 +2106,7 @@ export class StudyConductorApp extends LitElement {
     this.errorMessage = '';
     this.definitionConfirmation = '';
     this.platformImportConfirmed = false;
+    this.importWarningsAcknowledged = false;
     try {
       const review = reviewQuestionnaireExport(
         this.platformImportContents,
@@ -1482,6 +2142,7 @@ export class StudyConductorApp extends LitElement {
     this.errorMessage = '';
     this.definitionConfirmation = '';
     this.platformImportConfirmed = false;
+    this.importWarningsAcknowledged = false;
     try {
       const review = reviewQuestionnaireExport(
         this.platformImportContents,
@@ -1528,6 +2189,7 @@ export class StudyConductorApp extends LitElement {
   ) {
     this.customDraft = { ...this.customDraft, [field]: value };
     if (this.platformImportReview) this.platformImportConfirmed = false;
+    if (this.platformImportReview) this.importWarningsAcknowledged = false;
   }
 
   private updateCustomItem<K extends keyof CustomQuestionnaireItemDraft>(
@@ -1541,6 +2203,7 @@ export class StudyConductorApp extends LitElement {
         itemIndex === index ? { ...item, [field]: value } : item),
     };
     if (this.platformImportReview) this.platformImportConfirmed = false;
+    if (this.platformImportReview) this.importWarningsAcknowledged = false;
   }
 
   private addCustomItem = () => {
@@ -1638,6 +2301,7 @@ export class StudyConductorApp extends LitElement {
     this.customDraft = createCustomQuestionnaireDraft();
     this.platformImportReview = null;
     this.platformImportConfirmed = false;
+    this.importWarningsAcknowledged = false;
     this.platformImportSelectedGroupId = '';
     this.platformImportSelectedRatingSetId = '';
     this.platformImportContents = '';

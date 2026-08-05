@@ -32,6 +32,14 @@ scoring and optional reverse-scored items. The builder validates before a link
 can be generated. The study protocol should retain the downloaded definition and
 the generated configuration.
 
+The conductor is presented as a guarded wizard rather than one crowded page.
+A ready-made or saved AQP definition uses six screens: source, scoring, study,
+support, collection and review. A Qualtrics/LimeSurvey source export uses ten
+screens: source, upload/group selection, questions, answer values, warnings,
+scoring, study, support, collection and review. Each Continue action validates
+the current task. Browser history follows the step sequence, and a same-tab
+session draft survives reload; raw source-file contents are not persisted.
+
 ## Local technical workflow
 
 1. The conductor generates a local configuration.

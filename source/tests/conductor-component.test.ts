@@ -28,6 +28,25 @@ function inputFor(component: HTMLElement, labelText: string) {
     .querySelector<HTMLInputElement>('input')!;
 }
 
+function wizardContinue(component: HTMLElement) {
+  return component.querySelector<HTMLButtonElement>(
+    '.wizard-navigation .primary-button',
+  )!;
+}
+
+async function chooseImportedRoute(component: HTMLElement) {
+  inputFor(component, 'Import a Qualtrics or LimeSurvey export').click();
+  await (component as any).updateComplete;
+  wizardContinue(component).click();
+  await (component as any).updateComplete;
+  expect(component.textContent).toContain('Step 2 of 10');
+}
+
+async function continueWizard(component: HTMLElement) {
+  wizardContinue(component).click();
+  await (component as any).updateComplete;
+}
+
 function mixedLimeSurveyRatingSets() {
   let lss = readFileSync(
     resolve(import.meta.dirname, 'fixtures', 'limesurvey-current-rating.lss'),
@@ -49,12 +68,14 @@ beforeEach(() => {
   });
   scrollIntoView.mockClear();
   localStorage.clear();
+  sessionStorage.clear();
   window.history.replaceState({}, '', '/study.html');
 });
 
 afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
+  sessionStorage.clear();
   window.history.replaceState({}, '', '/');
   vi.restoreAllMocks();
   Reflect.deleteProperty(navigator, 'clipboard');
@@ -62,6 +83,47 @@ afterEach(() => {
 });
 
 describe('study conductor defaults and guidance', () => {
+  it('uses a six-step ready-made route and a guarded ten-step import route', async () => {
+    const component = await renderConductor();
+    expect(component.textContent).toContain('Step 1 of 6');
+
+    inputFor(component, 'Import a Qualtrics or LimeSurvey export').click();
+    await (component as any).updateComplete;
+    expect(component.textContent).toContain('Step 1 of 10');
+    wizardContinue(component).click();
+    await (component as any).updateComplete;
+    expect(component.textContent).toContain('Step 2 of 10');
+
+    wizardContinue(component).click();
+    await (component as any).updateComplete;
+    expect(component.textContent).toContain('Step 2 of 10');
+    expect(component.textContent).toContain(
+      'Choose and review a questionnaire export before continuing.',
+    );
+    expect(document.activeElement?.id).toBe('conductor-error');
+  });
+
+  it('restores a setup draft after reload and supports browser step history', async () => {
+    const component = await renderConductor();
+    const studyId = inputFor(component, 'Study ID');
+    studyId.value = 'RECOVERY-01';
+    studyId.dispatchEvent(new Event('input', { bubbles: true }));
+    await chooseImportedRoute(component);
+    await (component as any).updateComplete;
+
+    component.remove();
+    const restored = await renderConductor();
+    expect(restored.textContent).toContain('Step 2 of 10');
+    expect(inputFor(restored, 'Study ID').value).toBe('RECOVERY-01');
+
+    window.dispatchEvent(new PopStateEvent('popstate', {
+      state: { aqpConductorStep: 0 },
+    }));
+    await (restored as any).updateComplete;
+    expect(restored.textContent).toContain('Step 1 of 10');
+    expect(document.activeElement?.id).toBe('conductor-step-heading');
+  });
+
   it('separates participant identity and starts with optional participant choice for an accessibility evaluation', async () => {
     const component = await renderConductor();
     expect(component.textContent).toContain('This researcher page generates a separate participant page');
@@ -138,13 +200,10 @@ describe('study conductor defaults and guidance', () => {
     await (component as any).updateComplete;
 
     expect(component.textContent).toContain(
-      '1. Import a Qualtrics or LimeSurvey export',
+      '1. Reuse an AQP questionnaire definition',
     );
     expect(component.textContent).toContain(
-      '2. Reuse an AQP questionnaire definition',
-    );
-    expect(component.textContent).toContain(
-      '3. Build a questionnaire manually',
+      '2. Build a questionnaire manually',
     );
     expect(component.textContent).toContain(
       'These routes accept different file types and are not interchangeable',
@@ -265,10 +324,7 @@ describe('study conductor defaults and guidance', () => {
 
   it('reviews and confirms a Qualtrics export before converting it', async () => {
     const component = await renderConductor();
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await (component as any).updateComplete;
+    await chooseImportedRoute(component);
 
     const qsf = readFileSync(
       resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
@@ -285,17 +341,25 @@ describe('study conductor defaults and guidance', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await (component as any).updateComplete;
 
-    const review = component.querySelector<HTMLElement>('#platform-import-review')!;
-    expect(review.textContent).toContain('Import review ready');
-    expect(review.textContent).toContain('Imported safely (2)');
-    expect(review.textContent).toContain('3 = Neither agree nor disagree');
-    expect(review.textContent).toContain('Requires researcher confirmation');
-    expect(review.textContent).toContain('Unsupported content (0)');
-    expect(review.textContent).toContain('Voice input remains English');
-    expect(document.activeElement).toBe(review);
-    const convert = [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Convert and use this questionnaire')!;
-    expect(convert.disabled).toBe(true);
+    expect(component.textContent).toContain('File review ready');
+    expect(component.textContent).toContain('2 compatible items');
+
+    await continueWizard(component);
+    expect(component.textContent).toContain('Step 3 of 10');
+    expect(component.textContent).toContain('The instructions were clear.');
+    await continueWizard(component);
+    expect(component.textContent).toContain('Step 4 of 10');
+    expect(component.textContent).toContain('3 = Neither agree nor disagree');
+    await continueWizard(component);
+    expect(component.textContent).toContain('Step 5 of 10');
+    expect(component.textContent).toContain('Imported safely (2)');
+    expect(component.textContent).toContain('Requires confirmation');
+    expect(component.textContent).toContain('Unsupported content (0)');
+    component.querySelector<HTMLInputElement>(
+      '[data-platform-import-warnings-confirm]',
+    )!.click();
+    await continueWizard(component);
+    expect(component.textContent).toContain('Step 6 of 10');
 
     const reverse = component.querySelector<HTMLInputElement>(
       '[data-platform-import-reverse="1"]',
@@ -306,14 +370,13 @@ describe('study conductor defaults and guidance', () => {
     )!;
     confirmation.click();
     await (component as any).updateComplete;
-    expect(convert.disabled).toBe(false);
-    convert.click();
-    await (component as any).updateComplete;
+    await continueWizard(component);
+    expect(component.textContent).toContain('Step 7 of 10');
 
     const summary = component.querySelector<HTMLElement>('#selected-questionnaire-summary')!;
     expect(summary.textContent).toContain('Task Support Check');
     expect(summary.textContent).toContain('imported, validated and selected');
-    expect(document.activeElement).toBe(summary);
+    expect(document.activeElement?.id).toBe('conductor-step-heading');
     const definition = (component as any).customDefinition;
     expect(definition.items[0].responseLabels['3']).toBe(
       'Neither agree nor disagree',
@@ -323,10 +386,7 @@ describe('study conductor defaults and guidance', () => {
 
   it('asks for one group before reviewing a multi-group LimeSurvey survey', async () => {
     const component = await renderConductor();
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await (component as any).updateComplete;
+    await chooseImportedRoute(component);
 
     const lss = readFileSync(
       resolve(import.meta.dirname, 'fixtures', 'limesurvey-group-rating.lsg'),
@@ -367,20 +427,18 @@ describe('study conductor defaults and guidance', () => {
       .click();
     await (component as any).updateComplete;
 
-    review = component.querySelector<HTMLElement>('#platform-import-review')!;
-    expect(review.textContent).toContain('Import review ready');
-    expect(review.textContent).toContain('Imported safely (2)');
-    expect(review.textContent).toContain('Only “Task support” will be converted');
-    expect(review.textContent).toContain('Blank scale positions');
-    expect(document.activeElement).toBe(review);
+    expect(component.textContent).toContain('File review ready');
+    expect(component.textContent).toContain('2 compatible items');
+    await continueWizard(component);
+    await continueWizard(component);
+    await continueWizard(component);
+    expect(component.textContent).toContain('Only “Task support” will be converted');
+    expect(component.textContent).toContain('Blank scale positions');
   });
 
   it('reviews a LimeSurvey LSQ as one standalone question', async () => {
     const component = await renderConductor();
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await (component as any).updateComplete;
+    await chooseImportedRoute(component);
 
     const lsq = readFileSync(
       resolve(import.meta.dirname, 'fixtures', 'limesurvey-question-rating.lsq'),
@@ -397,20 +455,19 @@ describe('study conductor defaults and guidance', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await (component as any).updateComplete;
 
-    const review = component.querySelector<HTMLElement>('#platform-import-review')!;
-    expect(review.textContent).toContain('LimeSurvey LSQ');
-    expect(review.textContent).toContain('Imported safely (1)');
-    expect(review.textContent).toContain('standalone questionnaire');
-    expect(review.textContent).toContain('Unsupported content (0)');
-    expect(document.activeElement).toBe(review);
+    expect(component.textContent).toContain('File review ready');
+    expect(component.textContent).toContain('LimeSurvey LSQ');
+    expect(component.textContent).toContain('1 compatible item');
+    await continueWizard(component);
+    await continueWizard(component);
+    await continueWizard(component);
+    expect(component.textContent).toContain('standalone questionnaire');
+    expect(component.textContent).toContain('Unsupported content (0)');
   });
 
   it('exposes every supported native import format with linked instructions', async () => {
     const component = await renderConductor();
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await (component as any).updateComplete;
+    await chooseImportedRoute(component);
 
     const source = component.querySelector<HTMLSelectElement>(
       '[data-platform-import-source]',
@@ -436,10 +493,7 @@ describe('study conductor defaults and guidance', () => {
 
   it('asks for one compatible rating set and then reviews only that set', async () => {
     const component = await renderConductor();
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await (component as any).updateComplete;
+    await chooseImportedRoute(component);
 
     const fileInput = component.querySelector<HTMLInputElement>(
       '[data-platform-questionnaire-import]',
@@ -472,20 +526,18 @@ describe('study conductor defaults and guidance', () => {
       .click();
     await (component as any).updateComplete;
 
-    review = component.querySelector<HTMLElement>('#platform-import-review')!;
-    expect(review.textContent).toContain('Import review ready');
-    expect(review.textContent).toContain('Imported safely (1)');
-    expect(review.textContent).toContain('Only the 1–5 rating set will be converted');
-    expect(review.textContent).toContain('CONTROL [type L]');
-    expect(document.activeElement).toBe(review);
+    expect(component.textContent).toContain('File review ready');
+    expect(component.textContent).toContain('1 compatible item');
+    await continueWizard(component);
+    await continueWizard(component);
+    await continueWizard(component);
+    expect(component.textContent).toContain('Only the 1–5 rating set will be converted');
+    expect(component.textContent).toContain('CONTROL [type L]');
   });
 
   it('shows unsupported exported content and does not offer partial conversion', async () => {
     const component = await renderConductor();
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await (component as any).updateComplete;
+    await chooseImportedRoute(component);
 
     const qsf = JSON.parse(readFileSync(
       resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
