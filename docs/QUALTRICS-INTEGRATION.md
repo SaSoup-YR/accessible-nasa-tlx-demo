@@ -59,7 +59,7 @@ uploading repository files.
    setting before collecting the verification row.
 4. Put one Text/Graphic question on its own page.
 5. Open the versioned
-   [`study.html?package=0.8.7-q7`](https://sasoup-yr.github.io/accessible-nasa-tlx-demo/study.html?package=0.8.7-q7)
+   [`study.html?package=0.8.7-q7`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.7-q7)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 6. Generate the configuration.
