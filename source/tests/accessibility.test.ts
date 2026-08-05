@@ -42,14 +42,28 @@ function checkbox(component: AccessibleNasaTlx, text: string) {
   return label?.querySelector<HTMLInputElement>('input');
 }
 
+async function showImportedQuestionnaireUpload(conductor: StudyConductorApp) {
+  const route = [...conductor.querySelectorAll<HTMLLabelElement>('label')]
+    .find((label) => label.textContent?.includes('Import a Qualtrics or LimeSurvey export'))!
+    .querySelector<HTMLInputElement>('input')!;
+  route.click();
+  await conductor.updateComplete;
+  conductor.querySelector<HTMLButtonElement>(
+    '.wizard-navigation .primary-button',
+  )!.click();
+  await conductor.updateComplete;
+}
+
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
+  sessionStorage.clear();
   window.history.replaceState({}, '', '/');
 });
 
@@ -126,10 +140,7 @@ describe('automated structural accessibility scan', () => {
     const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
     document.body.append(conductor);
     await conductor.updateComplete;
-    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await conductor.updateComplete;
+    await showImportedQuestionnaireUpload(conductor);
     const qsf = readFileSync(
       resolve(import.meta.dirname, 'fixtures', 'qualtrics-rating.qsf'),
       'utf8',
@@ -144,7 +155,7 @@ describe('automated structural accessibility scan', () => {
     input.dispatchEvent(new Event('change', { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 0));
     await conductor.updateComplete;
-    expect(conductor.querySelector('#platform-import-review')).not.toBeNull();
+    expect(conductor.textContent).toContain('File review ready');
     const result = await axe.run(conductor, {
       rules: { 'color-contrast': { enabled: false } },
     });
@@ -155,10 +166,7 @@ describe('automated structural accessibility scan', () => {
     const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
     document.body.append(conductor);
     await conductor.updateComplete;
-    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await conductor.updateComplete;
+    await showImportedQuestionnaireUpload(conductor);
 
     const guide = conductor.querySelector<HTMLDetailsElement>('.platform-import-guide')!;
     guide.open = true;
@@ -172,10 +180,7 @@ describe('automated structural accessibility scan', () => {
     const conductor = document.createElement('study-conductor-app') as StudyConductorApp;
     document.body.append(conductor);
     await conductor.updateComplete;
-    [...conductor.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add your own questionnaire')!
-      .click();
-    await conductor.updateComplete;
+    await showImportedQuestionnaireUpload(conductor);
     const lss = readFileSync(
       resolve(import.meta.dirname, 'fixtures', 'limesurvey-group-rating.lsg'),
       'utf8',

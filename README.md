@@ -21,7 +21,16 @@ tag is an immutable evidence point: any later functional change requires a new
 tag and proportionate re-verification. The earlier **`v0.8.0-rc.3`** and
 **`v0.8.0-rc.2`** tags remain unchanged evidence baselines.
 
-The current source is the prepared **`v0.8.0-rc.4` candidate**. It adds `.lsg`
+The immutable **`v0.8.0-rc.4`** baseline contains the prepared import and
+participant workflow. The current source is a post-`rc.4` researcher-wizard
+candidate: ready-made/saved questionnaires use six short screens and a
+Qualtrics/LimeSurvey import uses ten short screens with separate question,
+value, warning and scoring review. It adds same-tab draft recovery and browser
+step history without changing questionnaire definitions, participant scoring,
+result schemas or the Qualtrics bridge. See
+[`docs/RESEARCHER-WIZARD.md`](docs/RESEARCHER-WIZARD.md).
+
+The `rc.4` baseline added `.lsg`
 question-group and `.lsq` single-question imports, explicit selection when an
 `.lss` survey contains several groups and source-language metadata for correct
 page semantics. Voice input has one deliberately bounded English route: every
@@ -29,10 +38,10 @@ supported questionnaire accepts a displayed number spoken in English, while an
 English questionnaire also accepts one complete visible English answer label,
 with a small allowlist of meaning-preserving speech-service variants.
 
-Verification on the current unreleased candidate:
+Verification on the post-`rc.4` wizard candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 181 passing tests;
+- 18 test files passed, containing 183 passing tests;
 - 12 representative axe structural accessibility scans passed;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups, produced a
@@ -184,14 +193,15 @@ Built-in questionnaire files are discovered from
 runtime semantic checks reject unsupported fields and incompatible scorers. Scoring
 functions are an executable allowlist; JSON cannot inject code.
 
-On the conductor page, **Add your own questionnaire** provides:
+On the conductor page, the researcher first chooses one of two setup routes:
 
-- **Import a source-platform export:** review and convert a Qualtrics `.qsf`
-  survey export, a LimeSurvey `.lss` survey export, a LimeSurvey `.lsg`
-  question-group export, or a LimeSurvey `.lsq` single-question export;
-- **Reuse an AQP definition:** re-import a `.json` definition that this platform
-  previously validated and downloaded; and
-- **Build manually:** enter a bounded questionnaire through the no-code form.
+- **Ready-made or saved AQP definition (six screens):** select a registered
+  definition, re-import a previously validated `.json` definition, or build a
+  bounded questionnaire manually; then confirm scoring and configure the study.
+- **Qualtrics or LimeSurvey export (ten screens):** review and convert a
+  Qualtrics `.qsf`, LimeSurvey `.lss`, `.lsg` or `.lsq` export through separate
+  source, question, value, warning and scoring screens before configuring the
+  study.
 
 The researcher reviews the detected wording, order, labels, numeric values,
 unsupported content and scoring before generating the prepared participant

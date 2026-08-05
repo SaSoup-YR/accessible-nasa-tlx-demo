@@ -151,15 +151,18 @@ reported and excluded.
 
 ## Review and conversion
 
-1. Open `study.html` and choose **Add your own questionnaire**.
-2. Under **1. Import a Qualtrics or LimeSurvey export**, leave **Detect from
+1. Open `study.html`, choose **Import a Qualtrics or LimeSurvey export**, then
+   select **Continue**. The progress indicator changes to ten setup screens.
+2. On **Upload the file and choose the relevant part**, leave **Detect from
    file** selected unless format checking is part of the test.
 3. Select one `.qsf`, `.lss`, `.lsg` or `.lsq` export.
-4. The page moves keyboard focus to the import review. If an LSS contains
+4. The page reports whether the file can be reviewed. If an LSS contains
    several groups, choose one group and select **Review selected group**. If that
    group contains different numeric scales, choose one compatible rating set and
    select **Review selected rating set**.
-5. Check all three review sections:
+5. Continue through the separate question and answer-value screens, comparing
+   each item, label and stored value with the untouched source.
+6. On the warning screen, check all three review sections:
    - **Imported safely** lists every accepted item and its ordered values.
    - **Requires researcher confirmation** lists transformations and decisions
      that cannot be inferred safely.
@@ -167,17 +170,15 @@ reported and excluded.
    Confirm that every source question outside the selected rating set is named in
    **Requires researcher confirmation**. Those questions remain in the source
    survey and are not part of the converted standalone questionnaire.
-6. If conversion is blocked, correct the source questionnaire and export it
+7. If conversion is blocked, correct the source questionnaire and export it
    again. No partial definition is created.
-7. If conversion is available, compare the item wording, order, labels and values
-   with the source platform.
-8. Select the reviewed scale description and mean or sum scoring rule.
-9. Select reverse-scored items only when the questionnaire's authoritative
+8. Acknowledge the findings, then continue to scoring.
+9. Select the reviewed scale description and mean or sum scoring rule.
+10. Select reverse-scored items only when the questionnaire's authoritative
    scoring instructions require them.
-10. Select the final confirmation checkbox and then **Convert and use this
-    questionnaire**.
-11. The page moves to the green **Questionnaire ready** confirmation.
-12. Download the current definition JSON, generate a local study and verify a
+11. Select the final confirmation checkbox and then **Convert and continue**.
+12. Complete study details, support and collection, then review and generate.
+13. Download the current definition JSON, generate a local study and verify a
     complete response before installing it in a copied Qualtrics collection
     survey.
 
@@ -199,10 +200,10 @@ Run the sanitised files included with the automated tests:
 For the QSF, LSS and LSG fixtures:
 
 1. Open the versioned conductor page in a new private window.
-2. Select **Add your own questionnaire**.
-3. Under **1. Import a Qualtrics or LimeSurvey export**, leave **Detect from
+2. Select **Import a Qualtrics or LimeSurvey export**, then **Continue**.
+3. On the upload screen, leave **Detect from
    file** selected and choose the fixture.
-4. Confirm that the review receives keyboard focus and shows:
+4. Continue through questions, values and warnings. Confirm that the screens show:
    - source format detected correctly;
    - two safely imported items in this order: `CLARITY`, then `CONTROL`;
    - values `1, 2, 3, 4, 5` in order;
@@ -213,9 +214,11 @@ For the QSF, LSS and LSG fixtures:
    positional conversion of `A001`–`A005` are all reported rather than hidden.
    For the LSG fixture, confirm the one-row Array expansion, blank numeric scale
    labels and source group condition are all reported for confirmation.
-6. Choose **Agreement**, **Mean of reviewed item values**, no reverse-scored
-   items, select the final confirmation checkbox, then convert.
-7. Confirm that the page moves to the green **Questionnaire ready** summary.
+6. Acknowledge the warnings. Choose **Agreement**, **Mean of reviewed item
+   values**, no reverse-scored items, select the final confirmation checkbox,
+   then choose **Convert and continue**.
+7. Complete the remaining setup screens and confirm that the review summary uses
+   the imported questionnaire.
 8. Generate a local study, answer `4` and `2`, submit, and confirm a primary
    score of `3.00`.
 9. Export the result and confirm the two raw answers, primary score, instrument
